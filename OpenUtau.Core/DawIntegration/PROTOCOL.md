@@ -151,10 +151,21 @@ audio <hash> <length>\n
 #### `updateTracks` (notification)
 
 ```json
-{ "tracks": [ { "name": "Singer 1", "volume": 0.0, "pan": 0.0 } ] }
+{ "tracks": [ { "name": "Singer 1", "volume": 0.0, "pan": 0.0, "muted": false } ] }
 ```
 
-- `volume`/`pan` are passed through in OpenUtau's internal scale, unconverted: `UTrack.Volume` is **decibels** (`0` = unity, `-24` = the value OpenUtau uses for mute) and `UTrack.Pan` is **-100..+100** (`0` = centre). A plugin that wants a linear gain applies `10^(dB/20)`.
+- `volume`/`pan` are passed through in OpenUtau's internal scale, unconverted: `UTrack.Volume` is **decibels** (`0` = unity) and `UTrack.Pan` is **-100..+100** (`0` = centre).
+- `muted` is the **effective** mute: `UTrack.Muted`, which already has solo resolved against the rest of the project (a track is effectively muted when another track is soloed). It is sent because data-plane audio is **pre-fader** — OpenUtau applies the fader per track, downstream of the part signal that `getAudio` serves — so a plugin that ignored `muted` could not reproduce a mute or a solo at all. `UTrack.Muted` is `[YamlIgnore]`, so it is *not* recoverable from the `ustx` baseline either.
+- A plugin that wants to match OpenUtau's mix must reproduce its fader law rather than a plain decibel conversion, because the curve steepens below -16 dB and hard-mutes at -24 dB (`PlaybackManager.DecibelToVolume`):
+
+  ```
+  gain(db) = 0                                  if db <= -24
+           = 10 ^ ((db * 2 + 16) / 20)          if -24 < db < -16
+           = 10 ^ (db / 20)                     if db >= -16
+  ```
+
+  Pan is constant-power (`MusicMath.PanToChannelVolumes`): with `angle = (clamp(pan, -100, 100) + 100) / 200 * π/2`, the channel gains are `(cos angle, sin angle)` — so `-100` is hard left, `0` is `(0.707, 0.707)`, `+100` is hard right.
+- Effective per-track gain is therefore `muted ? 0 : gain(volume)`, mirroring `RenderEngine`.
 
 ### 6.2 Plugin → OpenUtau
 

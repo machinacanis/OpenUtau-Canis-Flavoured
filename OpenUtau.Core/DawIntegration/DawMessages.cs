@@ -194,6 +194,13 @@ namespace OpenUtau.Core.DawIntegration {
         [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
         [JsonPropertyName("volume")] public double Volume { get; set; }
         [JsonPropertyName("pan")] public double Pan { get; set; }
+
+        /// <summary>
+        /// The effective mute, i.e. <see cref="Ustx.UTrack.Muted"/> — mute with solo already
+        /// resolved against the rest of the project. Part audio travels pre-fader, so without
+        /// this the plugin has no way to reproduce a mute or a solo.
+        /// </summary>
+        [JsonPropertyName("muted")] public bool Muted { get; set; }
     }
 
     /// <summary><c>updateTracks</c> notification payload (PROTOCOL.md §6.1).</summary>

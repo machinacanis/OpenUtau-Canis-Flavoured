@@ -74,7 +74,8 @@ namespace OpenUtau.Core.DawIntegration {
             var built = new UProject();
             built.tracks.Clear();
             built.tracks.Add(new UTrack("Lead") { TrackNo = 0, Volume = -3, Pan = -20 });
-            built.tracks.Add(new UTrack("Harmony") { TrackNo = 1, Volume = 0, Pan = 15 });
+            // Muted, so the effective-mute field is exercised rather than defaulted.
+            built.tracks.Add(new UTrack("Harmony") { TrackNo = 1, Volume = 0, Pan = 15, Muted = true });
             built.parts.Add(new UVoicePart {
                 name = "Lead A", trackNo = 0, position = 0, duration = 480, Mix = new RampSource(),
             });
@@ -122,16 +123,20 @@ namespace OpenUtau.Core.DawIntegration {
             Assert.Equal(DawUstx.Serialize(project), plugin.Ustx);
             Assert.Contains("ustx_version", plugin.Ustx);
 
+            // §6.1: the fader is applied downstream of the audio the plugin pulls, so mute has to
+            // travel as its own field or the plugin cannot reproduce it.
             Assert.Collection(plugin.Tracks,
                 track => {
                     Assert.Equal("Lead", track.Name);
                     Assert.Equal(-3d, track.Volume);
                     Assert.Equal(-20d, track.Pan);
+                    Assert.False(track.Muted);
                 },
                 track => {
                     Assert.Equal("Harmony", track.Name);
                     Assert.Equal(0d, track.Volume);
                     Assert.Equal(15d, track.Pan);
+                    Assert.True(track.Muted);
                 });
 
             // 480 ticks is 500 ms at the project defaults, so the windows are 0-500 and 500-1500.

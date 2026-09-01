@@ -502,6 +502,9 @@ namespace OpenUtau.Core.DawIntegration {
                         Name = track.TrackName,
                         Volume = track.Volume,
                         Pan = track.Pan,
+                        // Matches RenderEngine's own fader input, so the plugin mixes what
+                        // OpenUtau would have mixed.
+                        Muted = track.Muted,
                     })
                     .ToList(),
             });
