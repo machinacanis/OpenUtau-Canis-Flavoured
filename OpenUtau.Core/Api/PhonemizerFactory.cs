@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -23,7 +24,11 @@ namespace OpenUtau.Api {
             ? $"[{tag}] {name}"
             : $"[{tag}] {name} (Contributed by {author})";
 
-        private static Dictionary<Type, PhonemizerFactory> factories = new Dictionary<Type, PhonemizerFactory>();
+        // Reached from UTrack's constructor, so it is hit from whatever thread happens to be
+        // building tracks - project load and rendering both do this off the UI thread. A plain
+        // Dictionary corrupts under concurrent insertion, and Get(string)/BuildList() enumerate
+        // it while those insertions are in flight.
+        private static ConcurrentDictionary<Type, PhonemizerFactory> factories = new ConcurrentDictionary<Type, PhonemizerFactory>();
         private static PhonemizerFactory[] orderedFactories = [];
         public static PhonemizerFactory Get(Type type) {
             if (!factories.TryGetValue(type, out var factory)) {
