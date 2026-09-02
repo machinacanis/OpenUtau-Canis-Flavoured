@@ -77,6 +77,31 @@ namespace OpenUtau.Core.DawIntegration {
         }
 
         [Fact]
+        public void HashMatchesTheReferenceVectorForEmptyInput() {
+            // Pins this side to standard XXH64 with seed 0 — the published vector, not something
+            // K4os.Hash.xxHash agrees with only because it computed both numbers. The plugin
+            // hashes with its own library; if either stops being the reference algorithm, every
+            // part looks missing forever and nothing else in the protocol reports it.
+            Assert.Equal(0xEF46DB3751D8E999UL, DawAudio.Hash(Array.Empty<byte>()));
+        }
+
+        [Fact]
+        public void SharedPcmVectorHashesToTheValueThePluginExpects() {
+            // Interleaved little-endian float32 is the wire encoding (§6.1), so the bytes are
+            // spelled out rather than round-tripped: this is the one assertion that would catch a
+            // big-endian or non-IEEE encoding, which no same-side round trip can.
+            byte[] pcm = DawAudio.ToPcmBytes(new[] { 1f, -1f, 0.5f });
+
+            Assert.Equal(new byte[] {
+                0x00, 0x00, 0x80, 0x3F, 0x00, 0x00, 0x80, 0xBF, 0x00, 0x00, 0x00, 0x3F,
+            }, pcm);
+            // The plugin's tests/test_hash.cpp asserts this same constant against its own XXH64.
+            // Two suites, two libraries, one number: neither repository can drift alone.
+            Assert.Equal(12033956788804169010UL, DawAudio.Hash(pcm));
+            Assert.Equal("12033956788804169010", DawAudio.FormatHash(DawAudio.Hash(pcm)));
+        }
+
+        [Fact]
         public void HashSerializesAsDecimalStringBeyondDoublePrecision() {
             // §5.2: a JSON number would round this; the wire format is a string for that reason.
             string text = DawAudio.FormatHash(ulong.MaxValue);
