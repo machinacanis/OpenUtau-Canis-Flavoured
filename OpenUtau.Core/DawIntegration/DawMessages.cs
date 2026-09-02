@@ -142,7 +142,7 @@ namespace OpenUtau.Core.DawIntegration {
         }
     }
 
-    /// <summary>Payload for kinds that carry no fields: <c>init</c>, <c>ping</c>, <c>playbackStarted</c>.</summary>
+    /// <summary>Payload for kinds that carry no fields: <c>ping</c> and <c>playbackStarted</c>.</summary>
     public class DawEmptyPayload {
         public static readonly DawEmptyPayload Instance = new DawEmptyPayload();
     }
