@@ -76,12 +76,12 @@ namespace OpenUtau.Core.DawIntegration {
             built.tracks.Add(new UTrack("Lead") { TrackNo = 0, Volume = -3, Pan = -20 });
             // Muted, so the effective-mute field is exercised rather than defaulted.
             built.tracks.Add(new UTrack("Harmony") { TrackNo = 1, Volume = 0, Pan = 15, Muted = true });
-            built.parts.Add(new UVoicePart {
-                name = "Lead A", trackNo = 0, position = 0, duration = 480, Mix = new RampSource(),
-            });
-            built.parts.Add(new UVoicePart {
-                name = "Harmony A", trackNo = 1, position = 480, duration = 960, Mix = new RampSource(),
-            });
+            var lead = new UVoicePart { name = "Lead A", trackNo = 0, position = 0, duration = 480 };
+            lead.SetMix(new RampSource());
+            built.parts.Add(lead);
+            var harmony = new UVoicePart { name = "Harmony A", trackNo = 1, position = 480, duration = 960 };
+            harmony.SetMix(new RampSource());
+            built.parts.Add(harmony);
             built.timeAxis.BuildSegments(built);
             return built;
         }

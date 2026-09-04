@@ -157,7 +157,7 @@ namespace OpenUtau.Core.DawIntegration {
         public void ExtractionReadsThePartsOwnAbsoluteWindow() {
             var project = NewProject();
             var part = new UVoicePart { trackNo = 0, position = 480, duration = 480 };
-            part.Mix = new RampSource();
+            part.SetMix(new RampSource());
 
             Assert.True(DawAudio.TryExtractPart(project, part, out float[] samples));
 
@@ -173,7 +173,7 @@ namespace OpenUtau.Core.DawIntegration {
             // ISignalSource.Mix adds rather than assigns, so a reused buffer would double the signal.
             var project = NewProject();
             var part = new UVoicePart { trackNo = 0, position = 0, duration = 480 };
-            part.Mix = new RampSource();
+            part.SetMix(new RampSource());
 
             Assert.True(DawAudio.TryExtractPart(project, part, out float[] first));
             Assert.True(DawAudio.TryExtractPart(project, part, out float[] second));
@@ -186,9 +186,9 @@ namespace OpenUtau.Core.DawIntegration {
             var project = NewProject();
             var empty = new UVoicePart { trackNo = 0, position = 0, duration = 480 };
             var unfinished = new UVoicePart { trackNo = 0, position = 0, duration = 480 };
-            unfinished.Mix = new RampSource { Ready = false };
+            unfinished.SetMix(new RampSource { Ready = false });
             var zeroLength = new UVoicePart { trackNo = 0, position = 0, duration = 0 };
-            zeroLength.Mix = new RampSource();
+            zeroLength.SetMix(new RampSource());
 
             Assert.False(DawAudio.TryExtractPart(project, empty, out _));
             Assert.False(DawAudio.TryExtractPart(project, unfinished, out _));
@@ -203,7 +203,7 @@ namespace OpenUtau.Core.DawIntegration {
             var source = new WaveSource(0, 500, 0, 2);
             source.SetSamples(samples);
             var part = new UVoicePart { trackNo = 0, position = 0, duration = 480 };
-            part.Mix = source;
+            part.SetMix(source);
 
             Assert.True(DawAudio.TryExtractPart(project, part, out float[] extracted));
 

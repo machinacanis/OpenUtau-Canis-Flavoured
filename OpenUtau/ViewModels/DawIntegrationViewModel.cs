@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using OpenUtau.Core.DawIntegration;
-using ReactiveUI.SourceGenerators;
+using ReactiveUI.Fody.Helpers;
 using Serilog;
 
 namespace OpenUtau.App.ViewModels {
@@ -33,17 +33,17 @@ namespace OpenUtau.App.ViewModels {
     /// state of the single connection <see cref="DawManager"/> owns. The manager outlives this
     /// dialog, so closing the window does not drop the connection.
     /// </summary>
-    public partial class DawIntegrationViewModel : ViewModelBase, IDisposable {
+    public class DawIntegrationViewModel : ViewModelBase, IDisposable {
         private readonly DawServerFinder finder = new DawServerFinder(DawServerFinder.DefaultDirectory);
         private bool disposed;
 
         public ObservableCollection<DawServerViewModel> Servers { get; }
             = new ObservableCollection<DawServerViewModel>();
 
-        [Reactive] public partial DawServerViewModel? SelectedServer { get; set; }
-        [Reactive] public partial string Status { get; set; } = string.Empty;
-        [Reactive] public partial bool IsConnected { get; set; }
-        [Reactive] public partial bool IsBusy { get; set; }
+        [Reactive] public DawServerViewModel? SelectedServer { get; set; }
+        [Reactive] public string Status { get; set; } = string.Empty;
+        [Reactive] public bool IsConnected { get; set; }
+        [Reactive] public bool IsBusy { get; set; }
 
         public DawIntegrationViewModel() {
             DawManager.Inst.StateChanged += OnStateChanged;

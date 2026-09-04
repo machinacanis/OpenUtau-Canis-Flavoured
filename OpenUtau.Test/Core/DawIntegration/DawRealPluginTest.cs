@@ -59,10 +59,9 @@ namespace OpenUtau.Core.DawIntegration {
             var built = new UProject();
             built.tracks.Clear();
             built.tracks.Add(new UTrack("Live") { TrackNo = 0, Volume = 0, Pan = 0 });
-            built.parts.Add(new UVoicePart {
-                name = "Live A", trackNo = 0, position = 1920, duration = 960,
-                Mix = new ConstantSource(),
-            });
+            var live = new UVoicePart { name = "Live A", trackNo = 0, position = 1920, duration = 960 };
+            live.SetMix(new ConstantSource());
+            built.parts.Add(live);
             built.timeAxis.BuildSegments(built);
             return built;
         }
@@ -70,8 +69,11 @@ namespace OpenUtau.Core.DawIntegration {
         [Fact]
         public async Task RealPluginCompletesTheHandshakeAndPullsAudio() {
             string? directory = Environment.GetEnvironmentVariable("OPENUTAU_BRIDGE_DISCOVERY");
-            Assert.SkipWhen(string.IsNullOrEmpty(directory),
-                "Set OPENUTAU_BRIDGE_DISCOVERY to a running bridge-host's discovery directory.");
+            if (string.IsNullOrEmpty(directory)) {
+                // Opt-in live test: needs a running bridge-host publishing its discovery file.
+                // xUnit v2 on this branch has no runtime skip, so a bare return stands in for it.
+                return;
+            }
             Assert.True(Directory.Exists(directory), $"No such directory: {directory}");
 
             // Discovery is exercised for real: the file was written by the C++ side, and this is
