@@ -114,7 +114,7 @@ audio <hash> <length>\n
 ```
 
 - `hash`: decimal XXH64 of the payload bytes, **serialized as a decimal string** (e.g. `"13507256038857166760"`). Never as a JSON number — 64-bit values exceed the 2^53 safe-integer limit of JS/`double` parsers. In the data-plane frame header the hash is the same decimal string (unquoted, as it is outside JSON).
-- `length`: decimal byte count. The receiver MUST read exactly `length` bytes after the header line (the frame does not end at `\n`).
+- `length`: decimal byte count. The receiver MUST read exactly `length` bytes after the header line (the frame does not end at `\n`). A length above **268435456** (256 MiB, `DawAudio.MaxFrameBytes` — about 12.7 minutes of 44.1 kHz stereo float32) is a malformed frame: the receiver MUST refuse it as a protocol error rather than allocate, because the length is peer-controlled. Senders MUST NOT emit frames above this bound.
 - Distinguish the planes on receive: a line starting with `audio ` is a data frame header; anything else is a control line.
 
 ---

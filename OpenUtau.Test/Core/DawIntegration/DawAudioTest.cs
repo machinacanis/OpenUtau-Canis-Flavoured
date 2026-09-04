@@ -142,9 +142,16 @@ namespace OpenUtau.Core.DawIntegration {
         [InlineData("audio abc 2")]
         [InlineData("audio 1 -2")]
         [InlineData("audio 1 abc")]
+        [InlineData("audio 1 268435457")] // MaxFrameBytes + 1: a hostile length must not drive allocation.
         public void MalformedFrameHeadersAreRefused(string line) {
             // A header we cannot trust would desynchronize the stream, so it must never parse.
             Assert.False(DawAudio.TryParseFrameHeader(line, out _, out _));
+        }
+
+        [Fact]
+        public void FrameHeaderAcceptsTheLargestLegalLength() {
+            Assert.True(DawAudio.TryParseFrameHeader($"audio 1 {DawAudio.MaxFrameBytes}", out _, out int length));
+            Assert.Equal(DawAudio.MaxFrameBytes, length);
         }
 
         [Fact]

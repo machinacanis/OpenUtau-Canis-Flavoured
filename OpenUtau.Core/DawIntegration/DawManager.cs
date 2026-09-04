@@ -300,15 +300,34 @@ namespace OpenUtau.Core.DawIntegration {
             lock (stateLock) {
                 transport = opened;
             }
-            // §6.1 as decided: init carries the USTX baseline and the answer is the api version.
-            string ustx = await SerializeProjectAsync();
-            var response = await opened.SendRequestAsync<InitResponse>(
-                DawMessageKind.Init, new InitRequest { Ustx = ustx }, InitTimeout, cancellation);
-            if (!DawApiVersion.TryParse(response.ApiVersion, out var version)
-                || !version.IsCompatibleWith(DawApiVersion.Current)) {
-                throw new DawProtocolException(
-                    $"Plugin answered init with api '{response.ApiVersion}', " +
-                    $"which this build cannot speak.");
+            try {
+                // §6.1 as decided: init carries the USTX baseline and the answer is the api version.
+                string ustx = await SerializeProjectAsync();
+                var response = await opened.SendRequestAsync<InitResponse>(
+                    DawMessageKind.Init, new InitRequest { Ustx = ustx }, InitTimeout, cancellation);
+                if (!DawApiVersion.TryParse(response.ApiVersion, out var version)
+                    || !version.IsCompatibleWith(DawApiVersion.Current)) {
+                    throw new DawProtocolException(
+                        $"Plugin answered init with api '{response.ApiVersion}', " +
+                        $"which this build cannot speak.");
+                }
+            } catch {
+                // A failed open must not leave a wired, connected transport behind: if the peer
+                // later dropped it, OnTransportDisconnected would start a second reconnect
+                // ladder while the caller (ConnectAsync's catch or ReconnectAsync) is still
+                // unwinding the first. Detach before disposing so the synchronous
+                // Disconnected callback never fires, and do NOT go through
+                // CloseTransportAsync — with closingLocally still false it would raise it.
+                opened.Disconnected -= OnTransportDisconnected;
+                bool stillCurrent;
+                lock (stateLock) {
+                    stillCurrent = ReferenceEquals(transport, opened);
+                    if (stillCurrent) {
+                        transport = null;
+                    }
+                }
+                opened.Dispose();
+                throw;
             }
             Subscribe();
             SetState(DawConnectionState.Connected);
@@ -774,7 +793,11 @@ namespace OpenUtau.Core.DawIntegration {
                 transport = null;
                 server = null;
             }
-            syncGate.Dispose();
+            // Deliberately not disposing syncGate: StopPump does not join an in-flight timer
+            // callback, and OnPluginNotification starts PumpOnceAsync without awaiting it, so a
+            // pump can still enter WaitAsync/Release after this point. A SemaphoreSlim holds no
+            // unmanaged state, so leaving it to the GC is safe; disposing it here could throw
+            // ObjectDisposedException into an awaited DisconnectAsync on the UI thread.
             SetState(DawConnectionState.Disconnected);
         }
     }

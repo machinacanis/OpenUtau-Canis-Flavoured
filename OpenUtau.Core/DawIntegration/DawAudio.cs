@@ -19,6 +19,14 @@ namespace OpenUtau.Core.DawIntegration {
         public const string FramePrefix = "audio ";
 
         /// <summary>
+        /// Upper bound on a single data-plane frame payload (256 MiB = 44.1 kHz stereo float32,
+        /// roughly 12.7 minutes of audio). Frames are length-prefixed by the peer, so before this
+        /// bound a hostile or corrupted header could make the receiver allocate up to 2 GiB
+        /// (PROTOCOL.md §6.1). Parts larger than this cannot be shipped over the wire in v1.
+        /// </summary>
+        public const int MaxFrameBytes = 1 << 28;
+
+        /// <summary>
         /// Converts project time to an index into OpenUtau's interleaved stereo sample space.
         /// The signal chain is addressed in absolute project samples, two floats per frame
         /// (see <c>WaveSource.offset</c>).
@@ -115,8 +123,9 @@ namespace OpenUtau.Core.DawIntegration {
         public static bool IsFrameHeader(string line) => line.StartsWith(FramePrefix, StringComparison.Ordinal);
 
         /// <summary>
-        /// Parses a data-plane header line (without the trailing newline). Rejects negative or
-        /// unparseable lengths so a malformed header cannot desynchronize the stream.
+        /// Parses a data-plane header line (without the trailing newline). Rejects negative,
+        /// unparseable or oversized lengths so a malformed header cannot desynchronize the stream
+        /// and a hostile length cannot drive the receiver into a huge allocation (§8).
         /// </summary>
         public static bool TryParseFrameHeader(string line, out string hash, out int length) {
             hash = string.Empty;
@@ -132,6 +141,9 @@ namespace OpenUtau.Core.DawIntegration {
                 return false;
             }
             if (!int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out length)) {
+                return false;
+            }
+            if (length > MaxFrameBytes) {
                 return false;
             }
             hash = parts[0];
