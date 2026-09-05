@@ -874,7 +874,8 @@ namespace OpenUtau.Core.DawIntegration {
                         $"The DAW project's tempo ({dawBpm:0.##} BPM) does not match this " +
                         $"project's tempo ({projectBpm:0.##} BPM). Align them, or the DAW " +
                         $"timeline and OpenUtau's will only agree in seconds, not in bars.",
-                        $"<translate:dawintegration.bpmmismatch> ({detail})")));
+                        $"<translate:dawintegration.bpmmismatch> ({detail})",
+                        new InvalidOperationException(), false)));
                 return 0;
             }), "bpm check");
         }

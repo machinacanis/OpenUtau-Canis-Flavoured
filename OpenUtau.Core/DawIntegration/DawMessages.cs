@@ -145,7 +145,7 @@ namespace OpenUtau.Core.DawIntegration {
             if (string.IsNullOrEmpty(project.FilePath)) {
                 throw new MessageCustomizableException(
                     "The project has not been saved. Save it before connecting a DAW plugin.",
-                    "<translate:dawintegration.unsavedproject>");
+                    "<translate:dawintegration.unsavedproject>", new InvalidOperationException(), false);
             }
             project.ustxVersion = Format.Ustx.kUstxVersion;
             project.BeforeSave();

@@ -73,6 +73,9 @@ namespace OpenUtau.Core.DawIntegration {
         /// </summary>
         private static UProject BuildProject() {
             var built = new UProject();
+            // v1.1 refuses to sync an unsaved project (the USTX serializer needs a FilePath
+            // for relative paths), so give the test project a plausible save location.
+            built.FilePath = Path.Combine(Path.GetTempPath(), "conformance-test.ustx");
             built.tracks.Clear();
             built.tracks.Add(new UTrack("Lead") { TrackNo = 0, Volume = -3, Pan = -20 });
             // Muted, so the effective-mute field is exercised rather than defaulted.
@@ -117,7 +120,7 @@ namespace OpenUtau.Core.DawIntegration {
             Assert.Equal(plugin.Name, openutau.ServerName);
             // §7: the connect handshake is init, then tracks, then layout, in that order.
             Assert.Equal(
-                new[] { DawMessageKind.Init, DawMessageKind.UpdateTracks, DawMessageKind.UpdatePartLayout },
+                new[] { DawMessageKind.Init, DawMessageKind.UpdateTracks, DawMessageKind.UpdateProjectInfo, DawMessageKind.UpdatePartLayout },
                 plugin.Received.ToArray());
 
             // The baseline is real USTX YAML, not a JSON projection of the project.
