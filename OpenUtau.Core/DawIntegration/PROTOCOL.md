@@ -157,6 +157,7 @@ audio <hash> <length>\n
 - `volume`/`pan` are passed through in OpenUtau's internal scale, unconverted: `UTrack.Volume` is **decibels** (`0` = unity) and `UTrack.Pan` is **-100..+100** (`0` = centre).
 - `muted` is the **effective** mute: `UTrack.Muted`, which already has solo resolved against the rest of the project.
 - These fields remain on the wire for compatibility and for peers that need the OpenUtau mixer state. The bridge's default output is **pre-fader**: it does not apply `volume`, `pan`, or `muted`. The DAW owns gain, pan, mute and solo so the dry signal entering its effects chain stays stable while the OpenUtau performance is edited.
+- Pre-fader output is scaled by a **constant output trim of √0.5 (≈ 0.7071, −3.01 dB) per channel**. OpenUtau pans constant-power, so its own playback of a centred track puts cos(π/4) on each channel; a bridge that bypassed panning without this trim would sit a systematic 3 dB above the level the performance was tuned against. The trim is not mixer state: it never follows `volume`, `pan` or `muted`.
 - A bridge may therefore receive a muted track and still request/render its part audio. `muted` is not a request to omit audio from the data plane.
 
 #### `updateProjectInfo` (notification) — v1.1

@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" Width="620" Height="380" MinWidth="480" MinHeight="300"
+        mc:Ignorable="d" Width="680" Height="400" MinWidth="520" MinHeight="320"
         x:Class="OpenUtau.App.Views.DawIntegrationDialog"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource dawintegration.caption}"
@@ -18,11 +18,13 @@
         <DataGridTextColumn Header="{DynamicResource dawintegration.col.name}"
                             Binding="{Binding Name}" Width="*"/>
         <DataGridTextColumn Header="{DynamicResource dawintegration.col.port}"
-                            Binding="{Binding Port}" Width="80"/>
+                            Binding="{Binding Port}" Width="70"/>
         <DataGridTextColumn Header="{DynamicResource dawintegration.col.apiversion}"
-                            Binding="{Binding ApiVersion}" Width="100"/>
+                            Binding="{Binding ApiVersion}" Width="60"/>
         <DataGridTextColumn Header="{DynamicResource dawintegration.col.compatibility}"
-                            Binding="{Binding Compatibility}" Width="150"/>
+                            Binding="{Binding Compatibility}" Width="130"/>
+        <DataGridTextColumn Header="{DynamicResource dawintegration.col.state}"
+                            Binding="{Binding StateText}" Width="110"/>
       </DataGrid.Columns>
     </DataGrid>
 
@@ -33,9 +35,9 @@
       <Button Content="{DynamicResource dawintegration.refresh}" Click="OnRefresh"
               IsEnabled="{Binding !IsBusy}"/>
       <Button Content="{DynamicResource dawintegration.connect}" Click="OnConnect"
-              IsEnabled="{Binding !IsConnected}"/>
+              IsEnabled="{Binding ConnectEnabled}"/>
       <Button Content="{DynamicResource dawintegration.disconnect}" Click="OnDisconnect"
-              IsEnabled="{Binding IsConnected}"/>
+              IsEnabled="{Binding DisconnectEnabled}"/>
       <Button Content="{DynamicResource button.close}" Click="OnClose" Width="90"/>
     </StackPanel>
   </Grid>

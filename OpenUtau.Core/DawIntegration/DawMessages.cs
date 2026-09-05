@@ -15,9 +15,12 @@ namespace OpenUtau.Core.DawIntegration {
         public const string UpdatePartLayout = "updatePartLayout";
         public const string GetAudio = "getAudio";
         public const string UpdateTracks = "updateTracks";
+        public const string UpdateProjectInfo = "updateProjectInfo";
         // plugin -> OpenUtau
         public const string Ping = "ping";
         public const string PlaybackStarted = "playbackStarted";
+        public const string Playhead = "playhead";
+        public const string Bpm = "bpm";
     }
 
     /// <summary>
@@ -25,8 +28,8 @@ namespace OpenUtau.Core.DawIntegration {
     /// (PROTOCOL.md §4). Major mismatch refuses the connection; minor skew connects.
     /// </summary>
     public readonly struct DawApiVersion : IEquatable<DawApiVersion> {
-        public const string CurrentString = "1.0";
-        public static DawApiVersion Current => new DawApiVersion(1, 0);
+        public const string CurrentString = "1.1";
+        public static DawApiVersion Current => new DawApiVersion(1, 1);
 
         public readonly int Major;
         public readonly int Minor;
@@ -131,7 +134,19 @@ namespace OpenUtau.Core.DawIntegration {
     /// serialization views (<c>voiceParts</c>/<c>waveParts</c>), so concurrent edits would race.
     /// </remarks>
     public static class DawUstx {
+        /// <summary>
+        /// Serializes the open project to USTX YAML. An unsaved project has no
+        /// <c>FilePath</c>, and <c>UWavePart.BeforeSave</c> builds paths relative to it, so
+        /// serializing one dies inside <c>Path.GetRelativePath</c> with a null-argument
+        /// exception that tells the user nothing. That case is reported here instead, in the
+        /// same shape as the renderer's friendly errors.
+        /// </summary>
         public static string Serialize(Ustx.UProject project) {
+            if (string.IsNullOrEmpty(project.FilePath)) {
+                throw new MessageCustomizableException(
+                    "The project has not been saved. Save it before connecting a DAW plugin.",
+                    "<translate:dawintegration.unsavedproject>");
+            }
             project.ustxVersion = Format.Ustx.kUstxVersion;
             project.BeforeSave();
             try {
@@ -206,5 +221,30 @@ namespace OpenUtau.Core.DawIntegration {
     /// <summary><c>updateTracks</c> notification payload (PROTOCOL.md §6.1).</summary>
     public class UpdateTracksNotification {
         [JsonPropertyName("tracks")] public List<DawTrackInfo> Tracks { get; set; } = new List<DawTrackInfo>();
+    }
+
+    /// <summary>
+    /// <c>updateProjectInfo</c> notification payload (v1.1): what a plugin's info window shows
+    /// about the project. The name is the file stem; an unsaved project reports
+    /// <see cref="Saved"/> false and an empty name.
+    /// </summary>
+    public class UpdateProjectInfoNotification {
+        [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
+        [JsonPropertyName("saved")] public bool Saved { get; set; }
+    }
+
+    /// <summary>
+    /// <c>playhead</c> notification payload (v1.1): the DAW's transport position, one-way
+    /// towards OpenUtau. <see cref="PositionMs"/> is absolute milliseconds on the shared
+    /// timeline — the same coordinate <see cref="DawPartLayout.StartMs"/> uses.
+    /// </summary>
+    public class PlayheadNotification {
+        [JsonPropertyName("positionMs")] public double PositionMs { get; set; }
+        [JsonPropertyName("playing")] public bool Playing { get; set; }
+    }
+
+    /// <summary><c>bpm</c> notification payload (v1.1): the DAW project's tempo.</summary>
+    public class BpmNotification {
+        [JsonPropertyName("bpm")] public double Bpm { get; set; }
     }
 }

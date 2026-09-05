@@ -14,11 +14,13 @@ namespace OpenUtau.Core.DawIntegration {
         Ustx = 0,
         Tracks = 1,
         PartLayout = 2,
+        ProjectInfo = 3,
     }
 
     /// <summary>
-    /// Trailing-edge debounce for the three sync streams (PROTOCOL.md §7): 1 s for
-    /// <c>updateUstx</c>/<c>updateTracks</c>, 5 s for <c>updatePartLayout</c> and its audio.
+    /// Trailing-edge debounce for the sync streams (PROTOCOL.md §7): 1 s for
+    /// <c>updateUstx</c>/<c>updateTracks</c>/<c>updateProjectInfo</c>, 5 s for
+    /// <c>updatePartLayout</c> and its audio.
     /// </summary>
     /// <remarks>
     /// Time is passed in rather than read from the clock, so the pump can be a timer in
@@ -192,11 +194,30 @@ namespace OpenUtau.Core.DawIntegration {
         Reconnecting,
     }
 
+    /// <summary>One plugin connection, as the connection list shows it.</summary>
+    public sealed class DawConnectionInfo {
+        public int Port { get; }
+        public string Name { get; }
+        public DawConnectionState State { get; }
+
+        public DawConnectionInfo(int port, string name, DawConnectionState state) {
+            Port = port;
+            Name = name;
+            State = state;
+        }
+    }
+
     /// <summary>
-    /// Drives one plugin connection: the <see cref="ICmdSubscriber"/> subscription that marks
-    /// streams dirty, the debounced sync pump, audio serving and reconnect backoff
-    /// (PROTOCOL.md §7, §9).
+    /// Drives every plugin connection: the <see cref="ICmdSubscriber"/> subscription that marks
+    /// streams dirty, the debounced sync pump broadcast to all connections, audio serving and
+    /// per-connection reconnect backoff (PROTOCOL.md §7, §9).
     /// </summary>
+    /// <remarks>
+    /// Each plugin instance in the DAW binds one OpenUtau track, so several instances are
+    /// expected to be connected at once. Project state (the debounce scheduler, the audio
+    /// cache, the hash owners) is shared; connection state (transport, reconnect ladder) is
+    /// per connection.
+    /// </remarks>
     public sealed class DawManager : SingletonBase<DawManager>, ICmdSubscriber, IDisposable {
         /// <summary>§3: 500 ms, 1 s, 2 s, then give up and tell the user.</summary>
         public static readonly TimeSpan[] DefaultReconnectBackoff = {
@@ -211,6 +232,20 @@ namespace OpenUtau.Core.DawIntegration {
         /// <summary>Pump period. Well under the 1 s fast debounce, so it never dominates latency.</summary>
         public static readonly TimeSpan DefaultPumpInterval = TimeSpan.FromMilliseconds(200);
 
+        /// <summary>
+        /// Playhead updates smaller than this are not forwarded to the document, so a parked
+        /// DAW transport does not re-seek OpenUtau on every notification.
+        /// </summary>
+        public const int PlayheadEpsilonTicks = 5;
+
+        /// <summary>Per-connection state. Guarded by <see cref="stateLock"/>.</summary>
+        private sealed class Connection {
+            public DawServer Server = null!;
+            public DawTransport? Transport;
+            public bool ClosingLocally;
+            public bool Reconnecting;
+        }
+
         private readonly DawSyncScheduler scheduler;
         private readonly DawAudioCache audioCache;
         private readonly TimeSpan[] reconnectBackoff;
@@ -220,12 +255,14 @@ namespace OpenUtau.Core.DawIntegration {
         /// <summary>Advertised hash → the part that produced it, so a cache miss can be re-extracted.</summary>
         private readonly Dictionary<string, UVoicePart> hashOwners = new Dictionary<string, UVoicePart>();
 
-        private DawTransport? transport;
+        private readonly List<Connection> connections = new List<Connection>();
         private Timer? pump;
-        private DawServer? server;
         private bool subscribed;
-        private volatile bool closingLocally;
         private int disposed;
+
+        // BPM-mismatch reporting state (document thread only).
+        private double lastDawBpm = double.NaN;
+        private double lastWarnedProjectBpm = double.NaN;
 
         public DawManager() : this(null) { }
 
@@ -239,8 +276,15 @@ namespace OpenUtau.Core.DawIntegration {
         }
 
         public DawConnectionState State { get; private set; } = DawConnectionState.Disconnected;
-        public bool IsConnected => transport?.IsConnected == true;
-        public string ServerName => server?.Name ?? string.Empty;
+        public bool IsConnected => LiveConnections().Any();
+        public string ServerName {
+            get {
+                lock (stateLock) {
+                    return connections.FirstOrDefault(c => c.Transport?.IsConnected == true)
+                        ?.Server.Name ?? string.Empty;
+                }
+            }
+        }
         public DawSyncScheduler Scheduler => scheduler;
         public DawAudioCache AudioCache => audioCache;
 
@@ -260,11 +304,40 @@ namespace OpenUtau.Core.DawIntegration {
 
         public event Action<DawConnectionState>? StateChanged;
 
+        /// <summary>Raised whenever a connection is added, dropped or changes state.</summary>
+        public event Action? ConnectionsChanged;
+
         /// <summary>Raised when reconnection is exhausted. The UI turns this into a visible error.</summary>
         public event Action<string>? ConnectionLost;
 
+        /// <summary>The connections currently held, in connect order, for the UI list.</summary>
+        public IReadOnlyList<DawConnectionInfo> Connections {
+            get {
+                lock (stateLock) {
+                    return connections
+                        .Select(c => new DawConnectionInfo(c.Server.Port, c.Server.Name, StateOf(c)))
+                        .ToList();
+                }
+            }
+        }
+
+        private static DawConnectionState StateOf(Connection c) {
+            if (c.Transport?.IsConnected == true) {
+                return DawConnectionState.Connected;
+            }
+            return c.Reconnecting ? DawConnectionState.Reconnecting : DawConnectionState.Connecting;
+        }
+
+        private List<Connection> LiveConnections() {
+            lock (stateLock) {
+                return connections.Where(c => c.Transport?.IsConnected == true).ToList();
+            }
+        }
+
         /// <summary>
         /// Connects to a discovered plugin, performs the init handshake and starts syncing.
+        /// Several plugins may be connected at once, one per DAW plugin instance; connecting a
+        /// port that is already connected replaces that connection.
         /// </summary>
         /// <exception cref="DawProtocolException">
         /// The advertisement, or the plugin's own init answer, is an api major this build cannot speak (§4).
@@ -275,30 +348,46 @@ namespace OpenUtau.Core.DawIntegration {
                     $"Plugin '{target.Name}' speaks api '{target.Info.ApiVersion}', " +
                     $"this build speaks {DawApiVersion.CurrentString}.");
             }
-            await DisconnectAsync();
+            Connection? replaced;
             lock (stateLock) {
-                server = target;
+                replaced = connections.FirstOrDefault(c => c.Server.Port == target.Port);
             }
-            closingLocally = false;
-            SetState(DawConnectionState.Connecting);
+            if (replaced != null) {
+                await CloseConnectionAsync(replaced, finalSync: false);
+            }
+            var conn = new Connection { Server = target };
+            lock (stateLock) {
+                connections.Add(conn);
+            }
+            RecomputeState();
             try {
-                await OpenAsync(target.Port, cancellation);
+                await OpenConnectionAsync(conn, cancellation);
             } catch {
-                // A half-open connection must not trigger the reconnect ladder.
-                closingLocally = true;
-                await TeardownAsync();
-                SetState(DawConnectionState.Disconnected);
+                lock (stateLock) {
+                    connections.Remove(conn);
+                }
+                RecomputeState();
                 throw;
             }
         }
 
-        private async Task OpenAsync(int port, CancellationToken cancellation) {
-            var opened = await DawTransport.ConnectAsync(port, TransportOptions, NowUtc, cancellation);
-            opened.Notification += OnPluginNotification;
-            opened.Disconnected += OnTransportDisconnected;
+        /// <summary>
+        /// The per-connection half of the old OpenAsync: transport, init handshake, then the
+        /// streams §9 still owes the plugin (tracks, layout, project info — init already
+        /// carried the USTX baseline).
+        /// </summary>
+        private async Task OpenConnectionAsync(Connection conn, CancellationToken cancellation) {
+            var opened = await DawTransport.ConnectAsync(
+                conn.Server.Port, TransportOptions, NowUtc, cancellation);
+            Action<string, JsonElement?> onNotification =
+                (kind, payload) => OnPluginNotification(conn, kind, payload);
+            Action<DawDisconnectReason, string> onDisconnected =
+                (reason, detail) => OnTransportDisconnected(conn, reason, detail);
+            opened.Notification += onNotification;
+            opened.Disconnected += onDisconnected;
             opened.RequestHandler = ServeRequestAsync;
             lock (stateLock) {
-                transport = opened;
+                conn.Transport = opened;
             }
             try {
                 // §6.1 as decided: init carries the USTX baseline and the answer is the api version.
@@ -313,30 +402,29 @@ namespace OpenUtau.Core.DawIntegration {
                 }
             } catch {
                 // A failed open must not leave a wired, connected transport behind: if the peer
-                // later dropped it, OnTransportDisconnected would start a second reconnect
-                // ladder while the caller (ConnectAsync's catch or ReconnectAsync) is still
-                // unwinding the first. Detach before disposing so the synchronous
-                // Disconnected callback never fires, and do NOT go through
-                // CloseTransportAsync — with closingLocally still false it would raise it.
-                opened.Disconnected -= OnTransportDisconnected;
+                // later dropped it, the disconnected callback would start a second reconnect
+                // ladder while the caller is still unwinding this one. Detach before disposing
+                // so the synchronous callback never fires.
+                opened.Disconnected -= onDisconnected;
                 bool stillCurrent;
                 lock (stateLock) {
-                    stillCurrent = ReferenceEquals(transport, opened);
+                    stillCurrent = ReferenceEquals(conn.Transport, opened);
                     if (stillCurrent) {
-                        transport = null;
+                        conn.Transport = null;
                     }
                 }
                 opened.Dispose();
                 throw;
             }
             Subscribe();
-            SetState(DawConnectionState.Connected);
-            // init already delivered the USTX, so only tracks and layout are outstanding (§7, §9).
-            var now = NowUtc();
-            scheduler.MakeDue(DawSyncKind.Tracks, now);
-            scheduler.MakeDue(DawSyncKind.PartLayout, now);
+            RecomputeState();
             StartPump();
-            await PumpOnceAsync(cancellation);
+            // init already delivered the USTX, so only tracks, layout and project info are
+            // outstanding (§7, §9). These go to this connection alone: the others already hold
+            // the same state.
+            await SyncConnectionAsync(conn, DawSyncKind.Tracks, cancellation);
+            await SyncConnectionAsync(conn, DawSyncKind.ProjectInfo, cancellation);
+            await SyncConnectionAsync(conn, DawSyncKind.PartLayout, cancellation);
         }
 
         /// <summary>
@@ -370,9 +458,9 @@ namespace OpenUtau.Core.DawIntegration {
             }
         }
 
-        private void Unsubscribe() {
+        private void UnsubscribeIfIdle() {
             lock (stateLock) {
-                if (!subscribed) {
+                if (!subscribed || connections.Count > 0) {
                     return;
                 }
                 DocManager.Inst.RemoveSubscriber(this);
@@ -380,7 +468,19 @@ namespace OpenUtau.Core.DawIntegration {
             }
         }
 
-        private void SetState(DawConnectionState next) {
+        private void RecomputeState() {
+            DawConnectionState next;
+            lock (stateLock) {
+                if (connections.Any(c => c.Transport?.IsConnected == true)) {
+                    next = DawConnectionState.Connected;
+                } else if (connections.Any(c => c.Reconnecting)) {
+                    next = DawConnectionState.Reconnecting;
+                } else if (connections.Count > 0) {
+                    next = DawConnectionState.Connecting;
+                } else {
+                    next = DawConnectionState.Disconnected;
+                }
+            }
             bool changed;
             lock (stateLock) {
                 changed = State != next;
@@ -389,6 +489,7 @@ namespace OpenUtau.Core.DawIntegration {
             if (changed) {
                 StateChanged?.Invoke(next);
             }
+            ConnectionsChanged?.Invoke();
         }
 
         private void StartPump() {
@@ -407,8 +508,11 @@ namespace OpenUtau.Core.DawIntegration {
             }
         }
 
-        private void StopPump() {
+        private void StopPumpIfIdle() {
             lock (stateLock) {
+                if (connections.Count > 0) {
+                    return;
+                }
                 pump?.Dispose();
                 pump = null;
             }
@@ -433,12 +537,17 @@ namespace OpenUtau.Core.DawIntegration {
                     scheduler.Touch(DawSyncKind.PartLayout, now);
                     break;
                 case LoadProjectNotification:
-                    // A different project: nothing the plugin holds is valid any more.
+                    // A different project: nothing any plugin holds is valid any more.
                     audioCache.Clear();
                     lock (stateLock) {
                         hashOwners.Clear();
                     }
                     scheduler.RequestFullSync(now);
+                    break;
+                case SaveProjectNotification:
+                    // Saving for the first time is what turns an unsaved project syncable, and
+                    // the file name is what the plugins' info windows show.
+                    scheduler.Touch(DawSyncKind.ProjectInfo, now);
                     break;
                 case UNotification:
                     // Transient UI state — play position, selection, progress. Not project data.
@@ -458,8 +567,8 @@ namespace OpenUtau.Core.DawIntegration {
         }
 
         /// <summary>
-        /// Sends whatever the debounce has made due, in §7 order. A gate serializes ticks so a
-        /// slow layout sync can never overlap the next one.
+        /// Sends whatever the debounce has made due, in §7 order, to every live connection. A
+        /// gate serializes ticks so a slow layout sync can never overlap the next one.
         /// </summary>
         public async Task PumpOnceAsync(CancellationToken cancellation = default) {
             if (!IsConnected || !scheduler.HasPending) {
@@ -478,10 +587,6 @@ namespace OpenUtau.Core.DawIntegration {
                 }
             } catch (OperationCanceledException) {
                 // Shutting down.
-            } catch (TimeoutException e) {
-                // §8: a request timeout means the connection is dead. Hand it to the reconnect path.
-                Log.Warning(e, "DAW: sync timed out; dropping the connection.");
-                await CloseTransportAsync();
             } catch (Exception e) {
                 // A refused envelope or a serialization fault leaves the stream coherent, so the
                 // connection survives and the stream is retried on the next edit.
@@ -491,9 +596,24 @@ namespace OpenUtau.Core.DawIntegration {
             }
         }
 
-        /// <summary>Sends one stream. Public so tests and the conformance harness can force a sync.</summary>
+        /// <summary>
+        /// Sends one stream to every live connection. A request timeout drops only the
+        /// connection it happened on (§8); the others stay synced.
+        /// </summary>
         public async Task SyncAsync(DawSyncKind kind, CancellationToken cancellation = default) {
-            var live = transport;
+            foreach (var conn in LiveConnections()) {
+                try {
+                    await SyncConnectionAsync(conn, kind, cancellation);
+                } catch (TimeoutException e) {
+                    Log.Warning(e, $"DAW: sync to '{conn.Server.Name}' timed out; dropping it.");
+                    await DropConnectionAsync(conn);
+                }
+            }
+        }
+
+        /// <summary>Sends one stream to one connection. Public-per-kind so tests can force a sync.</summary>
+        private async Task SyncConnectionAsync(Connection conn, DawSyncKind kind, CancellationToken cancellation) {
+            var live = conn.Transport;
             if (live == null || !live.IsConnected) {
                 return;
             }
@@ -508,8 +628,12 @@ namespace OpenUtau.Core.DawIntegration {
                     await live.SendNotificationAsync(
                         DawMessageKind.UpdateTracks, await BuildTracksAsync(), cancellation);
                     break;
+                case DawSyncKind.ProjectInfo:
+                    await live.SendNotificationAsync(
+                        DawMessageKind.UpdateProjectInfo, await BuildProjectInfoAsync(), cancellation);
+                    break;
                 case DawSyncKind.PartLayout:
-                    await SyncPartLayoutAsync(live, cancellation);
+                    await SyncPartLayoutAsync(conn, live, cancellation);
                     break;
             }
         }
@@ -526,6 +650,19 @@ namespace OpenUtau.Core.DawIntegration {
                         Muted = track.Muted,
                     })
                     .ToList(),
+            });
+        }
+
+        private Task<UpdateProjectInfoNotification> BuildProjectInfoAsync() {
+            return OnDocumentThreadAsync(() => {
+                var project = ProjectSource();
+                bool saved = !string.IsNullOrEmpty(project.FilePath);
+                return new UpdateProjectInfoNotification {
+                    Saved = saved,
+                    Name = saved
+                        ? System.IO.Path.GetFileNameWithoutExtension(project.FilePath)
+                        : string.Empty,
+                };
             });
         }
 
@@ -561,9 +698,11 @@ namespace OpenUtau.Core.DawIntegration {
         /// Parts whose render is unfinished are left out entirely rather than advertised with a
         /// placeholder hash, because <see cref="DawAudio.TryExtractPart"/> can only produce a
         /// correct hash for finished audio. <c>PartRenderedNotification</c> marks the stream dirty
-        /// again, so they appear in a later sync.
+        /// again, so they appear in a later sync. The hash owner map and the audio cache are
+        /// shared between connections: every plugin is offered every track, and chooses its own
+        /// (PROTOCOL.md §6.1).
         /// </remarks>
-        private async Task SyncPartLayoutAsync(DawTransport live, CancellationToken cancellation) {
+        private async Task SyncPartLayoutAsync(Connection conn, DawTransport live, CancellationToken cancellation) {
             var snapshot = await SnapshotPartsAsync();
             var layout = new List<DawPartLayout>(snapshot.Count);
             var owners = new Dictionary<string, UVoicePart>();
@@ -594,7 +733,8 @@ namespace OpenUtau.Core.DawIntegration {
             if (response.MissingAudios.Count > 0) {
                 // The plugin pulls each one itself with getAudio (§6.2); we just keep them warm.
                 Log.Information(
-                    $"DAW: plugin is missing {response.MissingAudios.Count} of {layout.Count} part audios.");
+                    $"DAW: plugin '{conn.Server.Name}' is missing " +
+                    $"{response.MissingAudios.Count} of {layout.Count} part audios.");
             }
         }
 
@@ -614,7 +754,7 @@ namespace OpenUtau.Core.DawIntegration {
         }
 
         /// <summary>
-        /// Serves the plugin's requests. Only <c>getAudio</c> is inbound in v1 (§6.2), and it is
+        /// Serves a plugin's requests. Only <c>getAudio</c> is inbound in v1 (§6.2), and it is
         /// answered with a data-plane frame rather than an envelope.
         /// </summary>
         private async Task ServeRequestAsync(DawInboundRequest request) {
@@ -662,7 +802,7 @@ namespace OpenUtau.Core.DawIntegration {
             return true;
         }
 
-        private void OnPluginNotification(string kind, JsonElement? payload) {
+        private void OnPluginNotification(Connection conn, string kind, JsonElement? payload) {
             switch (kind) {
                 case DawMessageKind.Ping:
                     // Liveness only — the transport already refreshed its heartbeat clock (§3).
@@ -672,6 +812,22 @@ namespace OpenUtau.Core.DawIntegration {
                     scheduler.FlushPending(NowUtc());
                     FireAndForget(PumpOnceAsync(), "playbackStarted flush");
                     break;
+                case DawMessageKind.Playhead:
+                    if (payload.HasValue) {
+                        var note = payload.Value.Deserialize<PlayheadNotification>(DawJson.Options);
+                        if (note != null) {
+                            HandlePlayhead(note);
+                        }
+                    }
+                    break;
+                case DawMessageKind.Bpm:
+                    if (payload.HasValue) {
+                        var note = payload.Value.Deserialize<BpmNotification>(DawJson.Options);
+                        if (note != null) {
+                            HandleBpm(note.Bpm);
+                        }
+                    }
+                    break;
                 default:
                     Log.Information($"DAW: ignoring unknown notification '{kind}'.");
                     break;
@@ -679,85 +835,111 @@ namespace OpenUtau.Core.DawIntegration {
         }
 
         /// <summary>
-        /// End of connection. A close we asked for stays closed; anything else climbs the §3
-        /// backoff ladder.
+        /// v1.1 one-way playhead sync: the DAW's position simply overwrites OpenUtau's. The
+        /// reverse direction does not exist — OpenUtau never reports its own position.
         /// </summary>
-        private void OnTransportDisconnected(DawDisconnectReason reason, string detail) {
-            StopPump();
-            Unsubscribe();
-            scheduler.Clear();
-            if (closingLocally) {
-                SetState(DawConnectionState.Disconnected);
-                return;
-            }
-            SetState(DawConnectionState.Reconnecting);
-            FireAndForget(ReconnectAsync(reason, detail), "reconnect");
+        private void HandlePlayhead(PlayheadNotification note) {
+            FireAndForget(OnDocumentThreadAsync(() => {
+                var project = ProjectSource();
+                int tick = Math.Max(0, project.timeAxis.MsPosToTickPos(note.PositionMs));
+                if (Math.Abs(tick - DocManager.Inst.playPosTick) < PlayheadEpsilonTicks) {
+                    return 0;
+                }
+                DocManager.Inst.ExecuteCmd(new SeekPlayPosTickNotification(tick));
+                return 0;
+            }), "playhead sync");
         }
 
         /// <summary>
-        /// Retries the same port on the §3 ladder — 500 ms, 1 s, 2 s. A plugin that really exited
-        /// never answers, so the ladder ends and the user is told once.
+        /// v1.1 tempo guard: without ARA there is no tempo-map sync, so a DAW tempo that does
+        /// not match the project's first tempo is reported once per distinct mismatch instead
+        /// of silently misaligning bars.
         /// </summary>
-        private async Task ReconnectAsync(DawDisconnectReason reason, string detail) {
-            var target = server;
-            if (target == null) {
-                SetState(DawConnectionState.Disconnected);
+        private void HandleBpm(double dawBpm) {
+            FireAndForget(OnDocumentThreadAsync(() => {
+                var project = ProjectSource();
+                double projectBpm = project.tempos.Count > 0 ? project.tempos[0].bpm : 120.0;
+                if (Math.Abs(dawBpm - projectBpm) < 0.5) {
+                    return 0;
+                }
+                if (dawBpm == lastDawBpm && projectBpm == lastWarnedProjectBpm) {
+                    // Already told the user about exactly this mismatch.
+                    return 0;
+                }
+                lastDawBpm = dawBpm;
+                lastWarnedProjectBpm = projectBpm;
+                string detail = $"DAW: {dawBpm:0.##} / OpenUtau: {projectBpm:0.##}";
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
+                    new MessageCustomizableException(
+                        $"The DAW project's tempo ({dawBpm:0.##} BPM) does not match this " +
+                        $"project's tempo ({projectBpm:0.##} BPM). Align them, or the DAW " +
+                        $"timeline and OpenUtau's will only agree in seconds, not in bars.",
+                        $"<translate:dawintegration.bpmmismatch> ({detail})")));
+                return 0;
+            }), "bpm check");
+        }
+
+        /// <summary>
+        /// End of one connection. A close we asked for stays closed; anything else climbs the
+        /// §3 backoff ladder for that connection alone.
+        /// </summary>
+        private void OnTransportDisconnected(Connection conn, DawDisconnectReason reason, string detail) {
+            if (conn.ClosingLocally) {
                 return;
             }
+            lock (stateLock) {
+                // The dead transport is left to the GC, as before the multi-instance split:
+                // disposing it from inside its own read-loop callback risks a self-join.
+                conn.Transport = null;
+                conn.Reconnecting = true;
+            }
+            RecomputeState();
+            FireAndForget(ReconnectAsync(conn, reason, detail), "reconnect");
+        }
+
+        /// <summary>
+        /// Retries the same port on the §3 ladder — 500 ms, 1 s, 2 s. A plugin that really
+        /// exited never answers, so the ladder ends and the user is told once.
+        /// </summary>
+        private async Task ReconnectAsync(Connection conn, DawDisconnectReason reason, string detail) {
             for (int attempt = 0; attempt < reconnectBackoff.Length; attempt++) {
                 await Task.Delay(reconnectBackoff[attempt]);
-                if (closingLocally || Volatile.Read(ref disposed) != 0) {
-                    SetState(DawConnectionState.Disconnected);
+                bool cancelled;
+                lock (stateLock) {
+                    cancelled = conn.ClosingLocally || !connections.Contains(conn);
+                }
+                if (cancelled || Volatile.Read(ref disposed) != 0) {
                     return;
                 }
                 try {
-                    await OpenAsync(target.Port, CancellationToken.None);
-                    Log.Information($"DAW: reconnected to '{target.Name}' on attempt {attempt + 1}.");
+                    await OpenConnectionAsync(conn, CancellationToken.None);
+                    lock (stateLock) {
+                        conn.Reconnecting = false;
+                    }
+                    RecomputeState();
+                    Log.Information(
+                        $"DAW: reconnected to '{conn.Server.Name}' on attempt {attempt + 1}.");
                     return;
                 } catch (Exception e) {
                     Log.Warning(e, $"DAW: reconnect attempt {attempt + 1} of {reconnectBackoff.Length} failed.");
                 }
             }
-            SetState(DawConnectionState.Disconnected);
-            ConnectionLost?.Invoke($"{reason}: {detail}");
+            lock (stateLock) {
+                connections.Remove(conn);
+            }
+            RecomputeState();
+            StopPumpIfIdle();
+            UnsubscribeIfIdle();
+            ConnectionLost?.Invoke($"{conn.Server.Name}: {reason}: {detail}");
         }
 
         /// <summary>
-        /// User-initiated teardown: flush what is pending so the DAW is left holding the final
-        /// state, then send the bare <c>close</c> (§9).
+        /// Drops one connection after a protocol-level failure, letting its disconnect handler
+        /// start the reconnect ladder.
         /// </summary>
-        public async Task DisconnectAsync() {
-            var live = transport;
+        private async Task DropConnectionAsync(Connection conn) {
+            var live = conn.Transport;
             if (live == null) {
-                return;
-            }
-            closingLocally = true;
-            StopPump();
-            if (live.IsConnected) {
-                scheduler.FlushPending(NowUtc());
-                await PumpOnceAsync();
-            }
-            await TeardownAsync();
-        }
-
-        private async Task TeardownAsync() {
-            await CloseTransportAsync();
-            StopPump();
-            Unsubscribe();
-            scheduler.Clear();
-            audioCache.Clear();
-            lock (stateLock) {
-                hashOwners.Clear();
-                transport?.Dispose();
-                transport = null;
-                server = null;
-            }
-            SetState(DawConnectionState.Disconnected);
-        }
-
-        private async Task CloseTransportAsync() {
-            var live = transport;
-            if (live == null || !live.IsConnected) {
                 return;
             }
             try {
@@ -767,6 +949,63 @@ namespace OpenUtau.Core.DawIntegration {
             }
         }
 
+        /// <summary>
+        /// User-initiated teardown of every connection: flush what is pending so the DAW is
+        /// left holding the final state, then send the bare <c>close</c> (§9).
+        /// </summary>
+        public async Task DisconnectAsync() {
+            List<Connection> snapshot;
+            lock (stateLock) {
+                snapshot = connections.ToList();
+            }
+            foreach (var conn in snapshot) {
+                await CloseConnectionAsync(conn, finalSync: true);
+            }
+        }
+
+        /// <summary>User-initiated teardown of the connection on one port, if it exists.</summary>
+        public async Task DisconnectAsync(int port) {
+            Connection? conn;
+            lock (stateLock) {
+                conn = connections.FirstOrDefault(c => c.Server.Port == port);
+            }
+            if (conn != null) {
+                await CloseConnectionAsync(conn, finalSync: true);
+            }
+        }
+
+        private async Task CloseConnectionAsync(Connection conn, bool finalSync) {
+            conn.ClosingLocally = true;
+            var live = conn.Transport;
+            if (finalSync && live != null && live.IsConnected) {
+                // Flush and drain the pending streams, so the due entries are consumed rather
+                // than replayed by the next pump tick (§9: the DAW keeps the final state).
+                scheduler.FlushPending(NowUtc());
+                try {
+                    foreach (var kind in scheduler.TryTake(NowUtc())) {
+                        await SyncAsync(kind);
+                    }
+                } catch (Exception e) {
+                    Log.Warning(e, "DAW: the final sync before closing failed.");
+                }
+            }
+            if (live != null) {
+                try {
+                    await live.CloseAsync();
+                } catch (Exception e) {
+                    Log.Warning(e, "DAW: closing the transport failed.");
+                }
+                live.Dispose();
+            }
+            lock (stateLock) {
+                conn.Transport = null;
+                connections.Remove(conn);
+            }
+            RecomputeState();
+            StopPumpIfIdle();
+            UnsubscribeIfIdle();
+        }
+
         private static void FireAndForget(Task task, string what) {
             task.ContinueWith(
                 faulted => Log.Error(faulted.Exception!, $"DAW: {what} failed."),
@@ -774,31 +1013,39 @@ namespace OpenUtau.Core.DawIntegration {
         }
 
         /// <summary>
-        /// Drops the connection without a final sync. Deliberately does no blocking wait: dispose
-        /// runs on application shutdown, and a final sync needs the document thread, which would
-        /// deadlock if that thread is the one disposing.
+        /// Drops every connection without a final sync. Deliberately does no blocking wait:
+        /// dispose runs on application shutdown, and a final sync needs the document thread,
+        /// which would deadlock if that thread is the one disposing.
         /// </summary>
         public void Dispose() {
             if (Interlocked.Exchange(ref disposed, 1) != 0) {
                 return;
             }
-            closingLocally = true;
-            StopPump();
-            Unsubscribe();
+            List<Connection> snapshot;
+            lock (stateLock) {
+                snapshot = connections.ToList();
+                connections.Clear();
+                pump?.Dispose();
+                pump = null;
+                hashOwners.Clear();
+            }
+            foreach (var conn in snapshot) {
+                conn.ClosingLocally = true;
+                conn.Transport?.Dispose();
+                conn.Transport = null;
+            }
+            if (subscribed) {
+                DocManager.Inst.RemoveSubscriber(this);
+                subscribed = false;
+            }
             scheduler.Clear();
             audioCache.Clear();
-            lock (stateLock) {
-                hashOwners.Clear();
-                transport?.Dispose();
-                transport = null;
-                server = null;
-            }
             // Deliberately not disposing syncGate: StopPump does not join an in-flight timer
-            // callback, and OnPluginNotification starts PumpOnceAsync without awaiting it, so a
-            // pump can still enter WaitAsync/Release after this point. A SemaphoreSlim holds no
+            // callback, and notifications start PumpOnceAsync without awaiting it, so a pump
+            // can still enter WaitAsync/Release after this point. A SemaphoreSlim holds no
             // unmanaged state, so leaving it to the GC is safe; disposing it here could throw
             // ObjectDisposedException into an awaited DisconnectAsync on the UI thread.
-            SetState(DawConnectionState.Disconnected);
+            State = DawConnectionState.Disconnected;
         }
     }
 }
