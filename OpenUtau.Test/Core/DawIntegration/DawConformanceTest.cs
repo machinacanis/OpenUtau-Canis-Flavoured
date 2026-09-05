@@ -13,6 +13,7 @@ namespace OpenUtau.Core.DawIntegration {
     /// <c>init → updateTracks → updatePartLayout → getAudio → playbackStarted</c> against the
     /// shipping <see cref="DawManager"/>, over loopback, through the real discovery directory.
     /// </summary>
+    [Collection(DawIntegrationCollection.Name)]
     public class DawConformanceTest : IDisposable {
         private static readonly DateTime T0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 

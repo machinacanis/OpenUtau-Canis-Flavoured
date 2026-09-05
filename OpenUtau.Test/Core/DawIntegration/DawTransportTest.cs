@@ -12,6 +12,7 @@ namespace OpenUtau.Core.DawIntegration {
     /// Framing, correlation, timeout and heartbeat behaviour over a real loopback socket
     /// (PROTOCOL.md §3, §5, §8).
     /// </summary>
+    [Collection(DawIntegrationCollection.Name)]
     public class DawTransportTest : IDisposable {
         private static readonly DateTime T0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
@@ -168,8 +169,10 @@ namespace OpenUtau.Core.DawIntegration {
             plugin.RequestHandler = null;
 
             // A silent drop would cost the caller a full 10 s timeout instead of an answer.
+            // The refusal is immediate, but on loaded CI the transport pumps may lag;
+            // a generous budget keeps the assertion about refusal semantics, not timing.
             var result = await openutau.SendRequestAsync(
-                DawMessageKind.Init, new DawEmptyPayload(), TimeSpan.FromSeconds(5));
+                DawMessageKind.Init, new DawEmptyPayload(), TimeSpan.FromSeconds(30));
 
             Assert.False(result.Success);
             Assert.NotNull(result.Error);

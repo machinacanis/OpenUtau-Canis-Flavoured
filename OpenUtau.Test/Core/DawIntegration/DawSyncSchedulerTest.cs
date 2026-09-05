@@ -6,6 +6,7 @@ namespace OpenUtau.Core.DawIntegration {
     /// The debounce contract from PROTOCOL.md §7. The scheduler takes time as an argument, so
     /// none of this sleeps.
     /// </summary>
+    [Collection(DawIntegrationCollection.Name)]
     public class DawSyncSchedulerTest {
         private static readonly DateTime T0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 

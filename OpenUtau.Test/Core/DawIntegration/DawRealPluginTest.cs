@@ -23,6 +23,7 @@ namespace OpenUtau.Core.DawIntegration {
     ///
     /// Skipped when that variable is unset, so CI and everyday runs are unaffected.
     /// </summary>
+    [Collection(DawIntegrationCollection.Name)]
     public class DawRealPluginTest : IDisposable {
         /// <summary>Bounded, unlike the ramp the other tests use: the plugin's peak meter is read
         /// as a number here, so the signal has to mean something at the far end.</summary>

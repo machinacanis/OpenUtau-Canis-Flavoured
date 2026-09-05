@@ -6,6 +6,7 @@ using Xunit;
 
 namespace OpenUtau.Core.DawIntegration {
     /// <summary>Data-plane contract: index space, PCM encoding, hashing and frame headers (§5.2, §6.1).</summary>
+    [Collection(DawIntegrationCollection.Name)]
     public class DawAudioTest {
         /// <summary>Writes each slot's absolute sample index, so any extracted window describes itself.</summary>
         private sealed class RampSource : ISignalSource {

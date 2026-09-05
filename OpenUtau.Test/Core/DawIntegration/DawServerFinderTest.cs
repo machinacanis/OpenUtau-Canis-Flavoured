@@ -7,6 +7,7 @@ using Xunit;
 
 namespace OpenUtau.Core.DawIntegration {
     /// <summary>Discovery directory and version negotiation (PROTOCOL.md §4).</summary>
+    [Collection(DawIntegrationCollection.Name)]
     public class DawServerFinderTest : IDisposable {
         private readonly string directory;
 
