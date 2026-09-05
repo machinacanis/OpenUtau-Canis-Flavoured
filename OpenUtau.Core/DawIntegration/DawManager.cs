@@ -710,6 +710,11 @@ namespace OpenUtau.Core.DawIntegration {
                         // Kept on the wire for compatibility, but the bridge sends pre-fader
                         // audio and leaves gain, pan, mute and solo to the DAW mixer.
                         Muted = track.Muted,
+                        // v1.2: informational fields for the plugin's GUI. Singer changes and
+                        // renderer changes are TrackCommands, so the same Tracks sync keeps
+                        // these fresh without new triggers.
+                        Singer = track.Singer?.Name ?? string.Empty,
+                        Engine = track.RendererSettings.renderer ?? string.Empty,
                     })
                     .ToList(),
             });

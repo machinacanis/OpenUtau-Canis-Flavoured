@@ -28,8 +28,8 @@ namespace OpenUtau.Core.DawIntegration {
     /// (PROTOCOL.md §4). Major mismatch refuses the connection; minor skew connects.
     /// </summary>
     public readonly struct DawApiVersion : IEquatable<DawApiVersion> {
-        public const string CurrentString = "1.1";
-        public static DawApiVersion Current => new DawApiVersion(1, 1);
+        public const string CurrentString = "1.2";
+        public static DawApiVersion Current => new DawApiVersion(1, 2);
 
         public readonly int Major;
         public readonly int Minor;
@@ -216,6 +216,20 @@ namespace OpenUtau.Core.DawIntegration {
         /// this the plugin has no way to reproduce a mute or a solo.
         /// </summary>
         [JsonPropertyName("muted")] public bool Muted { get; set; }
+
+        /// <summary>
+        /// v1.2: the track's singer display name (<see cref="Ustx.UTrack.Singer"/>), or the
+        /// empty string when the track has none yet. Informational — the plugin's GUI shows
+        /// it next to the track name; it does not affect the audio.
+        /// </summary>
+        [JsonPropertyName("singer")] public string Singer { get; set; } = string.Empty;
+
+        /// <summary>
+        /// v1.2: the track's render engine key (<see cref="Ustx.URenderSettings.renderer"/>,
+        /// e.g. CLASSIC, WORLDLINE-R, DIFFSINGER), or the empty string when the track has no
+        /// usable singer/renderer yet. Informational only.
+        /// </summary>
+        [JsonPropertyName("engine")] public string Engine { get; set; } = string.Empty;
     }
 
     /// <summary><c>updateTracks</c> notification payload (PROTOCOL.md §6.1).</summary>

@@ -78,7 +78,13 @@ namespace OpenUtau.Core.DawIntegration {
             built.FilePath = Path.Combine(Path.GetTempPath(), "conformance-test.ustx");
             built.tracks.Clear();
             built.tracks.Add(new UTrack("Lead") { TrackNo = 0, Volume = -3, Pan = -20 });
-            // Muted, so the effective-mute field is exercised rather than defaulted.
+            // v1.2: the singer/engine informational fields travel on updateTracks. The values
+            // are read straight off the track, so plain assignments exercise the wire format
+            // without spinning up real voicebank or renderer infrastructure.
+            built.tracks[0].Singer = USinger.CreateMissing("Test Singer");
+            built.tracks[0].RendererSettings.renderer = "DIFFSINGER";
+            // Muted, so the effective-mute field is exercised rather than defaulted; the
+            // second track has no singer, so the empty-string defaults are exercised too.
             built.tracks.Add(new UTrack("Harmony") { TrackNo = 1, Volume = 0, Pan = 15, Muted = true });
             var lead = new UVoicePart { name = "Lead A", trackNo = 0, position = 0, duration = 480 };
             lead.SetMix(new RampSource());
@@ -128,19 +134,24 @@ namespace OpenUtau.Core.DawIntegration {
             Assert.Contains("ustx_version", plugin.Ustx);
 
             // §6.1: the fader is applied downstream of the audio the plugin pulls, so mute has to
-            // travel as its own field or the plugin cannot reproduce it.
+            // travel as its own field or the plugin cannot reproduce it. v1.2 adds the singer and
+            // engine informational fields a plugin GUI shows next to the track name.
             Assert.Collection(plugin.Tracks,
                 track => {
                     Assert.Equal("Lead", track.Name);
                     Assert.Equal(-3d, track.Volume);
                     Assert.Equal(-20d, track.Pan);
                     Assert.False(track.Muted);
+                    Assert.Equal("Test Singer", track.Singer);
+                    Assert.Equal("DIFFSINGER", track.Engine);
                 },
                 track => {
                     Assert.Equal("Harmony", track.Name);
                     Assert.Equal(0d, track.Volume);
                     Assert.Equal(15d, track.Pan);
                     Assert.True(track.Muted);
+                    Assert.Equal(string.Empty, track.Singer);
+                    Assert.Equal(string.Empty, track.Engine);
                 });
 
             // 480 ticks is 500 ms at the project defaults, so the windows are 0-500 and 500-1500.
