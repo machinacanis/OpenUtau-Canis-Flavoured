@@ -70,6 +70,14 @@ namespace OpenUtau.Core.DawIntegration {
             // ISignalSource.Mix adds into the buffer, so it must start zeroed.
             var buffer = new float[count];
             mix.Mix(start, buffer, 0, count);
+            // §6.1 pre-fader output trim: OpenUtau pans constant-power, so a mix that
+            // bypasses panning sits a systematic 3 dB above what the performance was tuned
+            // against. Scale by cos(π/4) before hashing and serving; the trim is not mixer
+            // state and never follows volume, pan or muted.
+            float trim = MathF.Sqrt(0.5f);
+            for (int i = 0; i < count; i++) {
+                buffer[i] *= trim;
+            }
             samples = buffer;
             return true;
         }

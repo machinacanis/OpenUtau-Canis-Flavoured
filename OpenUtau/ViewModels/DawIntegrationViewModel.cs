@@ -69,8 +69,11 @@ namespace OpenUtau.App.ViewModels {
             && !SelectedServer.IsConnected
             && SelectedServer.Server.IsCompatible;
         public bool DisconnectEnabled => !IsBusy
-            && SelectedServer != null
-            && SelectedServer.IsConnected;
+            && (SelectedServer != null
+                ? SelectedServer.IsConnected
+                // Nothing selected (e.g. the plugin vanished from discovery): still allow
+                // tearing down whatever connections remain, one by one.
+                : ConnectedCount > 0);
 
         public DawIntegrationViewModel() {
             DawManager.Inst.StateChanged += OnStateChanged;

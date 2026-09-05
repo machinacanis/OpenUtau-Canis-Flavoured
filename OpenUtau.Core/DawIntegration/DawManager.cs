@@ -400,11 +400,23 @@ namespace OpenUtau.Core.DawIntegration {
                         $"Plugin answered init with api '{response.ApiVersion}', " +
                         $"which this build cannot speak.");
                 }
+                Subscribe();
+                RecomputeState();
+                StartPump();
+                // init already delivered the USTX, so only tracks, layout and project info are
+                // outstanding (§7, §9). These go to this connection alone: the others already hold
+                // the same state.
+                await SyncConnectionAsync(conn, DawSyncKind.Tracks, cancellation);
+                await SyncConnectionAsync(conn, DawSyncKind.ProjectInfo, cancellation);
+                await SyncConnectionAsync(conn, DawSyncKind.PartLayout, cancellation);
             } catch {
                 // A failed open must not leave a wired, connected transport behind: if the peer
                 // later dropped it, the disconnected callback would start a second reconnect
                 // ladder while the caller is still unwinding this one. Detach before disposing
-                // so the synchronous callback never fires.
+                // so the synchronous callback never fires. The whole open — init, subscription,
+                // pump and the initial per-connection syncs — is covered, so a post-init
+                // failure (a layout request timing out, an unsaved project) cannot leave a
+                // live transport behind either.
                 opened.Disconnected -= onDisconnected;
                 bool stillCurrent;
                 lock (stateLock) {
@@ -416,15 +428,6 @@ namespace OpenUtau.Core.DawIntegration {
                 opened.Dispose();
                 throw;
             }
-            Subscribe();
-            RecomputeState();
-            StartPump();
-            // init already delivered the USTX, so only tracks, layout and project info are
-            // outstanding (§7, §9). These go to this connection alone: the others already hold
-            // the same state.
-            await SyncConnectionAsync(conn, DawSyncKind.Tracks, cancellation);
-            await SyncConnectionAsync(conn, DawSyncKind.ProjectInfo, cancellation);
-            await SyncConnectionAsync(conn, DawSyncKind.PartLayout, cancellation);
         }
 
         /// <summary>
@@ -597,13 +600,72 @@ namespace OpenUtau.Core.DawIntegration {
         }
 
         /// <summary>
-        /// Sends one stream to every live connection. A request timeout drops only the
+        /// Sends one stream to every live connection. Shared payloads (the USTX YAML, the
+        /// track list, the part layout and its hashes) are built once, not once per
+        /// connection; only the sends are per connection. A request timeout drops only the
         /// connection it happened on (§8); the others stay synced.
         /// </summary>
         public async Task SyncAsync(DawSyncKind kind, CancellationToken cancellation = default) {
-            foreach (var conn in LiveConnections()) {
+            var live = LiveConnections();
+            if (live.Count == 0) {
+                return;
+            }
+            switch (kind) {
+                case DawSyncKind.Ustx: {
+                    // Serialize once: BeforeSave/AfterSave mutate the project's serialization
+                    // views, so N connections must not mean N mutation round trips.
+                    var payload = new UpdateUstxNotification { Ustx = await SerializeProjectAsync() };
+                    await BroadcastAsync(live, (conn, token) =>
+                        conn.Transport!.SendNotificationAsync(DawMessageKind.UpdateUstx, payload, token),
+                        cancellation);
+                    break;
+                }
+                case DawSyncKind.Tracks: {
+                    var payload = await BuildTracksAsync();
+                    await BroadcastAsync(live, (conn, token) =>
+                        conn.Transport!.SendNotificationAsync(DawMessageKind.UpdateTracks, payload, token),
+                        cancellation);
+                    break;
+                }
+                case DawSyncKind.ProjectInfo: {
+                    var payload = await BuildProjectInfoAsync();
+                    await BroadcastAsync(live, (conn, token) =>
+                        conn.Transport!.SendNotificationAsync(DawMessageKind.UpdateProjectInfo, payload, token),
+                        cancellation);
+                    break;
+                }
+                case DawSyncKind.PartLayout: {
+                    var layout = await BuildPartLayoutAsync();
+                    await BroadcastAsync(live, async (conn, token) => {
+                        var response = await conn.Transport!.SendRequestAsync<UpdatePartLayoutResponse>(
+                            DawMessageKind.UpdatePartLayout,
+                            new UpdatePartLayoutRequest { Parts = layout },
+                            cancellation: token);
+                        if (response.MissingAudios.Count > 0) {
+                            // The plugin pulls each one itself with getAudio (§6.2); we just keep them warm.
+                            Log.Information(
+                                $"DAW: plugin '{conn.Server.Name}' is missing " +
+                                $"{response.MissingAudios.Count} of {layout.Count} part audios.");
+                        }
+                    }, cancellation);
+                    break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends one pre-built payload to every live connection. A request timeout drops only
+        /// the connection it happened on (§8); the others stay synced.
+        /// </summary>
+        private async Task BroadcastAsync(List<Connection> targets,
+                Func<Connection, CancellationToken, Task> send, CancellationToken cancellation) {
+            foreach (var conn in targets) {
+                var t = conn.Transport;
+                if (t == null || !t.IsConnected) {
+                    continue;
+                }
                 try {
-                    await SyncConnectionAsync(conn, kind, cancellation);
+                    await send(conn, cancellation);
                 } catch (TimeoutException e) {
                     Log.Warning(e, $"DAW: sync to '{conn.Server.Name}' timed out; dropping it.");
                     await DropConnectionAsync(conn);
@@ -703,6 +765,25 @@ namespace OpenUtau.Core.DawIntegration {
         /// (PROTOCOL.md §6.1).
         /// </remarks>
         private async Task SyncPartLayoutAsync(Connection conn, DawTransport live, CancellationToken cancellation) {
+            var layout = await BuildPartLayoutAsync();
+            var response = await live.SendRequestAsync<UpdatePartLayoutResponse>(
+                DawMessageKind.UpdatePartLayout,
+                new UpdatePartLayoutRequest { Parts = layout },
+                cancellation: cancellation);
+            if (response.MissingAudios.Count > 0) {
+                // The plugin pulls each one itself with getAudio (§6.2); we just keep them warm.
+                Log.Information(
+                    $"DAW: plugin '{conn.Server.Name}' is missing " +
+                    $"{response.MissingAudios.Count} of {layout.Count} part audios.");
+            }
+        }
+
+        /// <summary>
+        /// Builds the part layout payload — extracting, hashing and caching every rendered
+        /// part — and updates the shared hash owner map. Done once per sync, never once per
+        /// connection: a part can be tens of megabytes.
+        /// </summary>
+        private async Task<List<DawPartLayout>> BuildPartLayoutAsync() {
             var snapshot = await SnapshotPartsAsync();
             var layout = new List<DawPartLayout>(snapshot.Count);
             var owners = new Dictionary<string, UVoicePart>();
@@ -726,16 +807,7 @@ namespace OpenUtau.Core.DawIntegration {
                 }
             }
             audioCache.Retain(owners.Keys);
-            var response = await live.SendRequestAsync<UpdatePartLayoutResponse>(
-                DawMessageKind.UpdatePartLayout,
-                new UpdatePartLayoutRequest { Parts = layout },
-                cancellation: cancellation);
-            if (response.MissingAudios.Count > 0) {
-                // The plugin pulls each one itself with getAudio (§6.2); we just keep them warm.
-                Log.Information(
-                    $"DAW: plugin '{conn.Server.Name}' is missing " +
-                    $"{response.MissingAudios.Count} of {layout.Count} part audios.");
-            }
+            return layout;
         }
 
         /// <summary>

@@ -170,10 +170,13 @@ namespace OpenUtau.Core.DawIntegration {
             Assert.True(DawAudio.TryExtractPart(project, part, out float[] samples));
 
             // 480 ticks in, 480 ticks long: 500 ms to 1000 ms of the project timeline.
+            // §6.1: extraction applies the pre-fader output trim (√0.5), so the ramp values
+            // come out scaled.
+            float trim = MathF.Sqrt(0.5f);
             int start = DawAudio.MsToInterleavedIndex(500);
             Assert.Equal(DawAudio.MsToInterleavedIndex(1000) - start, samples.Length);
-            Assert.Equal(start, samples[0]);
-            Assert.Equal(start + samples.Length - 1, samples[^1]);
+            Assert.Equal(start * trim, samples[0]);
+            Assert.Equal((start + samples.Length - 1) * trim, samples[^1]);
         }
 
         [Fact]
@@ -216,7 +219,10 @@ namespace OpenUtau.Core.DawIntegration {
             Assert.True(DawAudio.TryExtractPart(project, part, out float[] extracted));
 
             Assert.Equal(DawAudio.MsToInterleavedIndex(500), extracted.Length);
-            Assert.Equal(samples.Take(extracted.Length), extracted);
+            // §6.1: extraction applies the pre-fader output trim (√0.5), so what is served
+            // matches the level OpenUtau's constant-power pan produces per channel.
+            float trim = MathF.Sqrt(0.5f);
+            Assert.Equal(samples.Take(extracted.Length).Select(s => s * trim), extracted);
         }
     }
 }
