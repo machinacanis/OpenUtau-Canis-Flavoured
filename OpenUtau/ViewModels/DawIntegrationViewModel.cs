@@ -1,23 +1,25 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using OpenUtau.Core;
 using OpenUtau.Core.DawIntegration;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 using Serilog;
 
 namespace OpenUtau.App.ViewModels {
     /// <summary>One discovered plugin, as the connection list shows it.</summary>
-    public class DawServerViewModel : ViewModelBase {
+    public partial class DawServerViewModel : ViewModelBase {
         public DawServer Server { get; }
         public string Name => Server.Name;
         public int Port => Server.Port;
         public string ApiVersion => Server.Info.ApiVersion;
 
-        [Reactive] public DawConnectionState ConnectionState { get; set; } = DawConnectionState.Disconnected;
+        [Reactive] public partial DawConnectionState ConnectionState { get; set; } = DawConnectionState.Disconnected;
 
         public bool IsConnected => ConnectionState == DawConnectionState.Connected;
 
@@ -52,17 +54,17 @@ namespace OpenUtau.App.ViewModels {
     /// be connected at once, one per OpenUtau track. The manager outlives this dialog, so
     /// closing the window does not drop the connections.
     /// </summary>
-    public class DawIntegrationViewModel : ViewModelBase, IDisposable {
+    public partial class DawIntegrationViewModel : ViewModelBase, IDisposable {
         private readonly DawServerFinder finder = new DawServerFinder(DawServerFinder.DefaultDirectory);
         private bool disposed;
 
         public ObservableCollection<DawServerViewModel> Servers { get; }
             = new ObservableCollection<DawServerViewModel>();
 
-        [Reactive] public DawServerViewModel? SelectedServer { get; set; }
-        [Reactive] public string Status { get; set; } = string.Empty;
-        [Reactive] public bool IsBusy { get; set; }
-        [Reactive] public int ConnectedCount { get; set; }
+        [Reactive] public partial DawServerViewModel? SelectedServer { get; set; }
+        [Reactive] public partial string Status { get; set; } = string.Empty;
+        [Reactive] public partial bool IsBusy { get; set; }
+        [Reactive] public partial int ConnectedCount { get; set; }
 
         public bool ConnectEnabled => !IsBusy
             && SelectedServer != null
