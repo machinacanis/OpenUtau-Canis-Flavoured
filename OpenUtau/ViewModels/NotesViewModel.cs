@@ -592,7 +592,8 @@ namespace OpenUtau.App.ViewModels {
         }
 
         private void LoadTrackColor(UPart? part, UProject? project) {
-            if (part == null || project == null) {
+            if (part == null || project == null
+                || part.trackNo < 0 || part.trackNo >= project.tracks.Count) {
                 TrackAccentColor = ThemeManager.GetTrackColor("Blue").AccentColor;
                 ThemeManager.ChangePianorollColor("Blue");
                 return;
