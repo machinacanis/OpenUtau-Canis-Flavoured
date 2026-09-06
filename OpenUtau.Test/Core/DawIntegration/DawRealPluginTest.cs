@@ -48,16 +48,6 @@ namespace OpenUtau.Core.DawIntegration {
         }
 
         private DawManager? manager;
-        private readonly Xunit.Abstractions.ITestOutputHelper output;
-
-        /// <summary>
-        /// xUnit 2.x has no runtime skip API (that arrived in v3), so a missing
-        /// OPENUTAU_BRIDGE_DISCOVERY cannot mark the run skipped. It is reported through the test
-        /// output instead of silently passing, and the early return keeps CI unaffected.
-        /// </summary>
-        public DawRealPluginTest(Xunit.Abstractions.ITestOutputHelper output) {
-            this.output = output;
-        }
 
         public void Dispose() => manager?.Dispose();
 
@@ -80,14 +70,8 @@ namespace OpenUtau.Core.DawIntegration {
         [Fact]
         public async Task RealPluginCompletesTheHandshakeAndPullsAudio() {
             string? directory = Environment.GetEnvironmentVariable("OPENUTAU_BRIDGE_DISCOVERY");
-            if (string.IsNullOrEmpty(directory)) {
-                // Opt-in live test: needs a running bridge-host publishing its discovery file.
-                // xUnit v2 on this branch has no runtime skip, so report and return instead.
-                output.WriteLine(
-                    "SKIPPED (reported as pass): set OPENUTAU_BRIDGE_DISCOVERY to a running " +
-                    "bridge-host's discovery directory to run this live handshake test.");
-                return;
-            }
+            Assert.SkipWhen(string.IsNullOrEmpty(directory),
+                "Set OPENUTAU_BRIDGE_DISCOVERY to a running bridge-host's discovery directory.");
             Assert.True(Directory.Exists(directory), $"No such directory: {directory}");
 
             // Discovery is exercised for real: the file was written by the C++ side, and this is
