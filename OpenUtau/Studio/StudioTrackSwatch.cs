@@ -53,6 +53,10 @@ namespace OpenUtau.App.Studio {
         /// <summary>Same thickness as today: <c>new Pen(NoteThumbnailBrush, 3)</c>.</summary>
         public required IPen NoteThumbnailPen { get; init; }
         public required IPen? SelectedStrokePen { get; init; }
+        /// <summary>1px FillSelected outline for fade handles. Null on identity (use AccentPen).</summary>
+        public required IPen? FadeHandlePen { get; init; }
+        /// <summary>OnFill fade line. Null on identity (use white).</summary>
+        public required IPen? FadeLinePen { get; init; }
         /// <summary>
         /// Rgba8888 packed pixel: R | G&lt;&lt;8 | B&lt;&lt;16 | A&lt;&lt;24.
         /// Not <c>Color.ToUInt32()</c>.

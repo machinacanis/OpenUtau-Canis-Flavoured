@@ -493,10 +493,12 @@ namespace OpenUtau.App.ViewModels {
                     }
                 }
                 Notify();
-                var reason = cmd is ChangeTrackColorCommand
-                    ? StudioTrackPaletteChangeReason.TrackColor
-                    : StudioTrackPaletteChangeReason.TracksMutated;
-                StudioTrackPaintCache.Invalidate(reason);
+                if (cmd is AddTrackCommand or RemoveTrackCommand
+                    or MoveTrackCommand or SetTrackNoCommand) {
+                    StudioTrackPaintCache.Invalidate(StudioTrackPaletteChangeReason.TracksMutated);
+                } else if (cmd is ChangeTrackColorCommand) {
+                    StudioTrackPaintCache.Invalidate(StudioTrackPaletteChangeReason.TrackColor);
+                }
                 MessageBus.Current.SendMessage(new TracksRefreshEvent());
                 MessageBus.Current.SendMessage(new TrackSelectionEvent(SelectedTracks.ToArray()));
             } else if (cmd is UNotification) {

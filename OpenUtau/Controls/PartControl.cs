@@ -225,18 +225,10 @@ namespace OpenUtau.App.Controls {
                 } catch (Exception e) {
                     Log.Error(e, "failed to draw bitmap");
                 }
-                IBrush fadePointBrush;
-                IPen fadePointPen;
-                IPen fadeLinePen;
-                if (paint.Colors.DrawSelectedStroke) {
-                    fadePointBrush = paint.OnFillBrush;
-                    fadePointPen = new Pen(paint.FillSelectedBrush, 1);
-                    fadeLinePen = new Pen(paint.OnFillBrush);
-                } else {
-                    fadePointBrush = Brushes.White;
-                    fadePointPen = Selected ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1;
-                    fadeLinePen = fadePen;
-                }
+                IBrush fadePointBrush = paint.FadeHandlePen != null ? paint.OnFillBrush : Brushes.White;
+                IPen fadePointPen = paint.FadeHandlePen
+                    ?? (Selected ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1);
+                IPen fadeLinePen = paint.FadeLinePen ?? fadePen;
                 using (var state = context.PushTransform(Matrix.CreateTranslation(FadeIn, 0))) {
                     context.DrawGeometry(fadePointBrush, fadePointPen, pointGeometry);
                 }

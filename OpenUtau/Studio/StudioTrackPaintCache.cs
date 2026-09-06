@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
@@ -21,6 +22,8 @@ namespace OpenUtau.App.Studio {
         static readonly Color FallbackAccent1 = Color.FromRgb(0x4E, 0xA6, 0xEA);
         static readonly Color FallbackAccent2 = Color.FromRgb(0xFF, 0x67, 0x9D);
         static readonly Color FallbackBackground = Color.FromRgb(0x30, 0x30, 0x30);
+        static readonly SolidColorBrush WhiteTextBrush = new(Avalonia.Media.Colors.White);
+        static readonly Dictionary<uint, SolidColorBrush> textBrushes = new();
 
         static StudioTrackPaint[]? paints;
 
@@ -135,11 +138,13 @@ namespace OpenUtau.App.Studio {
             var fillBrush = new SolidColorBrush(swatch.Fill);
             var fillSelectedBrush = new SolidColorBrush(swatch.FillSelected);
             var fillMutedBrush = new SolidColorBrush(swatch.FillMuted);
-            var onFillBrush = new SolidColorBrush(swatch.OnFill);
-            var onHeaderAccentBrush = new SolidColorBrush(swatch.OnHeaderAccent);
+            var onFillBrush = TextBrush(swatch.OnFill);
+            var onHeaderAccentBrush = TextBrush(swatch.OnHeaderAccent);
             var noteThumbBrush = new SolidColorBrush(swatch.NoteThumbnail);
             IPen notePen = new Pen(noteThumbBrush, 3);
             IPen? selectedStroke = swatch.DrawSelectedStroke ? new Pen(onFillBrush, 1) : null;
+            IPen? fadeHandle = swatch.DrawSelectedStroke ? new Pen(fillSelectedBrush, 1) : null;
+            IPen? fadeLine = swatch.DrawSelectedStroke ? new Pen(onFillBrush) : null;
             uint packed = StudioColorMath.PackRgba8888(swatch.Waveform);
 
             SolidColorBrush headerAccentBrush;
@@ -175,6 +180,8 @@ namespace OpenUtau.App.Studio {
                 OnHeaderAccentBrush = onHeaderAccentBrush,
                 NoteThumbnailPen = notePen,
                 SelectedStrokePen = selectedStroke,
+                FadeHandlePen = fadeHandle,
+                FadeLinePen = fadeLine,
                 WaveformPackedRgba = packed,
                 LegacyTrackColor = legacy,
                 GhostBrush = ghost,
@@ -192,5 +199,18 @@ namespace OpenUtau.App.Studio {
         }
 
         static string Hex(Color c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+
+        // TextLayoutCache keys by IBrush reference; intern so Rebuild does not leak layouts.
+        static SolidColorBrush TextBrush(Color c) {
+            if (c == Avalonia.Media.Colors.White) {
+                return WhiteTextBrush;
+            }
+            uint key = StudioColorMath.PackRgba8888(c);
+            if (!textBrushes.TryGetValue(key, out var brush)) {
+                brush = new SolidColorBrush(c);
+                textBrushes[key] = brush;
+            }
+            return brush;
+        }
     }
 }

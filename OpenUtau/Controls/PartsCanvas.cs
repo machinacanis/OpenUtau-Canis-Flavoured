@@ -90,6 +90,8 @@ namespace OpenUtau.App.Controls {
                         control.SetSize();
                         control.SetPosition();
                         control.Refersh();
+                        control.ClearWaveformBitmap();
+                        control.InvalidateVisual();
                     }
                 });
             MessageBus.Current.Listen<PartRedrawEvent>()
