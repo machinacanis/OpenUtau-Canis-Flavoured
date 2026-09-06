@@ -342,6 +342,12 @@ namespace OpenUtau.App.ViewModels {
                             break;
                     }
                 });
+            MessageBus.Current.Listen<StudioTrackPaletteChangedEvent>()
+                .Subscribe(_ => {
+                    if (Preferences.Default.UseTrackColor) {
+                        LoadTrackColor(Part, Project);
+                    }
+                });
             MessageBus.Current.Listen<CurveSelectionEvent>()
                 .Subscribe(e => {
                     Selection.SelectNone();
