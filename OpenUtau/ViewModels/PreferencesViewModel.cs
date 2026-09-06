@@ -65,6 +65,9 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial int LockStartTime { get; set; }
         [Reactive] public partial int PlaybackAutoScroll { get; set; }
         [Reactive] public partial double PlayPosMarkerMargin { get; set; }
+        [Reactive] public partial int MetronomeVolume { get; set; }
+        [Reactive] public partial int MetronomeHighFrequency { get; set; }
+        [Reactive] public partial int MetronomeLowFrequency { get; set; }
 
         // Paths
         public string SingerPath => PathManager.Inst.SingersPath;
@@ -245,6 +248,9 @@ namespace OpenUtau.App.ViewModels {
             AudioBackEnd = Preferences.Default.AudioBackEnd;
             PlaybackAutoScroll = Preferences.Default.PlaybackAutoScroll;
             PlayPosMarkerMargin = Preferences.Default.PlayPosMarkerMargin;
+            MetronomeVolume = Preferences.Default.MetronomeVolume;
+            MetronomeHighFrequency = Preferences.Default.MetronomeHighFrequency;
+            MetronomeLowFrequency = Preferences.Default.MetronomeLowFrequency;
             LockStartTime = Preferences.Default.LockStartTime;
             InstallToAdditionalSingersPath = Preferences.Default.InstallToAdditionalSingersPath;
             LoadDeepFolders = Preferences.Default.LoadDeepFolderSinger;
@@ -388,6 +394,21 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             this.WhenAnyValue(vm => vm.PlayPosMarkerMargin)
                 .Subscribe(playPosMarkerMargin => {
                     Preferences.Default.PlayPosMarkerMargin = playPosMarkerMargin;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.MetronomeVolume)
+                .Subscribe(metronomeVolume => {
+                    Preferences.Default.MetronomeVolume = metronomeVolume;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.MetronomeHighFrequency)
+                .Subscribe(metronomeHighFrequency => {
+                    Preferences.Default.MetronomeHighFrequency = metronomeHighFrequency;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.MetronomeLowFrequency)
+                .Subscribe(metronomeLowFrequency => {
+                    Preferences.Default.MetronomeLowFrequency = metronomeLowFrequency;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.LockStartTime)
@@ -875,6 +896,26 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                 Log.Error(e, "Failed to play test sound.");
                 DocManager.Inst.ExecuteCmd(new ErrorMessageNotification("Failed to play test sound.", e));
             }
+        }
+        public void TestMetronome() {
+            try {
+                PlaybackManager.Inst.PlayMetronomeClick();
+            } catch (Exception e) {
+                Log.Error(e, "Failed to play metronome preview.");
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification("Failed to play metronome preview.", e));
+            }
+        }
+
+        public void ResetMetronomeVolume() {
+            MetronomeVolume = new Preferences.SerializablePreferences().MetronomeVolume;
+        }
+
+        public void ResetMetronomeHighFrequency() {
+            MetronomeHighFrequency = new Preferences.SerializablePreferences().MetronomeHighFrequency;
+        }
+
+        public void ResetMetronomeLowFrequency() {
+            MetronomeLowFrequency = new Preferences.SerializablePreferences().MetronomeLowFrequency;
         }
 
         void InitPresets() {

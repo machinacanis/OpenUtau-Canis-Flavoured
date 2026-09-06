@@ -754,6 +754,10 @@
   <system:String x:Key="prefs.playback.lockstarttime.off">什么都不做</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.on">将播放标记和视图移回开始播放处</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.onlycursor">将播放标记移回开始播放处，不回滚视图</system:String>
+  <!--<system:String x:Key="prefs.playback.metronome">Metronome</system:String>-->
+  <!--<system:String x:Key="prefs.playback.metronome.highfrequency">Metronome High Frequency</system:String>-->
+  <!--<system:String x:Key="prefs.playback.metronome.lowfrequency">Metronome Low Frequency</system:String>-->
+  <!--<system:String x:Key="prefs.playback.metronome.volume">Metronome Volume</system:String>-->
   <system:String x:Key="prefs.playback.systemdefault">使用系统默认设备</system:String>
   <system:String x:Key="prefs.playback.test">测试</system:String>
   <system:String x:Key="prefs.rendering">渲染</system:String>

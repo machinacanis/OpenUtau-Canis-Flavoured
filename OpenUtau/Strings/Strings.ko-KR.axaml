@@ -758,6 +758,10 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="prefs.playback.lockstarttime.off">아무것도 안 함</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.on">재생을 시작했던 위치로 커서 옮기기</system:String>
   <!--<system:String x:Key="prefs.playback.lockstarttime.onlycursor">Move only cursor back to where you started playing</system:String>-->
+  <!--<system:String x:Key="prefs.playback.metronome">Metronome</system:String>-->
+  <!--<system:String x:Key="prefs.playback.metronome.highfrequency">Metronome High Frequency</system:String>-->
+  <!--<system:String x:Key="prefs.playback.metronome.lowfrequency">Metronome Low Frequency</system:String>-->
+  <!--<system:String x:Key="prefs.playback.metronome.volume">Metronome Volume</system:String>-->
   <!--<system:String x:Key="prefs.playback.systemdefault">Use system default device</system:String>-->
   <system:String x:Key="prefs.playback.test">출력 테스트</system:String>
   <system:String x:Key="prefs.rendering">렌더링</system:String>

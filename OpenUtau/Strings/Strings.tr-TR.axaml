@@ -755,6 +755,10 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="prefs.playback.lockstarttime.off">Hiçbir şey yapma</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.on">Oynatmaya başladığınız konuma imleci ve görünümü geri getir</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.onlycursor">Sadece imleci başladığınız konuma geri getir</system:String>
+  <!--<system:String x:Key="prefs.playback.metronome">Metronome</system:String>-->
+  <!--<system:String x:Key="prefs.playback.metronome.highfrequency">Metronome High Frequency</system:String>-->
+  <!--<system:String x:Key="prefs.playback.metronome.lowfrequency">Metronome Low Frequency</system:String>-->
+  <!--<system:String x:Key="prefs.playback.metronome.volume">Metronome Volume</system:String>-->
   <system:String x:Key="prefs.playback.systemdefault">Sistem varsayılan cihazını kullan</system:String>
   <!--<system:String x:Key="prefs.playback.test">Test</system:String>-->
   <system:String x:Key="prefs.rendering">Render</system:String>

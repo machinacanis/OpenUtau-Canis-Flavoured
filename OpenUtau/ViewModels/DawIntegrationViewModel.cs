@@ -25,7 +25,7 @@ namespace OpenUtau.App.ViewModels {
 
         /// <summary>
         /// Whether this entry can be connected to. Incompatible plugins are still listed, so the
-        /// list can explain why one is refused instead of silently hiding it (PROTOCOL.md §4).
+        /// list can explain why one is refused instead of silently hiding it (API.md §4).
         /// </summary>
         public string Compatibility => Server.IsCompatible
             ? ThemeManager.GetString("dawintegration.compatible")
