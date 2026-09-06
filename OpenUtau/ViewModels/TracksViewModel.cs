@@ -4,6 +4,7 @@ using System.Linq;
 using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
+using OpenUtau.App.Studio;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
@@ -492,10 +493,15 @@ namespace OpenUtau.App.ViewModels {
                     }
                 }
                 Notify();
+                var reason = cmd is ChangeTrackColorCommand
+                    ? StudioTrackPaletteChangeReason.TrackColor
+                    : StudioTrackPaletteChangeReason.TracksMutated;
+                StudioTrackPaintCache.Invalidate(reason);
                 MessageBus.Current.SendMessage(new TracksRefreshEvent());
                 MessageBus.Current.SendMessage(new TrackSelectionEvent(SelectedTracks.ToArray()));
             } else if (cmd is UNotification) {
                 if (cmd is LoadProjectNotification loadProjectNotif) {
+                    StudioTrackPaintCache.Invalidate(StudioTrackPaletteChangeReason.TracksMutated);
                     Parts.Clear();
                     Parts.AddRange(loadProjectNotif.project.parts);
                     Tracks.Clear();

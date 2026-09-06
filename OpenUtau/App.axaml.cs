@@ -146,6 +146,7 @@ namespace OpenUtau.App {
             }
             ApplyStudioStyles(StudioUI.IsEnabled);
             ThemeManager.LoadTheme();
+            StudioTrackPaintCache.Invalidate(StudioTrackPaletteChangeReason.ThemeResources);
         }
 
         static void ApplyStudioStyles(bool enable) {

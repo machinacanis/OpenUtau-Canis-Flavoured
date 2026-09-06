@@ -10,6 +10,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using NWaves.Signals;
+using OpenUtau.App.Studio;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
 using ReactiveUI.Primitives;
@@ -113,7 +114,6 @@ namespace OpenUtau.App.Controls {
         private Geometry pointGeometry;
 
         public readonly UPart part;
-        private readonly Pen notePen = new Pen(Brushes.White, 3);
         private readonly Pen fadePen = new Pen(Brushes.White);
         private List<IDisposable> unbinds = new List<IDisposable>();
         private WriteableBitmap? bitmap;
@@ -182,12 +182,14 @@ namespace OpenUtau.App.Controls {
         }
 
         public override void Render(DrawingContext context) {
-            var backgroundBrush = Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
+            var paint = StudioTrackPaintCache.ForPart(part);
+            var backgroundBrush = Selected ? paint.FillSelectedBrush : paint.FillBrush;
+            var pen = Selected ? paint.SelectedStrokePen : null;
             // Background
-            context.DrawRectangle(backgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
+            context.DrawRectangle(backgroundBrush, pen, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
 
             // Text
-            var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
+            var textLayout = TextLayoutCache.Get(Text, paint.OnFillBrush, 12);
             using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
                 context.DrawRectangle(backgroundBrush, null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
                 textLayout.Draw(context, new Point());
@@ -209,12 +211,12 @@ namespace OpenUtau.App.Controls {
                 foreach (var note in voicePart.notes) {
                     var start = new Point((int)(note.position * tickWidth), maxTone - note.tone);
                     var end = new Point((int)(note.End * tickWidth), maxTone - note.tone);
-                    context.DrawLine(notePen, start, end);
+                    context.DrawLine(paint.NoteThumbnailPen, start, end);
                 }
             } else if (part is UWavePart wavePart) {
                 // Waveform
                 try {
-                    DrawWaveform(wavePart, GetBitmap(ViewWidth));
+                    DrawWaveform(wavePart, GetBitmap(ViewWidth), paint.WaveformPackedRgba);
                     if (bitmap != null) {
                         var srcRect = Bounds.WithY(0);
                         var dstRect = Bounds.WithX(1).WithY(0);
@@ -223,22 +225,36 @@ namespace OpenUtau.App.Controls {
                 } catch (Exception e) {
                     Log.Error(e, "failed to draw bitmap");
                 }
-                // Fade
-                var brush = Brushes.White;
-                var pen = Selected ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1;
+                IBrush fadePointBrush;
+                IPen fadePointPen;
+                IPen fadeLinePen;
+                if (paint.Colors.DrawSelectedStroke) {
+                    fadePointBrush = paint.OnFillBrush;
+                    fadePointPen = new Pen(paint.FillSelectedBrush, 1);
+                    fadeLinePen = new Pen(paint.OnFillBrush);
+                } else {
+                    fadePointBrush = Brushes.White;
+                    fadePointPen = Selected ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1;
+                    fadeLinePen = fadePen;
+                }
                 using (var state = context.PushTransform(Matrix.CreateTranslation(FadeIn, 0))) {
-                    context.DrawGeometry(brush, pen, pointGeometry);
+                    context.DrawGeometry(fadePointBrush, fadePointPen, pointGeometry);
                 }
                 if (wavePart.fadein > 0) {
-                    context.DrawLine(fadePen, new Point(2, Height - 2), new Point(FadeIn + 1, 2));
+                    context.DrawLine(fadeLinePen, new Point(2, Height - 2), new Point(FadeIn + 1, 2));
                 }
                 using (var state = context.PushTransform(Matrix.CreateTranslation(FadeOut - 6, 0))) {
-                    context.DrawGeometry(brush, pen, pointGeometry);
+                    context.DrawGeometry(fadePointBrush, fadePointPen, pointGeometry);
                 }
                 if (wavePart.fadeout > 0) {
-                    context.DrawLine(fadePen, new Point(Width - 1, Height - 2), new Point(FadeOut, 2));
+                    context.DrawLine(fadeLinePen, new Point(Width - 1, Height - 2), new Point(FadeOut, 2));
                 }
             }
+        }
+
+        public void ClearWaveformBitmap() {
+            bitmap?.Dispose();
+            bitmap = null;
         }
 
         private WriteableBitmap GetBitmap(double width) {
@@ -256,7 +272,7 @@ namespace OpenUtau.App.Controls {
             return bitmap;
         }
 
-        private void DrawWaveform(UWavePart wavePart, WriteableBitmap bitmap) {
+        private void DrawWaveform(UWavePart wavePart, WriteableBitmap bitmap, uint packedRgba) {
             if (wavePart.Peaks == null ||
                 !wavePart.Peaks.IsCompletedSuccessfully ||
                 wavePart.Peaks.Result == null) {
@@ -305,7 +321,8 @@ namespace OpenUtau.App.Controls {
                             double yOffset = i == 1 ? monoChnlAmp : 0;
                             DrawPeak(bitmapData, frameBuffer.Size.Width, x,
                                 (int)(ySpan * (1 + -min) + yOffset) + 2,
-                                (int)(ySpan * (1 + -max) + yOffset) + 2);
+                                (int)(ySpan * (1 + -max) + yOffset) + 2,
+                                packedRgba);
                         }
                     }
                     x++;
@@ -317,15 +334,15 @@ namespace OpenUtau.App.Controls {
             }
         }
 
-        private void DrawPeak(int[] data, int width, int x, int y1, int y2) {
-            const int white = unchecked((int)0xFFFFFFFF);
+        private void DrawPeak(int[] data, int width, int x, int y1, int y2, uint packedRgba) {
+            int color = unchecked((int)packedRgba);
             if (y1 > y2) {
                 int temp = y2;
                 y2 = y1;
                 y1 = temp;
             }
             for (var y = y1; y <= y2; ++y) {
-                data[x + width * y] = white;
+                data[x + width * y] = color;
             }
         }
 

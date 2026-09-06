@@ -57,6 +57,7 @@ namespace OpenUtau.App.Studio {
         }
 
         public static void NotifyChanged() {
+            StudioTrackPaintCache.Invalidate(StudioTrackPaletteChangeReason.StudioUIToggled);
             MessageBus.Current.SendMessage(new StudioUIChangedEvent());
         }
     }
