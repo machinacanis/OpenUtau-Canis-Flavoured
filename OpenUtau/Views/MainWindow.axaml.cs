@@ -669,6 +669,16 @@ namespace OpenUtau.App.Views {
             }
         }
 
+        void OnMenuDawIntegration(object sender, RoutedEventArgs args) {
+            var dialog = new DawIntegrationDialog() {
+                DataContext = new DawIntegrationViewModel(),
+            };
+            dialog.ShowDialog(this);
+            if (dialog.Position.Y < 0) {
+                dialog.Position = dialog.Position.WithY(0);
+            }
+        }
+
         async void OnMenuInstallWavtoolResampler(object sender, RoutedEventArgs args) {
             var filter = OS.IsWindows()
                 ? new[] { FilePicker.EXE }

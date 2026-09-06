@@ -141,10 +141,10 @@ namespace OpenUtau.Core.DiffSinger {
 
                 //variance curves
                 if (options.exportVariance && singer.HasVariancePredictor) {
-                    var variancePredictor = singer.getVariancePredictor();
                     VarianceResult varianceResult;
                     lock (singer.SessionLock) {
-                        varianceResult = variancePredictor.Process(phrase);
+                        // Acquire inside the lock so FreeMemory cannot dispose the model in between.
+                        varianceResult = singer.getVariancePredictor()!.Process(phrase);
                     }
                     if (varianceResult.energy != null) {
                         energy = ComputeVarianceCurve(
