@@ -90,6 +90,7 @@ namespace OpenUtau.App.Controls {
                             header.ViewModel.ManuallyRaise();
                         }
                     }
+                    MessageBus.Current.SendMessage(new TrackMuteVisualEvent(-1));
                 });
             MessageBus.Current.Listen<TracksMuteEvent>()
                 .Subscribe(e => {

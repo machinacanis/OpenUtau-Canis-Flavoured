@@ -183,7 +183,12 @@ namespace OpenUtau.App.Controls {
 
         public override void Render(DrawingContext context) {
             var paint = StudioTrackPaintCache.ForPart(part);
-            var backgroundBrush = Selected ? paint.FillSelectedBrush : paint.FillBrush;
+            var tracks = Core.DocManager.Inst.Project.tracks;
+            bool muted = part.trackNo >= 0 && part.trackNo < tracks.Count
+                && tracks[part.trackNo].Muted;
+            var backgroundBrush = muted
+                ? paint.FillMutedBrush
+                : Selected ? paint.FillSelectedBrush : paint.FillBrush;
             var pen = Selected ? paint.SelectedStrokePen : null;
             // Background
             context.DrawRectangle(backgroundBrush, pen, new Rect(1, 0, Width - 1, Height - 1), 4, 4);

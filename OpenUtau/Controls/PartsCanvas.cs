@@ -115,6 +115,14 @@ namespace OpenUtau.App.Controls {
                         control.InvalidateVisual();
                     }
                 });
+            MessageBus.Current.Listen<TrackMuteVisualEvent>()
+                .Subscribe(e => {
+                    foreach (var (part, control) in partControls) {
+                        if (e.trackNo == -1 || part.trackNo == e.trackNo) {
+                            control.InvalidateVisual();
+                        }
+                    }
+                });
         }
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {

@@ -11,6 +11,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using DynamicData;
 using DynamicData.Binding;
+using OpenUtau.App.Studio;
 using OpenUtau.App.Views;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
@@ -590,11 +591,16 @@ namespace OpenUtau.App.ViewModels {
                 ThemeManager.ChangePianorollColor("Blue");
                 return;
             }
-            TrackAccentColor = ThemeManager.GetTrackColor(project.tracks[part.trackNo].TrackColor).AccentColor;
-            string name = Preferences.Default.UseTrackColor
-                ? project.tracks[part.trackNo].TrackColor
-                : "Blue";
-            ThemeManager.ChangePianorollColor(name);
+            var track = project.tracks[part.trackNo];
+            if (Preferences.Default.UseTrackColor) {
+                var paint = StudioTrackPaintCache.ForTrack(track);
+                TrackAccentColor = paint.HeaderAccentBrush;
+                ThemeManager.ChangePianorollColor(paint);
+            } else {
+                TrackAccentColor = ThemeManager.GetTrackColor(track.TrackColor).AccentColor;
+                ThemeManager.ChangePianorollColor("Blue");
+                ThemeManager.ApplyPianoRollStyle();
+            }
         }
 
         private void UnloadPart() {

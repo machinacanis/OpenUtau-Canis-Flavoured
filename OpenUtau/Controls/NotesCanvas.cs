@@ -186,6 +186,8 @@ namespace OpenUtau.App.Controls {
 
             MessageBus.Current.Listen<ThemeChangedEvent>()
                 .Subscribe(_ => InvalidateVisual());
+            MessageBus.Current.Listen<StudioTrackPaletteChangedEvent>()
+                .Subscribe(_ => InvalidateVisual());
             MessageBus.Current.Listen<NotesRefreshEvent>()
                 .Subscribe(_ => InvalidateVisual());
             MessageBus.Current.Listen<NotesSelectionEvent>()
@@ -388,7 +390,7 @@ namespace OpenUtau.App.Controls {
                         var brush = ThemeManager.NeutralAccentBrushSemi;
                         if (otherVoicePart.trackNo >= 0) {
                             var track = DocManager.Inst.Project.tracks[otherVoicePart.trackNo];
-                            brush = ThemeManager.GetTrackColor(track.TrackColor).AccentColorLightSemi;
+                            brush = StudioTrackPaintCache.ForTrack(track).GhostBrush;
                         }
 
                             foreach (var note in otherVoicePart.notes) {

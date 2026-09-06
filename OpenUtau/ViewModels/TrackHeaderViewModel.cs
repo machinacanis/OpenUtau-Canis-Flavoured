@@ -196,6 +196,7 @@ namespace OpenUtau.App.ViewModels {
             }
             this.RaisePropertyChanged(nameof(Mute));
             JudgeMuted();
+            MessageBus.Current.SendMessage(new TrackMuteVisualEvent(track.TrackNo));
         }
 
         public void ToggleMute(bool mute) {
@@ -206,6 +207,7 @@ namespace OpenUtau.App.ViewModels {
             }
             this.RaisePropertyChanged(nameof(Mute));
             JudgeMuted();
+            MessageBus.Current.SendMessage(new TrackMuteVisualEvent(track.TrackNo));
         }
 
         public void MuteOnly() {

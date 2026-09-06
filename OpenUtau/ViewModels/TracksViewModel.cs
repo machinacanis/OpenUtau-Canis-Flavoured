@@ -32,6 +32,16 @@ namespace OpenUtau.App.ViewModels {
             this.allmute = allmute;
         }
     }
+    /// <summary>
+    /// Timeline redraw after mute/solo. Does not change Mute/Solo state.
+    /// trackNo == -1 means all tracks.
+    /// </summary>
+    public class TrackMuteVisualEvent {
+        public readonly int trackNo;
+        public TrackMuteVisualEvent(int trackNo) {
+            this.trackNo = trackNo;
+        }
+    }
     public class MixFxChangedNotification {
         public readonly int trackNo;
         public MixFxChangedNotification(int trackNo) {
