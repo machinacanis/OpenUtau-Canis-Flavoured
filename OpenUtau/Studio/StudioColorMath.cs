@@ -2,10 +2,7 @@
 using Avalonia.Media;
 
 namespace OpenUtau.App.Studio {
-    /// <summary>
-    /// Shared sRGB / HSL / WCAG helpers for Studio UI. HSL conversion matches
-    /// the original <see cref="StudioThemeGenerator"/> implementation.
-    /// </summary>
+    /// <summary>sRGB / HSL / WCAG helpers for Studio UI.</summary>
     public static class StudioColorMath {
         public static (double H, double S, double L) RgbToHsl(Color c) {
             double r = c.R / 255.0, g = c.G / 255.0, b = c.B / 255.0;

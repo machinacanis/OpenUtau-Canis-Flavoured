@@ -50,6 +50,11 @@ namespace OpenUtau.App {
                     var (h, _, _) = StudioColorMath.RgbToHsl(swatches[i].Fill);
                     Assert.False(h >= 40 && h <= 90,
                         $"N={n} i={i} hue {h:0.0} entered muddy yellow [40,90]");
+                    if (n == 1) {
+                        Assert.True(HueDelta(h, 8) <= 8,
+                            $"N=1 rainbow hue {h:0.0} expected ~8, not theme accent");
+                        Assert.NotEqual(ctx.Accent1, swatches[i].Fill);
+                    }
                 }
             }
         }

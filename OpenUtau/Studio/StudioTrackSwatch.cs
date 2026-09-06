@@ -40,8 +40,7 @@ namespace OpenUtau.App.Studio {
         bool IsDark);
 
     /// <summary>
-    /// Frozen paints for one Track. Built later by StudioTrackPaintCache from a
-    /// swatch. Defined here so later PRs can wire controls without moving types.
+    /// Frozen paints for one Track. Built by StudioTrackPaintCache from a swatch.
     /// </summary>
     public sealed class StudioTrackPaint {
         public required StudioTrackSwatch Colors { get; init; }
