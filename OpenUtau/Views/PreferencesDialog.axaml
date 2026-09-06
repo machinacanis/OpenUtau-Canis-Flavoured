@@ -345,6 +345,14 @@
               <ComboBox Grid.Column="0" ItemsSource="{Binding PresetItems}" SelectedItem="{Binding SelectedPresetItem}"/>
               <Button Grid.Column="2" Content="{DynamicResource prefs.studioui.save}" Click="OnSavePreset"/>
             </Grid>
+            <TextBlock Text="{DynamicResource prefs.studioui.trackcolor.mode}" Margin="0,10,0,0"/>
+            <ComboBox SelectedIndex="{Binding StudioTrackColorMode}">
+              <ComboBoxItem Content="{DynamicResource prefs.studioui.trackcolor.mode.fixed}"/>
+              <ComboBoxItem Content="{DynamicResource prefs.studioui.trackcolor.mode.rainbow}"/>
+              <ComboBoxItem Content="{DynamicResource prefs.studioui.trackcolor.mode.theme}"/>
+            </ComboBox>
+            <TextBlock FontSize="11" TextWrapping="Wrap"
+                       Text="{DynamicResource prefs.studioui.trackcolor.mode.hint}"/>
             <TextBlock Text="{DynamicResource prefs.appearance.waveform}" Margin="0,10,0,0" FontWeight="Bold"/>
             <TextBlock Text="{DynamicResource prefs.appearance.waveform.layout}" Margin="0,10,0,0"/>
             <ComboBox SelectedIndex="{Binding WaveformLayout}">

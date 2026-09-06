@@ -796,6 +796,11 @@ HN-SEP model: {3} ({4})</system:String>-->
   <!--<system:String x:Key="prefs.studioui.save.empty">Preset name cannot be empty.</system:String>-->
   <!--<system:String x:Key="prefs.studioui.save.prompt">Preset name</system:String>-->
   <!--<system:String x:Key="prefs.studioui.save.title">Save Studio UI preset</system:String>-->
+  <!--<system:String x:Key="prefs.studioui.trackcolor.mode">Track colors</system:String>-->
+  <!--<system:String x:Key="prefs.studioui.trackcolor.mode.fixed">Fixed</system:String>-->
+  <!--<system:String x:Key="prefs.studioui.trackcolor.mode.hint">Rainbow and theme colors are computed from the current background. Fixed uses each track's color; the default Blue keeps the theme accent on clips. A single-track Rainbow is the red end of the strip, not the theme accent.</system:String>-->
+  <!--<system:String x:Key="prefs.studioui.trackcolor.mode.rainbow">Rainbow</system:String>-->
+  <!--<system:String x:Key="prefs.studioui.trackcolor.mode.theme">Theme gradient</system:String>-->
   <system:String x:Key="prefs.utau">УТАУ</system:String>
 
   <system:String x:Key="progress.cachecleared">Кэш очищен.</system:String>

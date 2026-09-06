@@ -124,6 +124,7 @@ namespace OpenUtau.App.ViewModels {
 
         // Studio UI
         [Reactive] public partial bool UseStudioUI { get; set; }
+        [Reactive] public partial int StudioTrackColorMode { get; set; }
         [Reactive] public partial string CurrentPreset { get; set; } = string.Empty;
         [Reactive] public partial string SelectedPresetItem { get; set; } = string.Empty;
         public List<string> PresetItems { get; private set; } = new();
@@ -313,6 +314,7 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             ShowPlaybackNoteBounce = Preferences.Default.ShowPlaybackNoteBounce;
             DetachPianoRoll = Preferences.Default.DetachPianoRoll;
             UseStudioUI = Preferences.Default.UseStudioUI;
+            StudioTrackColorMode = Preferences.Default.StudioTrackColorMode;
             InitPresets();
             WaveformStyle = Preferences.Default.WaveformStyle;
             WaveformLayout = Preferences.Default.WaveformLayout;
@@ -474,6 +476,12 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                     StudioUI.NotifyChanged();
                     MessageBus.Current.SendMessage(new WaveformRefreshEvent());
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.StudioTrackColorMode)
+                .Subscribe(mode => {
+                    Preferences.Default.StudioTrackColorMode = mode;
+                    Preferences.Save();
+                    StudioTrackPaintCache.Invalidate(StudioTrackPaletteChangeReason.Mode);
                 });
             this.WhenAnyValue(vm => vm.SelectedPresetItem)
                 .Subscribe(display => {
