@@ -79,3 +79,35 @@
 
 - 上游 `56436e18`（CUDA）删除了早期 `23af41c1` 添加的空列表兜底（上游回归）；重写后的本次合并直接带入上游 **#2365 判空修复**（`80fc0a16`：`OnnxGpuOptions.Count > 0 ? FirstOrDefault(...) : new GpuInfo()`），`OnnxGpu` 不再越界。
 - 历史重写前曾有本地临时修复（`7347bd67` PadGpuList）与回退（`9e2ac075`），已随重写移除；最终采用上游方案（不向 GPU 列表注入假条目）。
+
+---
+
+## Merge 2026-09-06 b863f7be
+
+- **时间**（UTC）：`2026-09-06T01:10:20Z`（合并提交时间）
+- **合并方式**：`git merge upstream/master`（merge-base `03a2833f88322ad24e3faf0d885995486f7759d1`，即上次合并记录的上游基线）
+- **上游基线**：`b863f7be012a6b4dc23063023529b186d74846e2` — Fix Presamp Static Dictionary Bug and File Encodings (#2081)
+
+### 引入的上游 commit（3 个）
+
+| # | SHA | 主题 |
+| --- | --- | --- |
+| 1 | `54f4693312a4980d3a5db4407eacdf76c8739abd` | Remove auto-merge rule requiring PRs to come from this repository |
+| 2 | `431b228d2f12220b7f89f262915d26d002599fbd` | "Just play" VCCV fix (#2367) |
+| 3 | `b863f7be012a6b4dc23063023529b186d74846e2` | Fix Presamp Static Dictionary Bug and File Encodings (#2081) |
+
+### 冲突
+
+**无冲突**（ort 策略自动合并）。变更文件（4 个）：`.github/auto-merge-rules.json`、`.github/scripts/auto-merge.mjs`、`OpenUtau.Core/Classic/Presamp.cs`、`OpenUtau.Plugin.Builtin/EnglishVCCVPhonemizer.cs`。合并后这 4 个文件与 `upstream/master`（`b863f7be`）逐字节一致（`git diff upstream/master HEAD -- <文件>` 为空）。
+
+### 决策记录
+
+- 无冲突块需要逐块决策；本 fork 自有的最近改动（Studio UI 偏好、README 修订）均未触及上述 4 个文件，故全部采纳上游提交，无保留 fork 侧内容。
+- 合并后测试与 fork 既有测试集一致（上游 `431b228d` 与 `b863f7be` 均未改动 `OpenUtau.Test`）；`OpenUtau.Test/Files` 夹具未变化。
+
+### 已验证
+
+- `dotnet build OpenUtau -c Debug`：0 错误（3 个既有 AVLN3001 XAML 运行时加载警告，与本次合并无关）。
+- `dotnet test OpenUtau.Test`：**315/315 通过**（35 s）。
+- `python3 Misc/sync_strings.py`：运行后无任何字符串文件差异。
+- `git diff --check`：无残留冲突标记；工作区无未提交改动。合并的 4 个文件与上游 `b863f7be` 逐字节一致（含上游 #2081/#2367 提交自带的尾随空格，按要求不改动上游文件）。
