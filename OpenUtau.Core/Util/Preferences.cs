@@ -228,6 +228,11 @@ namespace OpenUtau.Core.Util {
             /// appearance settings below with the preset's values.
             /// </summary>
             public string StudioPreset = "Studio Dark";
+            /// <summary>
+            /// Studio UI only. 0 = Fixed, 1 = Rainbow, 2 = Theme gradient.
+            /// Ignored when UseStudioUI is false.
+            /// </summary>
+            public int StudioTrackColorMode = 0;
             public EditTool EditTool = new EditTool();
             public bool PlayTone = true;
             /// <summary>Legacy; migrated to <see cref="RealTimePitchMode"/> on load.</summary>
