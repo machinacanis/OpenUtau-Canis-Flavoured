@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -24,7 +24,7 @@ namespace OpenUtau.App.Studio {
         /// Current built-in preset format version. Bump this when built-in
         /// preset contents change so existing seeded files are regenerated.
         /// </summary>
-        public const int BuiltInVersion = 1;
+        public const int BuiltInVersion = 2;
 
         static readonly string[] BuiltInNames = [
             StudioThemeGenerator.StudioDark,
@@ -124,6 +124,8 @@ namespace OpenUtau.App.Studio {
         }
 
         public static StudioPresetUi DefaultUi() => new() {
+            TrackColorMode = 0,
+            TrackColorConfig = StudioTrackColorConfig.FromCurrent(),
             WaveformStyle = 1,
             WaveformLayout = 0,
             WaveformFollowMode = 1,

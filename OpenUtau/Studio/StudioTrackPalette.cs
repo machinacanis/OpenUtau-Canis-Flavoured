@@ -11,14 +11,9 @@ namespace OpenUtau.App.Studio {
     /// no MessageBus. Unit tests call these methods with a constructed context.
     /// </summary>
     public static class StudioTrackPalette {
-        const double H0 = 8.0;
-        const double Hspan = 250.0;
-        const int Cycle = 12;
-        const double NeighborDistinctMin = 0.07;
-        const double NeighborLightnessPush = 0.08;
-        const double LowChromaDistinctMin = 0.05;
-        const double LowChromaSeed = 0.12;
-        const double LowChromaFallbackS = 0.28;
+        // Legacy defaults live in StudioTrackColorParams.cs; every tunable
+        // constant used below comes from the passed StudioTrackColorConfig,
+        // which falls back to those defaults when a preset omits a field.
 
         static readonly Color OnWhite = Color.FromRgb(0xF5, 0xF5, 0xF5);
         static readonly Color OnBlack = Color.FromRgb(0x1A, 0x1A, 0x1A);
@@ -27,17 +22,21 @@ namespace OpenUtau.App.Studio {
 
         /// <summary>
         /// Pure. tracks[i] is display index i == TrackNo after UpdateTrackNo.
+        /// <paramref name="config"/> (preset-owned tunables) defaults to legacy
+        /// constants; null behaves exactly like the pre-config algorithms.
         /// </summary>
         public static StudioTrackSwatch[] ResolveAll(
-            IReadOnlyList<UTrack> tracks, StudioTrackPaletteContext ctx) {
+            IReadOnlyList<UTrack> tracks, StudioTrackPaletteContext ctx,
+            StudioTrackColorConfig? config = null) {
             if (tracks == null || tracks.Count == 0) {
                 return Array.Empty<StudioTrackSwatch>();
             }
+            config ??= StudioTrackColorConfig.Default();
             try {
                 return ctx.Mode switch {
-                    StudioTrackColorMode.Rainbow => ResolveIndexed(tracks, ctx, rainbow: true),
-                    StudioTrackColorMode.ThemeGradient => ResolveIndexed(tracks, ctx, rainbow: false),
-                    _ => ResolveFixed(tracks, ctx),
+                    StudioTrackColorMode.Rainbow => ResolveIndexed(tracks, ctx, config, rainbow: true),
+                    StudioTrackColorMode.ThemeGradient => ResolveIndexed(tracks, ctx, config, rainbow: false),
+                    _ => ResolveFixed(tracks, ctx, config),
                 };
             } catch (Exception e) {
                 Log.Error(e, "StudioTrackPalette.ResolveAll failed");
@@ -96,24 +95,28 @@ namespace OpenUtau.App.Studio {
         }
 
         static StudioTrackSwatch[] ResolveFixed(
-            IReadOnlyList<UTrack> tracks, StudioTrackPaletteContext ctx) {
+            IReadOnlyList<UTrack> tracks, StudioTrackPaletteContext ctx,
+            StudioTrackColorConfig config) {
             var swatches = new StudioTrackSwatch[tracks.Count];
             for (int i = 0; i < tracks.Count; i++) {
-                swatches[i] = FixedFill(tracks[i], ctx);
+                swatches[i] = FixedFill(tracks[i], ctx, config);
             }
             return swatches;
         }
 
         static StudioTrackSwatch[] ResolveIndexed(
-            IReadOnlyList<UTrack> tracks, StudioTrackPaletteContext ctx, bool rainbow) {
+            IReadOnlyList<UTrack> tracks, StudioTrackPaletteContext ctx,
+            StudioTrackColorConfig config, bool rainbow) {
             int n = tracks.Count;
             var fills = new Color[n];
             for (int i = 0; i < n; i++) {
-                fills[i] = rainbow ? RainbowFill(i, n, ctx) : ThemeFill(i, n, ctx);
+                fills[i] = rainbow
+                    ? RainbowFill(i, n, ctx, config)
+                    : ThemeFill(i, n, ctx, config);
             }
             if (!rainbow) {
-                EnforceNeighborDistinctness(fills);
-                ApplyLowChromaHueFallback(fills, n);
+                EnforceNeighborDistinctness(fills, config);
+                ApplyLowChromaHueFallback(fills, n, config);
             }
             var swatches = new StudioTrackSwatch[n];
             for (int i = 0; i < n; i++) {
@@ -122,7 +125,8 @@ namespace OpenUtau.App.Studio {
             return swatches;
         }
 
-        static StudioTrackSwatch FixedFill(UTrack track, StudioTrackPaletteContext ctx) {
+        static StudioTrackSwatch FixedFill(
+            UTrack track, StudioTrackPaletteContext ctx, StudioTrackColorConfig config) {
             string name = track.TrackColor ?? "Blue";
             if (IsDefaultBlue(name)) {
                 return IdentityStudioBlue(ctx);
@@ -157,39 +161,48 @@ namespace OpenUtau.App.Studio {
             || name == "Blue"
             || !ThemeManager.TrackColors.Any(c => c.Name == name);
 
-        static Color RainbowFill(int i, int n, StudioTrackPaletteContext ctx) {
-            double h = HueAt(i, n);
+        static Color RainbowFill(
+            int i, int n, StudioTrackPaletteContext ctx, StudioTrackColorConfig config) {
+            double h = HueAt(i, n, config);
             TargetSL(ctx, out double s, out double l);
             ApplyHueCompensation(h, ref s, ref l, ctx.IsDark);
             return StudioColorMath.HslToRgb(h, s, l);
         }
 
-        static Color ThemeFill(int i, int n, StudioTrackPaletteContext ctx) {
+        static Color ThemeFill(
+            int i, int n, StudioTrackPaletteContext ctx, StudioTrackColorConfig config) {
             if (n <= 1) {
                 return ctx.Accent1;
             }
             var (hs, ss, _) = StudioColorMath.RgbToHsl(ctx.Accent1);
             var (_, s2, _) = StudioColorMath.RgbToHsl(ctx.Accent2);
             TargetSL(ctx, out double sFill, out double lFill);
-            double h = ThemeHue(i, n, hs, ss, s2);
-            ThemeSL(i, ctx.IsDark, ss, sFill, lFill, out double s, out double l);
+            double lowChromaSeed = config.GradientLowChromaSeedOrDefault;
+            double h = ThemeHue(i, n, hs, ss, s2, lowChromaSeed, config);
+            ThemeSL(i, ctx.IsDark, ss, sFill, lFill, out double s, out double l,
+                lowChromaSeed, config);
             ApplyHueCompensation(h, ref s, ref l, ctx.IsDark);
             return StudioColorMath.HslToRgb(h, s, l);
         }
 
-        static double HueAt(int i, int n) {
+        static double HueAt(int i, int n, StudioTrackColorConfig config) {
+            int cycle = Math.Max(1, config.RainbowCycleTracksOrDefault);
+            double h0 = config.RainbowStartHueOrDefault;
+            double span = Math.Abs(config.RainbowHueSpanOrDefault);
             if (n <= 1) {
-                return H0;
+                return HueMod(h0);
             }
-            double t = n <= Cycle ? i / (double)(n - 1) : (i % Cycle) / (double)(Cycle - 1);
-            return HueMod(H0 - t * Hspan);
+            double t = n <= cycle ? i / (double)(n - 1) : (i % cycle) / (double)(cycle - 1);
+            return HueMod(h0 - t * span);
         }
 
-        static double ThemeHue(int i, int n, double hs, double ss, double s2) {
-            if (ss < LowChromaSeed && s2 < LowChromaSeed) {
+        static double ThemeHue(
+            int i, int n, double hs, double ss, double s2,
+            double lowChromaSeed, StudioTrackColorConfig config) {
+            if (ss < lowChromaSeed && s2 < lowChromaSeed) {
                 return hs;
             }
-            double span = Math.Min(48.0, 18.0 + 2.5 * n);
+            double span = GradientHueSpan(n, config);
             if (n <= 1) {
                 return hs;
             }
@@ -197,12 +210,27 @@ namespace OpenUtau.App.Studio {
             return HueMod(hs - span + 2 * span * t);
         }
 
+        static double GradientHueSpan(int n, StudioTrackColorConfig config) {
+            double span = config.GradientBaseHueSpanOrDefault
+                + config.GradientHueSpanPerTrackOrDefault * n;
+            return Math.Min(span, config.GradientMaxHueSpanOrDefault);
+        }
+
         static void ThemeSL(
             int i, bool isDark, double ss, double sFill, double lFill,
-            out double s, out double l) {
-            double amp = isDark ? 0.07 : 0.06;
-            l = StudioColorMath.Clamp(lFill + amp * Math.Sin(i * Math.PI / 2.5), 0.34, 0.70);
-            s = ss < LowChromaSeed ? Math.Max(sFill * 0.45, 0.22) : Lerp(ss, sFill, 0.55);
+            out double s, out double l, double lowChromaSeed,
+            StudioTrackColorConfig config) {
+            double amp = isDark
+                ? config.GradientDarkLumaAmpOrDefault
+                : config.GradientLightLumaAmpOrDefault;
+            double divisor = Math.Abs(config.GradientLumaWaveDivisorOrDefault) < 1e-9
+                ? StudioTrackColorParams.GradientLumaWaveDivisor
+                : config.GradientLumaWaveDivisorOrDefault;
+            l = StudioColorMath.Clamp(
+                lFill + amp * Math.Sin(i * Math.PI / divisor), 0.34, 0.70);
+            s = ss < lowChromaSeed
+                ? Math.Max(sFill * 0.45, 0.22)
+                : Lerp(ss, sFill, 0.55);
         }
 
         static void TargetSL(StudioTrackPaletteContext ctx, out double sFill, out double lFill) {
@@ -227,26 +255,33 @@ namespace OpenUtau.App.Studio {
             }
         }
 
-        static void EnforceNeighborDistinctness(Color[] fills) {
+        static void EnforceNeighborDistinctness(
+            Color[] fills, StudioTrackColorConfig config) {
+            double distinctMin = config.GradientNeighborDistinctMinOrDefault;
+            double push = config.GradientNeighborLightnessPushOrDefault;
             for (int i = 0; i < fills.Length - 1; i++) {
-                if (Distinctness(fills[i], fills[i + 1]) >= NeighborDistinctMin) {
+                if (Distinctness(fills[i], fills[i + 1]) >= distinctMin) {
                     continue;
                 }
                 var (_, _, l1) = StudioColorMath.RgbToHsl(fills[i]);
                 var (h2, s2, l2) = StudioColorMath.RgbToHsl(fills[i + 1]);
-                l2 = l2 >= l1 ? l2 + NeighborLightnessPush : l2 - NeighborLightnessPush;
+                l2 = l2 >= l1 ? l2 + push : l2 - push;
                 l2 = StudioColorMath.Clamp(l2, 0, 1);
                 fills[i + 1] = StudioColorMath.HslToRgb(h2, s2, l2);
             }
         }
 
-        static void ApplyLowChromaHueFallback(Color[] fills, int n) {
+        static void ApplyLowChromaHueFallback(
+            Color[] fills, int n, StudioTrackColorConfig config) {
+            double distinctMin = config.GradientLowChromaDistinctMinOrDefault;
+            double fallbackS = config.GradientLowChromaFallbackSOrDefault;
             for (int i = 0; i < fills.Length - 1; i++) {
-                if (Distinctness(fills[i], fills[i + 1]) >= LowChromaDistinctMin) {
+                if (Distinctness(fills[i], fills[i + 1]) >= distinctMin) {
                     continue;
                 }
                 var (_, _, l) = StudioColorMath.RgbToHsl(fills[i + 1]);
-                fills[i + 1] = StudioColorMath.HslToRgb(HueAt(i + 1, n), LowChromaFallbackS, l);
+                fills[i + 1] = StudioColorMath.HslToRgb(
+                    HueAt(i + 1, n, config), fallbackS, l);
             }
         }
 
