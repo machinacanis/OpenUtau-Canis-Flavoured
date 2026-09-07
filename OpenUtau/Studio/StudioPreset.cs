@@ -25,6 +25,13 @@ namespace OpenUtau.App.Studio {
     /// listed values are applied when the preset is selected.
     /// </summary>
     public class StudioPresetUi {
+        /// <summary>
+        /// Track color mode stored with the preset: 0 = Fixed, 1 = Rainbow,
+        /// 2 = Theme gradient. Null keeps the user's current global mode.
+        /// </summary>
+        public int? TrackColorMode { get; set; }
+        /// <summary>Rainbow / theme-gradient tunables (preset-owned).</summary>
+        public StudioTrackColorConfig? TrackColorConfig { get; set; }
         public int? WaveformStyle { get; set; }
         public int? WaveformLayout { get; set; }
         public int? WaveformFollowMode { get; set; }

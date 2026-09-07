@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -125,12 +125,41 @@ namespace OpenUtau.App.ViewModels {
         // Studio UI
         [Reactive] public partial bool UseStudioUI { get; set; }
         [Reactive] public partial int StudioTrackColorMode { get; set; }
+        [Reactive] public partial double RainbowStartHue { get; set; }
+        [Reactive] public partial double RainbowHueSpan { get; set; }
+        [Reactive] public partial int RainbowCycleTracks { get; set; }
+        [Reactive] public partial double GradientBaseHueSpan { get; set; }
+        [Reactive] public partial double GradientHueSpanPerTrack { get; set; }
+        [Reactive] public partial double GradientMaxHueSpan { get; set; }
+        [Reactive] public partial double GradientLowChromaSeed { get; set; }
+        [Reactive] public partial double GradientNeighborHueMin { get; set; }
+        [Reactive] public partial double GradientNeighborHuePush { get; set; }
+        [Reactive] public partial double GradientLowChromaFallbackS { get; set; }
+        [Reactive] public partial double GradientLowChromaSatScale { get; set; }
+        [Reactive] public partial double GradientDarkLumaAmp { get; set; }
+        [Reactive] public partial double GradientLightLumaAmp { get; set; }
+        [Reactive] public partial double GradientLumaWaveDivisor { get; set; }
         [Reactive] public partial string CurrentPreset { get; set; } = string.Empty;
         [Reactive] public partial string SelectedPresetItem { get; set; } = string.Empty;
         public List<string> PresetItems { get; private set; } = new();
         public bool PresetDirty { get; private set; }
         bool _applyingPreset;
         static readonly HashSet<string> PresetUiPropertyNames = new(StringComparer.Ordinal) {
+            nameof(StudioTrackColorMode),
+            nameof(RainbowStartHue),
+            nameof(RainbowHueSpan),
+            nameof(RainbowCycleTracks),
+            nameof(GradientBaseHueSpan),
+            nameof(GradientHueSpanPerTrack),
+            nameof(GradientMaxHueSpan),
+            nameof(GradientLowChromaSeed),
+            nameof(GradientNeighborHueMin),
+            nameof(GradientNeighborHuePush),
+            nameof(GradientLowChromaFallbackS),
+            nameof(GradientLowChromaSatScale),
+            nameof(GradientDarkLumaAmp),
+            nameof(GradientLightLumaAmp),
+            nameof(GradientLumaWaveDivisor),
             nameof(WaveformStyle),
             nameof(WaveformLayout),
             nameof(WaveformFollowMode),
@@ -197,6 +226,8 @@ namespace OpenUtau.App.ViewModels {
         public bool WaveformFixedOptionsVisible => WaveformLayout == 2;
         public bool WaveformFillOptionsVisible => WaveformLayout != 2;
         public bool NoteCornerRadiusVisible => NoteRoundedCorners;
+        public bool RainbowTrackOptionsVisible => StudioTrackColorMode == 1;
+        public bool GradientTrackOptionsVisible => StudioTrackColorMode == 2;
 
         // UTAU
         public List<string> DefaultRendererOptions { get; set; }
@@ -315,6 +346,20 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             DetachPianoRoll = Preferences.Default.DetachPianoRoll;
             UseStudioUI = Preferences.Default.UseStudioUI;
             StudioTrackColorMode = Preferences.Default.StudioTrackColorMode;
+            RainbowStartHue = Preferences.Default.RainbowStartHue;
+            RainbowHueSpan = Preferences.Default.RainbowHueSpan;
+            RainbowCycleTracks = Preferences.Default.RainbowCycleTracks;
+            GradientBaseHueSpan = Preferences.Default.GradientBaseHueSpan;
+            GradientHueSpanPerTrack = Preferences.Default.GradientHueSpanPerTrack;
+            GradientMaxHueSpan = Preferences.Default.GradientMaxHueSpan;
+            GradientLowChromaSeed = Preferences.Default.GradientLowChromaSeed;
+            GradientNeighborHueMin = Preferences.Default.GradientNeighborHueMin;
+            GradientNeighborHuePush = Preferences.Default.GradientNeighborHuePush;
+            GradientLowChromaFallbackS = Preferences.Default.GradientLowChromaFallbackS;
+            GradientLowChromaSatScale = Preferences.Default.GradientLowChromaSatScale;
+            GradientDarkLumaAmp = Preferences.Default.GradientDarkLumaAmp;
+            GradientLightLumaAmp = Preferences.Default.GradientLightLumaAmp;
+            GradientLumaWaveDivisor = Preferences.Default.GradientLumaWaveDivisor;
             InitPresets();
             WaveformStyle = Preferences.Default.WaveformStyle;
             WaveformLayout = Preferences.Default.WaveformLayout;
@@ -481,8 +526,38 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                 .Subscribe(mode => {
                     Preferences.Default.StudioTrackColorMode = mode;
                     Preferences.Save();
+                    this.RaisePropertyChanged(nameof(RainbowTrackOptionsVisible));
+                    this.RaisePropertyChanged(nameof(GradientTrackOptionsVisible));
                     StudioTrackPaintCache.Invalidate(StudioTrackPaletteChangeReason.Mode);
                 });
+            this.WhenAnyValue(vm => vm.RainbowStartHue)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.RainbowStartHue = v));
+            this.WhenAnyValue(vm => vm.RainbowHueSpan)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.RainbowHueSpan = v));
+            this.WhenAnyValue(vm => vm.RainbowCycleTracks)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.RainbowCycleTracks = v));
+            this.WhenAnyValue(vm => vm.GradientBaseHueSpan)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientBaseHueSpan = v));
+            this.WhenAnyValue(vm => vm.GradientHueSpanPerTrack)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientHueSpanPerTrack = v));
+            this.WhenAnyValue(vm => vm.GradientMaxHueSpan)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientMaxHueSpan = v));
+            this.WhenAnyValue(vm => vm.GradientLowChromaSeed)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientLowChromaSeed = v));
+            this.WhenAnyValue(vm => vm.GradientNeighborHueMin)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientNeighborHueMin = v));
+            this.WhenAnyValue(vm => vm.GradientNeighborHuePush)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientNeighborHuePush = v));
+            this.WhenAnyValue(vm => vm.GradientLowChromaFallbackS)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientLowChromaFallbackS = v));
+            this.WhenAnyValue(vm => vm.GradientLowChromaSatScale)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientLowChromaSatScale = v));
+            this.WhenAnyValue(vm => vm.GradientDarkLumaAmp)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientDarkLumaAmp = v));
+            this.WhenAnyValue(vm => vm.GradientLightLumaAmp)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientLightLumaAmp = v));
+            this.WhenAnyValue(vm => vm.GradientLumaWaveDivisor)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientLumaWaveDivisor = v));
             this.WhenAnyValue(vm => vm.SelectedPresetItem)
                 .Subscribe(display => {
                     if (string.IsNullOrEmpty(display)) {
@@ -905,6 +980,17 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                 DocManager.Inst.ExecuteCmd(new ErrorMessageNotification("Failed to play test sound.", e));
             }
         }
+
+        /// <summary>
+        /// One track-palette slider change was already applied to the reactive
+        /// property; persist and re-render the track palette cache.
+        /// </summary>
+        void OnTrackColorTuned(Action storeToPreferences) {
+            storeToPreferences();
+            Preferences.Save();
+            StudioTrackPaintCache.Invalidate(StudioTrackPaletteChangeReason.Mode);
+        }
+
         public void TestMetronome() {
             try {
                 PlaybackManager.Inst.PlayMetronomeClick();
@@ -1007,6 +1093,25 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                     set(value);
                 }
             }
+            ApplyInt(ui.TrackColorMode, v => StudioTrackColorMode = v);
+            if (ui.TrackColorConfig != null) {
+                var c = ui.TrackColorConfig;
+                if (c.RainbowStartHue.HasValue) Preferences.Default.RainbowStartHue = c.RainbowStartHue.Value;
+                if (c.RainbowHueSpan.HasValue) Preferences.Default.RainbowHueSpan = c.RainbowHueSpan.Value;
+                if (c.RainbowCycleTracks.HasValue) Preferences.Default.RainbowCycleTracks = c.RainbowCycleTracks.Value;
+                if (c.GradientBaseHueSpan.HasValue) Preferences.Default.GradientBaseHueSpan = c.GradientBaseHueSpan.Value;
+                if (c.GradientHueSpanPerTrack.HasValue) Preferences.Default.GradientHueSpanPerTrack = c.GradientHueSpanPerTrack.Value;
+                if (c.GradientMaxHueSpan.HasValue) Preferences.Default.GradientMaxHueSpan = c.GradientMaxHueSpan.Value;
+                if (c.GradientLowChromaSeed.HasValue) Preferences.Default.GradientLowChromaSeed = c.GradientLowChromaSeed.Value;
+                if (c.GradientNeighborHueMin.HasValue) Preferences.Default.GradientNeighborHueMin = c.GradientNeighborHueMin.Value;
+                if (c.GradientNeighborHuePush.HasValue) Preferences.Default.GradientNeighborHuePush = c.GradientNeighborHuePush.Value;
+                if (c.GradientLowChromaFallbackS.HasValue) Preferences.Default.GradientLowChromaFallbackS = c.GradientLowChromaFallbackS.Value;
+                if (c.GradientLowChromaSatScale.HasValue) Preferences.Default.GradientLowChromaSatScale = c.GradientLowChromaSatScale.Value;
+                if (c.GradientDarkLumaAmp.HasValue) Preferences.Default.GradientDarkLumaAmp = c.GradientDarkLumaAmp.Value;
+                if (c.GradientLightLumaAmp.HasValue) Preferences.Default.GradientLightLumaAmp = c.GradientLightLumaAmp.Value;
+                if (c.GradientLumaWaveDivisor.HasValue) Preferences.Default.GradientLumaWaveDivisor = c.GradientLumaWaveDivisor.Value;
+                SyncTrackColorToView();
+            }
             ApplyInt(ui.WaveformStyle, v => WaveformStyle = v);
             ApplyInt(ui.WaveformLayout, v => WaveformLayout = v);
             ApplyInt(ui.WaveformFollowMode, v => WaveformFollowMode = v);
@@ -1041,7 +1146,9 @@ OnnxGpu = OnnxGpuOptions.Count > 0
 
         bool PresetMatches(StudioPreset preset) {
             var ui = preset.Ui;
-            return Match(ui.WaveformStyle, Preferences.Default.WaveformStyle)
+            return Match(ui.TrackColorMode, Preferences.Default.StudioTrackColorMode)
+                && ConfigMatches(ui.TrackColorConfig)
+                && Match(ui.WaveformStyle, Preferences.Default.WaveformStyle)
                 && Match(ui.WaveformLayout, Preferences.Default.WaveformLayout)
                 && Match(ui.WaveformFollowMode, Preferences.Default.WaveformFollowMode)
                 && Match(ui.WaveformFadeInMs, Preferences.Default.WaveformFadeInMs)
@@ -1073,6 +1180,43 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                 && Match(ui.NoteLyricColorInvert, Preferences.Default.NoteLyricColorInvert);
         }
 
+        void SyncTrackColorToView() {
+            RainbowStartHue = Preferences.Default.RainbowStartHue;
+            RainbowHueSpan = Preferences.Default.RainbowHueSpan;
+            RainbowCycleTracks = Preferences.Default.RainbowCycleTracks;
+            GradientBaseHueSpan = Preferences.Default.GradientBaseHueSpan;
+            GradientHueSpanPerTrack = Preferences.Default.GradientHueSpanPerTrack;
+            GradientMaxHueSpan = Preferences.Default.GradientMaxHueSpan;
+            GradientLowChromaSeed = Preferences.Default.GradientLowChromaSeed;
+            GradientNeighborHueMin = Preferences.Default.GradientNeighborHueMin;
+            GradientNeighborHuePush = Preferences.Default.GradientNeighborHuePush;
+            GradientLowChromaFallbackS = Preferences.Default.GradientLowChromaFallbackS;
+            GradientLowChromaSatScale = Preferences.Default.GradientLowChromaSatScale;
+            GradientDarkLumaAmp = Preferences.Default.GradientDarkLumaAmp;
+            GradientLightLumaAmp = Preferences.Default.GradientLightLumaAmp;
+            GradientLumaWaveDivisor = Preferences.Default.GradientLumaWaveDivisor;
+        }
+
+        bool ConfigMatches(StudioTrackColorConfig? config) {
+            if (config == null) {
+                return true;
+            }
+            return Match(config.RainbowStartHue, Preferences.Default.RainbowStartHue)
+                && Match(config.RainbowHueSpan, Preferences.Default.RainbowHueSpan)
+                && Match(config.RainbowCycleTracks, Preferences.Default.RainbowCycleTracks)
+                && Match(config.GradientBaseHueSpan, Preferences.Default.GradientBaseHueSpan)
+                && Match(config.GradientHueSpanPerTrack, Preferences.Default.GradientHueSpanPerTrack)
+                && Match(config.GradientMaxHueSpan, Preferences.Default.GradientMaxHueSpan)
+                && Match(config.GradientLowChromaSeed, Preferences.Default.GradientLowChromaSeed)
+                && Match(config.GradientNeighborHueMin, Preferences.Default.GradientNeighborHueMin)
+                && Match(config.GradientNeighborHuePush, Preferences.Default.GradientNeighborHuePush)
+                && Match(config.GradientLowChromaFallbackS, Preferences.Default.GradientLowChromaFallbackS)
+                && Match(config.GradientLowChromaSatScale, Preferences.Default.GradientLowChromaSatScale)
+                && Match(config.GradientDarkLumaAmp, Preferences.Default.GradientDarkLumaAmp)
+                && Match(config.GradientLightLumaAmp, Preferences.Default.GradientLightLumaAmp)
+                && Match(config.GradientLumaWaveDivisor, Preferences.Default.GradientLumaWaveDivisor);
+        }
+
         /// <summary>
         /// Saves the current Studio UI appearance values under <paramref name="name"/>
         /// into <c>DataPath/Presets</c> as a YAML preset.
@@ -1098,6 +1242,23 @@ OnnxGpu = OnnxGpuOptions.Count > 0
         }
 
         StudioPresetUi CaptureUi() => new() {
+            TrackColorMode = Preferences.Default.StudioTrackColorMode,
+            TrackColorConfig = new StudioTrackColorConfig {
+                RainbowStartHue = Preferences.Default.RainbowStartHue,
+                RainbowHueSpan = Preferences.Default.RainbowHueSpan,
+                RainbowCycleTracks = Preferences.Default.RainbowCycleTracks,
+                GradientBaseHueSpan = Preferences.Default.GradientBaseHueSpan,
+                GradientHueSpanPerTrack = Preferences.Default.GradientHueSpanPerTrack,
+                GradientMaxHueSpan = Preferences.Default.GradientMaxHueSpan,
+                GradientLowChromaSeed = Preferences.Default.GradientLowChromaSeed,
+                GradientNeighborHueMin = Preferences.Default.GradientNeighborHueMin,
+                GradientNeighborHuePush = Preferences.Default.GradientNeighborHuePush,
+                GradientLowChromaFallbackS = Preferences.Default.GradientLowChromaFallbackS,
+                GradientLowChromaSatScale = Preferences.Default.GradientLowChromaSatScale,
+                GradientDarkLumaAmp = Preferences.Default.GradientDarkLumaAmp,
+                GradientLightLumaAmp = Preferences.Default.GradientLightLumaAmp,
+                GradientLumaWaveDivisor = Preferences.Default.GradientLumaWaveDivisor,
+            },
             WaveformStyle = Preferences.Default.WaveformStyle,
             WaveformLayout = Preferences.Default.WaveformLayout,
             WaveformFollowMode = Preferences.Default.WaveformFollowMode,
@@ -1133,6 +1294,7 @@ OnnxGpu = OnnxGpuOptions.Count > 0
         static bool Match(int? a, int b) => !a.HasValue || a.Value == b;
         static bool Match(bool? a, bool b) => !a.HasValue || a.Value == b;
         static bool Match(string? a, string b) => string.IsNullOrEmpty(a) || a == b;
+        static bool Match(double? a, double b) => !a.HasValue || Math.Abs(a.Value - b) < 1e-9;
 
         public void OpenResamplerLocation() {
             try {

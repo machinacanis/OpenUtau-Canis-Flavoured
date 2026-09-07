@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -233,6 +233,24 @@ namespace OpenUtau.Core.Util {
             /// Ignored when UseStudioUI is false.
             /// </summary>
             public int StudioTrackColorMode = 0;
+            /// <summary>
+            /// Studio track palette tunables (legacy defaults; the Studio UI
+            /// preset page edits these and Save preset captures them).
+            /// </summary>
+            public double RainbowStartHue = 8.0;
+            public double RainbowHueSpan = 250.0;
+            public int RainbowCycleTracks = 12;
+            public double GradientBaseHueSpan = 14.0;
+            public double GradientHueSpanPerTrack = 4.0;
+            public double GradientMaxHueSpan = 52.0;
+            public double GradientLowChromaSeed = 0.12;
+            public double GradientNeighborHueMin = 6.0;
+            public double GradientNeighborHuePush = 8.0;
+            public double GradientLowChromaSatScale = 0.45;
+            public double GradientLowChromaFallbackS = 0.22;
+            public double GradientDarkLumaAmp = 0.0;
+            public double GradientLightLumaAmp = 0.0;
+            public double GradientLumaWaveDivisor = 2.5;
             public EditTool EditTool = new EditTool();
             public bool PlayTone = true;
             /// <summary>Legacy; migrated to <see cref="RealTimePitchMode"/> on load.</summary>

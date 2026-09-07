@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
@@ -72,7 +72,7 @@ namespace OpenUtau.App.Studio {
                 }
                 StudioTrackSwatch[] swatches;
                 if (StudioUI.IsEnabled) {
-                    swatches = StudioTrackPalette.ResolveAll(tracks, ctx);
+                    swatches = StudioTrackPalette.ResolveAll(tracks, ctx, LoadConfig());
                 } else {
                     swatches = new StudioTrackSwatch[tracks.Count];
                     for (int i = 0; i < tracks.Count; i++) {
@@ -101,6 +101,29 @@ namespace OpenUtau.App.Studio {
             }
             return BuildPaint(dummy, StudioTrackPalette.ResolveClassicFallback(dummy, ctx), ctx);
         }
+
+        /// <summary>
+        /// Builds the tunable set from the global preferences (the runtime
+        /// "current values" the settings page edits directly). The defaults in
+        /// <see cref="StudioTrackColorParams"/> reproduce the fixed algorithm
+        /// constants exactly when a preset omits a field.
+        /// </summary>
+        static StudioTrackColorConfig LoadConfig() => new() {
+            RainbowStartHue = Preferences.Default.RainbowStartHue,
+            RainbowHueSpan = Preferences.Default.RainbowHueSpan,
+            RainbowCycleTracks = Preferences.Default.RainbowCycleTracks,
+            GradientBaseHueSpan = Preferences.Default.GradientBaseHueSpan,
+            GradientHueSpanPerTrack = Preferences.Default.GradientHueSpanPerTrack,
+            GradientMaxHueSpan = Preferences.Default.GradientMaxHueSpan,
+            GradientLowChromaSeed = Preferences.Default.GradientLowChromaSeed,
+            GradientNeighborHueMin = Preferences.Default.GradientNeighborHueMin,
+            GradientNeighborHuePush = Preferences.Default.GradientNeighborHuePush,
+            GradientLowChromaFallbackS = Preferences.Default.GradientLowChromaFallbackS,
+            GradientLowChromaSatScale = Preferences.Default.GradientLowChromaSatScale,
+            GradientDarkLumaAmp = Preferences.Default.GradientDarkLumaAmp,
+            GradientLightLumaAmp = Preferences.Default.GradientLightLumaAmp,
+            GradientLumaWaveDivisor = Preferences.Default.GradientLumaWaveDivisor,
+        };
 
         static StudioTrackPaletteContext ContextFromTheme() {
             var mode = (StudioTrackColorMode)Preferences.Default.StudioTrackColorMode;

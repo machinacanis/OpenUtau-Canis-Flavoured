@@ -61,6 +61,35 @@ namespace OpenUtau.App {
         }
 
         [Fact]
+        public void Rainbow_ConfigOverridesStartAndSpan() {
+            var ctx = StudioDark(StudioTrackColorMode.Rainbow);
+            var custom = new StudioTrackColorConfig {
+                RainbowStartHue = 120,
+                RainbowHueSpan = 120,
+            };
+            var swatches = StudioTrackPalette.ResolveAll(Tracks(4), ctx, custom);
+            for (int i = 0; i < 4; i++) {
+                var (h, _, _) = StudioColorMath.RgbToHsl(swatches[i].Fill);
+                double expected = Mod360(120 - i * (120.0 / 3));
+                Assert.True(HueDelta(h, expected) <= 8,
+                    $"track {i}: hue {h:0.0} expected ~{expected:0.0} (custom start/span)");
+            }
+        }
+
+        [Fact]
+        public void Rainbow_ConfigCycleAffectsWrap() {
+            var ctx = StudioDark(StudioTrackColorMode.Rainbow);
+            var custom = new StudioTrackColorConfig {
+                RainbowCycleTracks = 2,
+            };
+            var swatches = StudioTrackPalette.ResolveAll(Tracks(3), ctx, custom);
+            var (h0, _, _) = StudioColorMath.RgbToHsl(swatches[0].Fill);
+            var (h2, _, _) = StudioColorMath.RgbToHsl(swatches[2].Fill);
+            Assert.True(HueDelta(h0, h2) <= 8,
+                $"N=3 cycle=2: index0 hue {h0:0.0} vs index2 {h2:0.0} expected same");
+        }
+
+        [Fact]
         public void Rainbow_TokyoDay_IsPastelNotMuddy() {
             var ctx = TokyoDay(StudioTrackColorMode.Rainbow);
             var swatches = StudioTrackPalette.ResolveAll(Tracks(5), ctx);
@@ -73,6 +102,23 @@ namespace OpenUtau.App {
                 Assert.True(y >= 0.44,
                     $"track {i} hue {h:0.0}: Y={y:0.00} expected pastel, not brick/navy");
                 Assert.Equal(OnBlack, swatches[i].OnFill);
+            }
+        }
+
+        [Fact]
+        public void ThemeGradient_ConfigWiderSpanStaysWithinFamily() {
+            var ctx = StudioDark(StudioTrackColorMode.ThemeGradient);
+            var (hSeed, _, _) = StudioColorMath.RgbToHsl(ctx.Accent1);
+            var custom = new StudioTrackColorConfig {
+                GradientBaseHueSpan = 12,
+                GradientHueSpanPerTrack = 0,
+                GradientMaxHueSpan = 24,
+            };
+            var swatches = StudioTrackPalette.ResolveAll(Tracks(4), ctx, custom);
+            for (int i = 0; i < swatches.Length; i++) {
+                var (h, _, _) = StudioColorMath.RgbToHsl(swatches[i].Fill);
+                Assert.True(HueDelta(h, hSeed) <= 24,
+                    $"track {i}: |H-Hseed|={HueDelta(h, hSeed):0.0} > 24 (custom max span)");
             }
         }
 
@@ -303,6 +349,8 @@ namespace OpenUtau.App {
             double d = Math.Abs(a - b) % 360;
             return Math.Min(d, 360 - d);
         }
+
+        static double Mod360(double h) => ((h % 360) + 360) % 360;
 
         static Color FindMidLYellowGreen() {
             for (double l = 0.42; l <= 0.58; l += 0.01) {
