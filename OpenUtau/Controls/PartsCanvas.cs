@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using OpenUtau.App.Studio;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
@@ -73,6 +74,7 @@ namespace OpenUtau.App.Controls {
                 .Subscribe(_ => {
                     foreach (var (part, control) in partControls) {
                         control.SetPosition();
+                        control.InvalidateVisual();
                     }
                 });
             MessageBus.Current.Listen<PartsSelectionEvent>()
@@ -88,6 +90,8 @@ namespace OpenUtau.App.Controls {
                         control.SetSize();
                         control.SetPosition();
                         control.Refersh();
+                        control.ClearWaveformBitmap();
+                        control.InvalidateVisual();
                     }
                 });
             MessageBus.Current.Listen<PartRedrawEvent>()
@@ -104,6 +108,21 @@ namespace OpenUtau.App.Controls {
                 });
             MessageBus.Current.Listen<ThemeChangedEvent>()
                 .Subscribe(_ => InvalidateVisual());
+            MessageBus.Current.Listen<StudioTrackPaletteChangedEvent>()
+                .Subscribe(_ => {
+                    foreach (var (_, control) in partControls) {
+                        control.ClearWaveformBitmap();
+                        control.InvalidateVisual();
+                    }
+                });
+            MessageBus.Current.Listen<TrackMuteVisualEvent>()
+                .Subscribe(e => {
+                    foreach (var (part, control) in partControls) {
+                        if (e.trackNo == -1 || part.trackNo == e.trackNo) {
+                            control.InvalidateVisual();
+                        }
+                    }
+                });
         }
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {

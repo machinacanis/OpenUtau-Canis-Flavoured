@@ -4,6 +4,7 @@ using System.Linq;
 using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
+using OpenUtau.App.Studio;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
@@ -29,6 +30,16 @@ namespace OpenUtau.App.ViewModels {
         public TracksMuteEvent(int trackNo, bool allmute) {
             this.trackNo = trackNo;
             this.allmute = allmute;
+        }
+    }
+    /// <summary>
+    /// Timeline redraw after mute/solo. Does not change Mute/Solo state.
+    /// trackNo == -1 means all tracks.
+    /// </summary>
+    public class TrackMuteVisualEvent {
+        public readonly int trackNo;
+        public TrackMuteVisualEvent(int trackNo) {
+            this.trackNo = trackNo;
         }
     }
     public class MixFxChangedNotification {
@@ -492,10 +503,17 @@ namespace OpenUtau.App.ViewModels {
                     }
                 }
                 Notify();
+                if (cmd is AddTrackCommand or RemoveTrackCommand
+                    or MoveTrackCommand or SetTrackNoCommand) {
+                    StudioTrackPaintCache.Invalidate(StudioTrackPaletteChangeReason.TracksMutated);
+                } else if (cmd is ChangeTrackColorCommand) {
+                    StudioTrackPaintCache.Invalidate(StudioTrackPaletteChangeReason.TrackColor);
+                }
                 MessageBus.Current.SendMessage(new TracksRefreshEvent());
                 MessageBus.Current.SendMessage(new TrackSelectionEvent(SelectedTracks.ToArray()));
             } else if (cmd is UNotification) {
                 if (cmd is LoadProjectNotification loadProjectNotif) {
+                    StudioTrackPaintCache.Invalidate(StudioTrackPaletteChangeReason.TracksMutated);
                     Parts.Clear();
                     Parts.AddRange(loadProjectNotif.project.parts);
                     Tracks.Clear();

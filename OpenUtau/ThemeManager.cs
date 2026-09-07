@@ -367,13 +367,20 @@ namespace OpenUtau.App {
         }
 
         public static void ChangePianorollColor(string color) {
+            ApplyPianorollTrackColor(GetTrackColor(color));
+        }
+
+        public static void ChangePianorollColor(StudioTrackPaint paint) {
+            ApplyPianorollTrackColor(paint.LegacyTrackColor);
+        }
+
+        private static void ApplyPianorollTrackColor(TrackColor tcolor) {
             if (Application.Current == null) {
                 return;
             }
             try {
                 IResourceDictionary resDict = Application.Current.Resources;
-                TrackColor tcolor = GetTrackColor(color);
-                
+
                 resDict["SelectedTrackAccentBrush"] = tcolor.AccentColor;
                 resDict["SelectedTrackAccentLightBrush"] = tcolor.AccentColorLight;
                 resDict["SelectedTrackAccentLightBrushSemi"] = tcolor.AccentColorLightSemi;

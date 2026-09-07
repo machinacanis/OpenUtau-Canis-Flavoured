@@ -11,6 +11,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using DynamicData;
 using DynamicData.Binding;
+using OpenUtau.App.Studio;
 using OpenUtau.App.Views;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
@@ -341,6 +342,12 @@ namespace OpenUtau.App.ViewModels {
                             break;
                     }
                 });
+            MessageBus.Current.Listen<StudioTrackPaletteChangedEvent>()
+                .Subscribe(_ => {
+                    if (Preferences.Default.UseTrackColor) {
+                        LoadTrackColor(Part, Project);
+                    }
+                });
             MessageBus.Current.Listen<CurveSelectionEvent>()
                 .Subscribe(e => {
                     Selection.SelectNone();
@@ -585,16 +592,22 @@ namespace OpenUtau.App.ViewModels {
         }
 
         private void LoadTrackColor(UPart? part, UProject? project) {
-            if (part == null || project == null) {
+            if (part == null || project == null
+                || part.trackNo < 0 || part.trackNo >= project.tracks.Count) {
                 TrackAccentColor = ThemeManager.GetTrackColor("Blue").AccentColor;
                 ThemeManager.ChangePianorollColor("Blue");
                 return;
             }
-            TrackAccentColor = ThemeManager.GetTrackColor(project.tracks[part.trackNo].TrackColor).AccentColor;
-            string name = Preferences.Default.UseTrackColor
-                ? project.tracks[part.trackNo].TrackColor
-                : "Blue";
-            ThemeManager.ChangePianorollColor(name);
+            var track = project.tracks[part.trackNo];
+            if (Preferences.Default.UseTrackColor) {
+                var paint = StudioTrackPaintCache.ForTrack(track);
+                TrackAccentColor = paint.HeaderAccentBrush;
+                ThemeManager.ChangePianorollColor(paint);
+            } else {
+                TrackAccentColor = ThemeManager.GetTrackColor(track.TrackColor).AccentColor;
+                ThemeManager.ChangePianorollColor("Blue");
+                ThemeManager.ApplyPianoRollStyle();
+            }
         }
 
         private void UnloadPart() {

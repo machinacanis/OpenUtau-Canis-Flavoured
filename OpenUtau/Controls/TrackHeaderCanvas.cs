@@ -7,6 +7,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
+using OpenUtau.App.Studio;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
@@ -89,6 +90,7 @@ namespace OpenUtau.App.Controls {
                             header.ViewModel.ManuallyRaise();
                         }
                     }
+                    MessageBus.Current.SendMessage(new TrackMuteVisualEvent(-1));
                 });
             MessageBus.Current.Listen<TracksMuteEvent>()
                 .Subscribe(e => {
@@ -123,6 +125,12 @@ namespace OpenUtau.App.Controls {
                 .Subscribe(_ => {
                     foreach (var (_, header) in trackHeaders) {
                         header.ViewModel?.RefreshSelectionStyle();
+                    }
+                });
+            MessageBus.Current.Listen<StudioTrackPaletteChangedEvent>()
+                .Subscribe(_ => {
+                    foreach (var (_, header) in trackHeaders) {
+                        header.ViewModel?.ManuallyRaise();
                     }
                 });
         }

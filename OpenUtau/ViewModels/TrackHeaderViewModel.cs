@@ -9,6 +9,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using OpenUtau.Api;
+using OpenUtau.App.Studio;
 using OpenUtau.App.Views;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
@@ -34,6 +35,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial string TrackName { get; set; } = string.Empty;
         [Reactive] public partial SolidColorBrush TrackAccentColor { get; set; } = ThemeManager.GetTrackColor("Blue").AccentColor;
         [Reactive] public partial TrackColor TrackColor { get; set; } = ThemeManager.GetTrackColor("Blue");
+        [Reactive] public partial SolidColorBrush BadgeForeground { get; set; } = new SolidColorBrush(Avalonia.Media.Colors.White);
         [Reactive] public partial double Volume { get; set; }
         [Reactive] public partial double Pan { get; set; }
         [Reactive] public partial bool Mute { get; set; }
@@ -115,10 +117,7 @@ namespace OpenUtau.App.ViewModels {
             Activator = new ViewModelActivator();
 
             TrackName = track.TrackName;
-            TrackAccentColor = ThemeManager.GetTrackColor(track.TrackColor).AccentColor;
-            TrackColor = Preferences.Default.UseTrackColor
-                ? ThemeManager.GetTrackColor(track.TrackColor)
-                : ThemeManager.GetTrackColor("Blue");
+            ApplyPaint();
             Volume = track.Volume;
             Pan = track.Pan;
             Mute = track.Mute;
@@ -163,6 +162,14 @@ namespace OpenUtau.App.ViewModels {
             RefreshSelectionStyle();
         }
 
+        void ApplyPaint() {
+            var paint = StudioTrackPaintCache.ForTrack(track);
+            TrackAccentColor = paint.HeaderAccentBrush;
+            TrackColor = paint.LegacyTrackColor;
+            BadgeForeground = paint.OnHeaderAccentBrush;
+            RefreshSelectionStyle();
+        }
+
         public void RefreshSelectionStyle() {
             HeaderBorderBrush = IsSelected
                 ? TrackAccentColor
@@ -189,6 +196,7 @@ namespace OpenUtau.App.ViewModels {
             }
             this.RaisePropertyChanged(nameof(Mute));
             JudgeMuted();
+            MessageBus.Current.SendMessage(new TrackMuteVisualEvent(track.TrackNo));
         }
 
         public void ToggleMute(bool mute) {
@@ -199,6 +207,7 @@ namespace OpenUtau.App.ViewModels {
             }
             this.RaisePropertyChanged(nameof(Mute));
             JudgeMuted();
+            MessageBus.Current.SendMessage(new TrackMuteVisualEvent(track.TrackNo));
         }
 
         public void MuteOnly() {
@@ -517,16 +526,13 @@ namespace OpenUtau.App.ViewModels {
 
         public void ManuallyRaise() {
             TrackName = track.TrackName;
-            TrackAccentColor = ThemeManager.GetTrackColor(track.TrackColor).AccentColor;
-            TrackColor = Preferences.Default.UseTrackColor
-                ? ThemeManager.GetTrackColor(track.TrackColor)
-                : ThemeManager.GetTrackColor("Blue");
-            RefreshSelectionStyle();
+            ApplyPaint();
             this.RaisePropertyChanged(nameof(Singer));
             this.RaisePropertyChanged(nameof(TrackNo));
             this.RaisePropertyChanged(nameof(TrackName));
             this.RaisePropertyChanged(nameof(TrackAccentColor));
             this.RaisePropertyChanged(nameof(TrackColor));
+            this.RaisePropertyChanged(nameof(BadgeForeground));
             this.RaisePropertyChanged(nameof(Phonemizer));
             this.RaisePropertyChanged(nameof(PhonemizerTag));
             this.RaisePropertyChanged(nameof(Renderer));
@@ -587,11 +593,7 @@ namespace OpenUtau.App.ViewModels {
 
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null) {
                 await dialog.ShowDialog(desktop.MainWindow);
-                TrackAccentColor = ThemeManager.GetTrackColor(track.TrackColor).AccentColor;
-                TrackColor = Preferences.Default.UseTrackColor
-                ? ThemeManager.GetTrackColor(track.TrackColor)
-                : ThemeManager.GetTrackColor("Blue");
-                RefreshSelectionStyle();
+                ApplyPaint();
             }
         }
 
