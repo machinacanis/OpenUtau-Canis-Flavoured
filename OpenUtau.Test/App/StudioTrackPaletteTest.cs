@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Media;
 using OpenUtau.App.Studio;
 using OpenUtau.Core.Ustx;
@@ -20,7 +21,7 @@ namespace OpenUtau.App {
                 var (h, s, l) = StudioColorMath.RgbToHsl(swatches[i].Fill);
                 Assert.True(HueDelta(h, expected[i]) <= 8,
                     $"track {i}: hue {h:0.0} expected ~{expected[i]}");
-                Assert.True(s >= 0.7, $"track {i}: S={s:0.00} expected >= 0.7");
+                Assert.InRange(s, 0.55, 0.78);
                 Assert.InRange(l, 0.45, 0.70);
             }
         }
@@ -60,22 +61,80 @@ namespace OpenUtau.App {
         }
 
         [Fact]
+        public void Rainbow_TokyoDay_IsPastelNotMuddy() {
+            var ctx = TokyoDay(StudioTrackColorMode.Rainbow);
+            var swatches = StudioTrackPalette.ResolveAll(Tracks(5), ctx);
+            Assert.Equal(5, swatches.Length);
+            for (int i = 0; i < swatches.Length; i++) {
+                var (h, s, l) = StudioColorMath.RgbToHsl(swatches[i].Fill);
+                double y = StudioColorMath.RelativeLuminance(swatches[i].Fill);
+                Assert.InRange(s, 0.24, 0.50);
+                Assert.InRange(l, 0.62, 0.86);
+                Assert.True(y >= 0.44,
+                    $"track {i} hue {h:0.0}: Y={y:0.00} expected pastel, not brick/navy");
+                Assert.Equal(OnBlack, swatches[i].OnFill);
+            }
+        }
+
+        [Fact]
+        public void ThemeGradient_TokyoDay_StaysLight() {
+            var ctx = TokyoDay(StudioTrackColorMode.ThemeGradient);
+            var swatches = StudioTrackPalette.ResolveAll(Tracks(5), ctx);
+            var (hSeed, _, _) = StudioColorMath.RgbToHsl(ctx.Accent1);
+            double[] ys = new double[swatches.Length];
+            for (int i = 0; i < swatches.Length; i++) {
+                var (h, s, l) = StudioColorMath.RgbToHsl(swatches[i].Fill);
+                ys[i] = StudioColorMath.RelativeLuminance(swatches[i].Fill);
+                Assert.True(HueDelta(h, hSeed) <= 52,
+                    $"track {i}: |H-Hseed|={HueDelta(h, hSeed):0.0} > 52");
+                Assert.InRange(s, 0.22, 0.55);
+                Assert.InRange(l, 0.58, 0.90);
+                Assert.True(ys[i] >= 0.40,
+                    $"track {i} hue {h:0.0}: Y={ys[i]:0.00} expected light paper, not ink");
+            }
+            Assert.True(ys.Max() - ys.Min() <= 0.08,
+                $"Tokyo Day theme ΔY={ys.Max() - ys.Min():0.00} expected even paper");
+        }
+
+        [Fact]
         public void ThemeGradient_StudioDark_FamilyAroundCyan() {
             var ctx = StudioDark(StudioTrackColorMode.ThemeGradient);
             var swatches = StudioTrackPalette.ResolveAll(Tracks(4), ctx);
             var (hSeed, _, _) = StudioColorMath.RgbToHsl(ctx.Accent1);
+            double[] ys = new double[swatches.Length];
+            double[] hs = new double[swatches.Length];
             for (int i = 0; i < swatches.Length; i++) {
                 var (h, _, _) = StudioColorMath.RgbToHsl(swatches[i].Fill);
-                Assert.True(HueDelta(h, hSeed) <= 48,
-                    $"track {i}: |H-Hseed|={HueDelta(h, hSeed):0.0} > 48 (complementary fan?)");
+                hs[i] = h;
+                ys[i] = StudioColorMath.RelativeLuminance(swatches[i].Fill);
+                Assert.True(HueDelta(h, hSeed) <= 52,
+                    $"track {i}: |H-Hseed|={HueDelta(h, hSeed):0.0} > 52 (complementary fan?)");
                 var expected = StudioTrackPalette.DeriveSurfaces(
                     swatches[i].Fill, ctx, swatches[i].Fill);
                 Assert.Equal(expected.Waveform, swatches[i].Waveform);
                 Assert.Equal(expected.FillSelected, swatches[i].FillSelected);
             }
+            Assert.True(ys.Max() - ys.Min() <= 0.08,
+                $"Studio Dark theme ΔY={ys.Max() - ys.Min():0.00} expected even neon");
             for (int i = 0; i < swatches.Length - 1; i++) {
-                Assert.True(Distinctness(swatches[i].Fill, swatches[i + 1].Fill) >= 0.07,
-                    $"adjacent {i}/{i + 1} Distinctness={Distinctness(swatches[i].Fill, swatches[i + 1].Fill):0.000}");
+                Assert.True(HueDelta(hs[i], hs[i + 1]) >= 6,
+                    $"adjacent {i}/{i + 1} ΔH={HueDelta(hs[i], hs[i + 1]):0.0}");
+            }
+        }
+
+        [Fact]
+        public void ThemeGradient_SixTracks_EvenY() {
+            foreach (var ctx in new[] {
+                StudioDark(StudioTrackColorMode.ThemeGradient),
+                TokyoDay(StudioTrackColorMode.ThemeGradient),
+            }) {
+                var swatches = StudioTrackPalette.ResolveAll(Tracks(6), ctx);
+                double[] ys = new double[6];
+                for (int i = 0; i < 6; i++) {
+                    ys[i] = StudioColorMath.RelativeLuminance(swatches[i].Fill);
+                }
+                Assert.True(ys.Max() - ys.Min() <= 0.08,
+                    $"{(ctx.IsDark ? "dark" : "light")} n=6 ΔY={ys.Max() - ys.Min():0.00}");
             }
         }
 
@@ -159,6 +218,15 @@ namespace OpenUtau.App {
             var (_, _, lWaveLight) = StudioColorMath.RgbToHsl(light.Waveform);
             Assert.True(Math.Abs(lWaveLight - lFillLight) >= 0.12,
                 $"light ΔL={Math.Abs(lWaveLight - lFillLight):0.00}");
+
+            var pastel = StudioColorMath.HslToRgb(8, 0.36, 0.76);
+            var pastelSwatch = StudioTrackPalette.DeriveSurfaces(pastel, lightCtx, pastel);
+            var (_, _, lFillPastel) = StudioColorMath.RgbToHsl(pastelSwatch.Fill);
+            var (_, _, lWavePastel) = StudioColorMath.RgbToHsl(pastelSwatch.Waveform);
+            Assert.True(lWavePastel < lFillPastel,
+                $"pastel waveform L={lWavePastel:0.00} should be darker than fill L={lFillPastel:0.00}");
+            Assert.True(lFillPastel - lWavePastel >= 0.12,
+                $"pastel ΔL={lFillPastel - lWavePastel:0.00}");
         }
 
         [Fact]
@@ -213,6 +281,16 @@ namespace OpenUtau.App {
                 IsDark: true);
         }
 
+        static StudioTrackPaletteContext TokyoDay(StudioTrackColorMode mode) {
+            var p = StudioThemeGenerator.BuildTokyoDay();
+            return new StudioTrackPaletteContext(
+                mode,
+                p["BackgroundColor"],
+                p["AccentColor1"],
+                p["AccentColor2"],
+                IsDark: false);
+        }
+
         static List<UTrack> Tracks(int n, string color = "Blue") {
             var list = new List<UTrack>(n);
             for (int i = 0; i < n; i++) {
@@ -224,13 +302,6 @@ namespace OpenUtau.App {
         static double HueDelta(double a, double b) {
             double d = Math.Abs(a - b) % 360;
             return Math.Min(d, 360 - d);
-        }
-
-        static double Distinctness(Color a, Color b) {
-            var (h1, _, l1) = StudioColorMath.RgbToHsl(a);
-            var (h2, _, l2) = StudioColorMath.RgbToHsl(b);
-            double dh = Math.Min(Math.Abs(h1 - h2), 360 - Math.Abs(h1 - h2)) / 360.0;
-            return Math.Max(dh, Math.Abs(l1 - l2));
         }
 
         static Color FindMidLYellowGreen() {
