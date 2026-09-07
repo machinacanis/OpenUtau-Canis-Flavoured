@@ -49,3 +49,38 @@
 - `dotnet test OpenUtau.Test`：**401 通过 / 0 失败 / 1 跳过**（跳过的为 `DawRealPluginTest.RealPluginCompletesTheHandshakeAndPullsAudio`，需真实 DAW 插件，与上游行为一致）。
 - `python Misc/sync_strings.py`：已执行（见决策记录）。
 - `git diff --check`：无冲突标记。上游文件自带的尾随空格（`ENtoJAPhonemizer.cs`/`en2ja.template.yaml`/`fil2ja.template.yaml`/`Resources.Designer.cs`）按本 fork 一贯约定不改动；`OpenUtau.Core/DawIntegration/` 与 `OpenUtau.Test/Core/DawIntegration/` 与 `upstream/master` 逐字节一致。
+
+---
+
+## Merge 2026-09-07 2b03ad56
+
+- **时间**（UTC）：`2026-09-07T06:23:42Z`（合并提交 `11f98b1a` 完成时间）
+- **合并方式**：`git merge --no-ff --no-commit upstream/master`（merge-base `eaaf2e88`，即上次合并记录的上游基线；合并范围 `eaaf2e88..2b03ad56`）
+- **上游基线**：`2b03ad562fa6ee2937fdcfe24e790ad92c58064c` — Revert piano roll phrase bounds from WaveformImage
+
+### 引入的上游 commit（2 个，线性）
+
+| # | SHA | 主题 |
+| --- | --- | --- |
+| 1 | `f590e0830414714543fd69ab3ec3d615b0702f40` | ci: gate release publication on all build legs succeeding |
+| 2 | `2b03ad562fa6ee2937fdcfe24e790ad92c58064c` | Revert piano roll phrase bounds from WaveformImage |
+
+### 冲突
+
+仅 1 个文件有冲突标记（3 处）；其余 1 个文件（`build.yml`）由 ort 自动合并。冲突文件及来源：
+
+| 文件 | fork 侧来源 | 上游侧来源 |
+| --- | --- | --- |
+| `OpenUtau/Controls/WaveformImage.cs`（3 处冲突：常量区 / drawWidth 逐列绘制区 / DrawPeak 签名） | fork 自研波形实现：`f22f3a13` Studio 波形重写 + `bb832af7` 无音频留白 + `59f48d53`（明确不含 phrase bounds） | `ea676948` #2364（引入 phrase bounds 绘制，上游 `2b03ad56` 自身 revert 撤销） |
+
+### 决策记录
+
+- **`WaveformImage.cs` 全部 3 处冲突取 fork 侧（`--ours`）**：上游 `2b03ad56` 只是 revert 掉上游 `ea676948` #2364 顺带引入的 phrase-bounds 背景/边框绘制，并恢复旧 `DrawPeak`；这两段代码 fork 从未采纳（fork 波形是自研重写，`59f48d53`/`ff48a513` 已明确选择不含 phrase bounds）。冲突本质是"上游删一段 fork 没有的代码"与"fork 自研实现占住相同行号区域"的重叠。保留 fork 侧后，语义与上游 revert 意图一致——fork 波形同样不画 phrase bounds（已 grep 验证无 `WaveformBorderBrush`/`DrawGeometry`/bounds 绘制代码）。
+- **`build.yml` 自动合并，全部采纳**：上游 `f590e083` 重构发布流程（release job 门控 + artifact 常传 + alpha 标题保留 4 段版本号）。fork 从未改过此文件，合并零冲突。
+- **字符串同步**：本次未触碰任何 `Strings.*.axaml`，无需运行 `Misc/sync_strings.py`。
+
+### 已验证
+
+- `dotnet build OpenUtau -c Debug`：0 错误（1735 个警告为存量：Enunu CS0649/CS0414、AVLN3001 等，与上次合并记录一致）。
+- `dotnet test OpenUtau.Test`：**351 通过 / 60 失败 / 1 跳过**——与合并前 fork master `0afa4739` 的基线完全一致（在干净 master 上复跑全量测试得到相同 60 失败）。60 个失败（集中于 `EnToJaTest`、`PluginRunnerTest`、完整套件时序下的 `StringsTest` 等）为 fork master 存量问题，与本次合并无关：本次合并对 C# 代码零改动，仅 `build.yml`。`AppTest`（StringsTest）单独运行通过，失败仅在完整套件并行/时序下出现，属另一待查议题，不在本次合并范围。
+- `git diff --check`：无冲突标记残留。
