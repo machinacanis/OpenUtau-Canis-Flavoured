@@ -77,7 +77,7 @@ namespace OpenUtau.App.Studio {
             Color fillSelected = ctx.IsDark
                 ? StudioColorMath.HslToRgb(h, Math.Min(s + 0.05, 1), StudioColorMath.Clamp(l + 0.08, 0, 0.78))
                 : StudioColorMath.HslToRgb(h, Math.Min(s + 0.08, 1), StudioColorMath.Clamp(l - 0.06, 0.28, 1));
-            double lWave = WaveformL(l, ctx.IsDark);
+            double lWave = WaveformL(l);
             Color waveform = StudioColorMath.HslToRgb(h, Math.Min(s + 0.05, 1), lWave);
             Color centerKey = StudioColorMath.HslToRgb(
                 h, s * 0.45, ctx.IsDark ? Math.Min(l + 0.25, 0.85) : Math.Max(l - 0.15, 0.75));
@@ -115,8 +115,7 @@ namespace OpenUtau.App.Studio {
                     : ThemeFill(i, n, ctx, config);
             }
             if (!rainbow) {
-                EnforceNeighborDistinctness(fills, config);
-                ApplyLowChromaHueFallback(fills, n, config);
+                EnforceNeighborHueDistinctness(fills, ctx.IsDark, config);
             }
             var swatches = new StudioTrackSwatch[n];
             for (int i = 0; i < n; i++) {
@@ -136,8 +135,7 @@ namespace OpenUtau.App.Studio {
             TargetSL(ctx, out double sFill, out double lFill);
             s = Lerp(s, sFill, 0.30);
             l = Lerp(l, lFill, 0.30);
-            ApplyHueCompensation(h, ref s, ref l, ctx.IsDark);
-            Color fill = StudioColorMath.HslToRgb(h, s, l);
+            Color fill = FinishFill(h, s, l, ctx.IsDark);
             return DeriveSurfaces(fill, ctx, headerAccent: lut);
         }
 
@@ -165,8 +163,7 @@ namespace OpenUtau.App.Studio {
             int i, int n, StudioTrackPaletteContext ctx, StudioTrackColorConfig config) {
             double h = HueAt(i, n, config);
             TargetSL(ctx, out double s, out double l);
-            ApplyHueCompensation(h, ref s, ref l, ctx.IsDark);
-            return StudioColorMath.HslToRgb(h, s, l);
+            return FinishFill(h, s, l, ctx.IsDark);
         }
 
         static Color ThemeFill(
@@ -178,10 +175,25 @@ namespace OpenUtau.App.Studio {
             var (_, s2, _) = StudioColorMath.RgbToHsl(ctx.Accent2);
             TargetSL(ctx, out double sFill, out double lFill);
             double lowChromaSeed = config.GradientLowChromaSeedOrDefault;
-            double h = ThemeHue(i, n, hs, ss, s2, lowChromaSeed, config);
-            ThemeSL(i, ctx.IsDark, ss, sFill, lFill, out double s, out double l,
-                lowChromaSeed, config);
+            double h;
+            double s;
+            if (ss < lowChromaSeed && s2 < lowChromaSeed) {
+                h = HueAt(i, n, config);
+                s = Math.Max(sFill * config.GradientLowChromaSatScaleOrDefault,
+                    config.GradientLowChromaFallbackSOrDefault);
+            } else {
+                h = ThemeHue(i, n, hs, config);
+                s = sFill;
+            }
+            double l = LumaForThemeTrack(i, ctx.IsDark, lFill, config);
             ApplyHueCompensation(h, ref s, ref l, ctx.IsDark);
+            FitToTargetY(h, s, ref l, ctx.IsDark);
+            return StudioColorMath.HslToRgb(h, s, l);
+        }
+
+        static Color FinishFill(double h, double s, double l, bool isDark) {
+            ApplyHueCompensation(h, ref s, ref l, isDark);
+            FitRelativeLuminance(h, s, ref l, isDark);
             return StudioColorMath.HslToRgb(h, s, l);
         }
 
@@ -196,13 +208,10 @@ namespace OpenUtau.App.Studio {
             return HueMod(h0 - t * span);
         }
 
-        static double ThemeHue(
-            int i, int n, double hs, double ss, double s2,
-            double lowChromaSeed, StudioTrackColorConfig config) {
-            if (ss < lowChromaSeed && s2 < lowChromaSeed) {
-                return hs;
-            }
-            double span = GradientHueSpan(n, config);
+        static double ThemeHue(int i, int n, double hs, StudioTrackColorConfig config) {
+            double span = Math.Min(config.GradientMaxHueSpanOrDefault,
+                config.GradientBaseHueSpanOrDefault
+                + config.GradientHueSpanPerTrackOrDefault * n);
             if (n <= 1) {
                 return hs;
             }
@@ -210,86 +219,140 @@ namespace OpenUtau.App.Studio {
             return HueMod(hs - span + 2 * span * t);
         }
 
-        static double GradientHueSpan(int n, StudioTrackColorConfig config) {
-            double span = config.GradientBaseHueSpanOrDefault
-                + config.GradientHueSpanPerTrackOrDefault * n;
-            return Math.Min(span, config.GradientMaxHueSpanOrDefault);
-        }
-
-        static void ThemeSL(
-            int i, bool isDark, double ss, double sFill, double lFill,
-            out double s, out double l, double lowChromaSeed,
-            StudioTrackColorConfig config) {
+        /// <summary>
+        /// Theme fill lightness. By default every Theme track is fitted to the
+        /// same target relative luminance (a smooth family). The luma knobs add
+        /// an optional per-track sine wave around that target; amplitude 0 (the
+        /// default) keeps the flat equal-luminance fan.
+        /// </summary>
+        static double LumaForThemeTrack(
+            int i, bool isDark, double lFill, StudioTrackColorConfig config) {
             double amp = isDark
                 ? config.GradientDarkLumaAmpOrDefault
                 : config.GradientLightLumaAmpOrDefault;
+            if (Math.Abs(amp) < 1e-9) {
+                return lFill;
+            }
             double divisor = Math.Abs(config.GradientLumaWaveDivisorOrDefault) < 1e-9
                 ? StudioTrackColorParams.GradientLumaWaveDivisor
                 : config.GradientLumaWaveDivisorOrDefault;
-            l = StudioColorMath.Clamp(
+            return StudioColorMath.Clamp(
                 lFill + amp * Math.Sin(i * Math.PI / divisor), 0.34, 0.70);
-            s = ss < lowChromaSeed
-                ? Math.Max(sFill * 0.45, 0.22)
-                : Lerp(ss, sFill, 0.55);
         }
 
+        /// <summary>
+        /// Dark fills are neon on black (mid L, high S). Light fills are colored
+        /// paper on a pale ground (high L, low S) — not darkened jewel tones.
+        /// </summary>
         static void TargetSL(StudioTrackPaletteContext ctx, out double sFill, out double lFill) {
             var (_, sb, lb) = StudioColorMath.RgbToHsl(ctx.Background);
             if (ctx.IsDark) {
-                sFill = StudioColorMath.Clamp(0.72 + 0.15 * (0.35 - sb), 0.62, 0.90);
-                lFill = StudioColorMath.Clamp(0.58 - 0.10 * (lb - 0.08), 0.50, 0.64);
+                sFill = StudioColorMath.Clamp(0.68 + 0.08 * (0.35 - sb), 0.62, 0.75);
+                lFill = StudioColorMath.Clamp(0.56 - 0.08 * (lb - 0.08), 0.50, 0.62);
             } else {
-                sFill = StudioColorMath.Clamp(0.55 - 0.20 * sb, 0.40, 0.65);
-                lFill = StudioColorMath.Clamp(0.42 + 0.08 * (lb - 0.80), 0.38, 0.50);
+                sFill = StudioColorMath.Clamp(0.38 - 0.10 * sb, 0.28, 0.48);
+                lFill = StudioColorMath.Clamp(0.72 + 0.08 * (lb - 0.80), 0.66, 0.80);
             }
         }
 
         static void ApplyHueCompensation(double h, ref double s, ref double l, bool isDark) {
             h = HueMod(h);
-            if (h >= 45 && h <= 75) {
-                l = Math.Min(l, isDark ? 0.52 : 0.40);
-                s = Math.Min(s, 0.78);
-            }
-            if (h >= 170 && h <= 200) {
-                l = Math.Min(l, isDark ? 0.55 : 0.42);
+            if (isDark) {
+                if (h >= 45 && h <= 75) {
+                    l = Math.Min(l, 0.52);
+                    s = Math.Min(s, 0.72);
+                }
+                if (h >= 90 && h <= 140) {
+                    s = Math.Min(s, 0.58);
+                }
+                if (h >= 170 && h <= 200) {
+                    l = Math.Min(l, 0.55);
+                }
+                if (h >= 280 && h <= 320) {
+                    s = Math.Min(s, 0.62);
+                }
+            } else {
+                if (h <= 30 || h >= 330) {
+                    s = Math.Min(s, 0.42);
+                }
+                if (h >= 45 && h <= 140) {
+                    s = Math.Min(s, 0.40);
+                }
             }
         }
 
-        static void EnforceNeighborDistinctness(
-            Color[] fills, StudioTrackColorConfig config) {
-            double distinctMin = config.GradientNeighborDistinctMinOrDefault;
-            double push = config.GradientNeighborLightnessPushOrDefault;
+        /// <summary>
+        /// HSL L is not perceptual. Lift navy/brick on light paper; lift navy
+        /// on dark. Lime/cyan glare is handled by saturation cuts, not by
+        /// pulling L into mud.
+        /// </summary>
+        static void FitRelativeLuminance(double h, double s, ref double l, bool isDark) {
+            double yMin = isDark ? 0.14 : 0.46;
+            double yMax = isDark ? 1.0 : 0.68;
+            double lo = isDark ? 0.48 : 0.66;
+            double hi = isDark ? 0.64 : 0.84;
+            double y = StudioColorMath.RelativeLuminance(StudioColorMath.HslToRgb(h, s, l));
+            if (y >= yMin && y <= yMax) {
+                return;
+            }
+            for (int i = 0; i < 10; i++) {
+                double mid = (lo + hi) * 0.5;
+                y = StudioColorMath.RelativeLuminance(StudioColorMath.HslToRgb(h, s, mid));
+                if (y < yMin) {
+                    lo = mid;
+                } else if (y > yMax) {
+                    hi = mid;
+                } else {
+                    l = mid;
+                    return;
+                }
+            }
+            l = (lo + hi) * 0.5;
+        }
+
+        /// <summary>
+        /// Theme fan: every Track sits on the same relative luminance so the
+        /// hue sweep reads as a smooth family, not a lightness sawtooth.
+        /// </summary>
+        static void FitToTargetY(double h, double s, ref double l, bool isDark) {
+            double yTarget = isDark ? 0.32 : 0.52;
+            double lo = isDark ? 0.36 : 0.60;
+            double hi = isDark ? 0.80 : 0.88;
+            for (int i = 0; i < 12; i++) {
+                double mid = (lo + hi) * 0.5;
+                double y = StudioColorMath.RelativeLuminance(StudioColorMath.HslToRgb(h, s, mid));
+                if (y < yTarget) {
+                    lo = mid;
+                } else {
+                    hi = mid;
+                }
+            }
+            l = (lo + hi) * 0.5;
+        }
+
+        /// <summary>
+        /// Adjacent theme tracks keep at least <see cref="StudioTrackColorConfig.GradientNeighborHueMinOrDefault"/>
+        /// degrees of hue separation; when two are too close the later one is
+        /// pushed away by <see cref="StudioTrackColorConfig.GradientNeighborHuePushOrDefault"/>.
+        /// </summary>
+        static void EnforceNeighborHueDistinctness(
+            Color[] fills, bool isDark, StudioTrackColorConfig config) {
+            double minDeg = config.GradientNeighborHueMinOrDefault;
+            double pushDeg = config.GradientNeighborHuePushOrDefault;
+            if (minDeg <= 0) {
+                return;
+            }
             for (int i = 0; i < fills.Length - 1; i++) {
-                if (Distinctness(fills[i], fills[i + 1]) >= distinctMin) {
+                var (h1, _, _) = StudioColorMath.RgbToHsl(fills[i]);
+                var (h2, s2, l2) = StudioColorMath.RgbToHsl(fills[i + 1]);
+                double dh = Math.Min(Math.Abs(h1 - h2), 360 - Math.Abs(h1 - h2));
+                if (dh >= minDeg) {
                     continue;
                 }
-                var (_, _, l1) = StudioColorMath.RgbToHsl(fills[i]);
-                var (h2, s2, l2) = StudioColorMath.RgbToHsl(fills[i + 1]);
-                l2 = l2 >= l1 ? l2 + push : l2 - push;
-                l2 = StudioColorMath.Clamp(l2, 0, 1);
+                h2 = HueMod(h2 + pushDeg);
+                FitToTargetY(h2, s2, ref l2, isDark);
                 fills[i + 1] = StudioColorMath.HslToRgb(h2, s2, l2);
             }
-        }
-
-        static void ApplyLowChromaHueFallback(
-            Color[] fills, int n, StudioTrackColorConfig config) {
-            double distinctMin = config.GradientLowChromaDistinctMinOrDefault;
-            double fallbackS = config.GradientLowChromaFallbackSOrDefault;
-            for (int i = 0; i < fills.Length - 1; i++) {
-                if (Distinctness(fills[i], fills[i + 1]) >= distinctMin) {
-                    continue;
-                }
-                var (_, _, l) = StudioColorMath.RgbToHsl(fills[i + 1]);
-                fills[i + 1] = StudioColorMath.HslToRgb(
-                    HueAt(i + 1, n, config), fallbackS, l);
-            }
-        }
-
-        static double Distinctness(Color a, Color b) {
-            var (h1, _, l1) = StudioColorMath.RgbToHsl(a);
-            var (h2, _, l2) = StudioColorMath.RgbToHsl(b);
-            double dh = Math.Min(Math.Abs(h1 - h2), 360 - Math.Abs(h1 - h2)) / 360.0;
-            return Math.Max(dh, Math.Abs(l1 - l2));
         }
 
         static Color PickOnFill(Color fill) {
@@ -298,8 +361,8 @@ namespace OpenUtau.App.Studio {
             return cW >= cB ? OnWhite : OnBlack;
         }
 
-        static double WaveformL(double l, bool dark) {
-            double sign = dark ? -1 : 1;
+        static double WaveformL(double l) {
+            double sign = l >= 0.5 ? -1 : 1;
             double result = StudioColorMath.Clamp(l + sign * 0.22, 0.18, 0.85);
             if (Math.Abs(result - l) < 0.12) {
                 result = StudioColorMath.Clamp(l + sign * 0.12, 0, 1);

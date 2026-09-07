@@ -4,7 +4,7 @@ namespace OpenUtau.App.Studio {
     /// <summary>
     /// Default constants of the Studio track palette algorithms. Keeping the
     /// numbers next to the algorithms makes presets override them with the
-    /// exact legacy defaults.
+    /// exact defaults.
     /// </summary>
     public static class StudioTrackColorParams {
         // Rainbow
@@ -17,34 +17,34 @@ namespace OpenUtau.App.Studio {
 
         // Theme gradient
         /// <summary>Base hue span around the theme accent (degrees).</summary>
-        public const double GradientBaseHueSpan = 18.0;
+        public const double GradientBaseHueSpan = 14.0;
         /// <summary>Extra hue span per additional gradient track (degrees).</summary>
-        public const double GradientHueSpanPerTrack = 2.5;
+        public const double GradientHueSpanPerTrack = 4.0;
         /// <summary>Maximum gradient hue span (degrees).</summary>
-        public const double GradientMaxHueSpan = 48.0;
+        public const double GradientMaxHueSpan = 52.0;
         /// <summary>Theme accent saturation below which a low-chroma ramp is used.</summary>
         public const double GradientLowChromaSeed = 0.12;
-        /// <summary>Minimum hue difference between adjacent theme-gradient tracks.</summary>
-        public const double GradientNeighborDistinctMin = 0.07;
-        /// <summary>Lightness push applied when adjacent gradients are too close.</summary>
-        public const double GradientNeighborLightnessPush = 0.08;
-        /// <summary>Saturation of the low-chroma fallback ramp.</summary>
-        public const double GradientLowChromaFallbackS = 0.28;
-        /// <summary>Minimum distinctness required before low-chroma hue fallback.</summary>
-        public const double GradientLowChromaDistinctMin = 0.05;
-        /// <summary>Dark-theme lightness amplitude along the gradient.</summary>
-        public const double GradientDarkLumaAmp = 0.07;
-        /// <summary>Light-theme lightness amplitude along the gradient.</summary>
-        public const double GradientLightLumaAmp = 0.06;
+        /// <summary>Minimum hue separation between adjacent theme-gradient tracks (degrees).</summary>
+        public const double GradientNeighborHueMin = 6.0;
+        /// <summary>Hue offset applied when adjacent gradients are too close (degrees).</summary>
+        public const double GradientNeighborHuePush = 8.0;
+        /// <summary>Saturation scale (multiplier) of the low-chroma ramp fills.</summary>
+        public const double GradientLowChromaSatScale = 0.45;
+        /// <summary>Saturation floor of the low-chroma ramp fills.</summary>
+        public const double GradientLowChromaFallbackS = 0.22;
+        /// <summary>Dark-theme amplitude of the optional per-track luma wave (0 = off).</summary>
+        public const double GradientDarkLumaAmp = 0.0;
+        /// <summary>Light-theme amplitude of the optional per-track luma wave (0 = off).</summary>
+        public const double GradientLightLumaAmp = 0.0;
         /// <summary>Luma-wave phase divisor (2.5 ≈ 5/2 rad per track step).</summary>
         public const double GradientLumaWaveDivisor = 2.5;
     }
 
     /// <summary>
     /// User-tunable track palette parameters. When a preset omits a field the
-    /// default (legacy algorithm) value is used. Non-finite and out-of-range
-    /// values from hand-written presets are sanitized by the OrDefault getters
-    /// before they reach the palette algorithms.
+    /// default value is used. Non-finite and out-of-range values from
+    /// hand-written presets are sanitized by the OrDefault getters before they
+    /// reach the palette algorithms.
     /// </summary>
     public sealed class StudioTrackColorConfig {
         public double? RainbowStartHue { get; set; }
@@ -54,10 +54,10 @@ namespace OpenUtau.App.Studio {
         public double? GradientHueSpanPerTrack { get; set; }
         public double? GradientMaxHueSpan { get; set; }
         public double? GradientLowChromaSeed { get; set; }
-        public double? GradientNeighborDistinctMin { get; set; }
-        public double? GradientNeighborLightnessPush { get; set; }
+        public double? GradientNeighborHueMin { get; set; }
+        public double? GradientNeighborHuePush { get; set; }
+        public double? GradientLowChromaSatScale { get; set; }
         public double? GradientLowChromaFallbackS { get; set; }
-        public double? GradientLowChromaDistinctMin { get; set; }
         public double? GradientDarkLumaAmp { get; set; }
         public double? GradientLightLumaAmp { get; set; }
         public double? GradientLumaWaveDivisor { get; set; }
@@ -76,14 +76,14 @@ namespace OpenUtau.App.Studio {
             Sanitize(GradientMaxHueSpan, StudioTrackColorParams.GradientMaxHueSpan, 1, 180);
         public double GradientLowChromaSeedOrDefault =>
             Sanitize(GradientLowChromaSeed, StudioTrackColorParams.GradientLowChromaSeed, 0, 0.5);
-        public double GradientNeighborDistinctMinOrDefault =>
-            Sanitize(GradientNeighborDistinctMin, StudioTrackColorParams.GradientNeighborDistinctMin, 0, 1);
-        public double GradientNeighborLightnessPushOrDefault =>
-            Sanitize(GradientNeighborLightnessPush, StudioTrackColorParams.GradientNeighborLightnessPush, 0, 0.5);
+        public double GradientNeighborHueMinOrDefault =>
+            Sanitize(GradientNeighborHueMin, StudioTrackColorParams.GradientNeighborHueMin, 0, 360);
+        public double GradientNeighborHuePushOrDefault =>
+            Sanitize(GradientNeighborHuePush, StudioTrackColorParams.GradientNeighborHuePush, 0, 360);
+        public double GradientLowChromaSatScaleOrDefault =>
+            Sanitize(GradientLowChromaSatScale, StudioTrackColorParams.GradientLowChromaSatScale, 0, 1);
         public double GradientLowChromaFallbackSOrDefault =>
             Sanitize(GradientLowChromaFallbackS, StudioTrackColorParams.GradientLowChromaFallbackS, 0, 1);
-        public double GradientLowChromaDistinctMinOrDefault =>
-            Sanitize(GradientLowChromaDistinctMin, StudioTrackColorParams.GradientLowChromaDistinctMin, 0, 1);
         public double GradientDarkLumaAmpOrDefault =>
             Sanitize(GradientDarkLumaAmp, StudioTrackColorParams.GradientDarkLumaAmp, 0, 0.3);
         public double GradientLightLumaAmpOrDefault =>
@@ -101,9 +101,9 @@ namespace OpenUtau.App.Studio {
         public static StudioTrackColorConfig Default() => new();
 
         /// <summary>
-        /// Full explicit set at the legacy default values. Presets saved through
-        /// the UI persist this complete set so files round-trip; the algorithm
-        /// falls back per-field via the OrDefault getters.
+        /// Full explicit set at the default values. Presets saved through the UI
+        /// persist this complete set so files round-trip; the algorithm falls
+        /// back per-field via the OrDefault getters.
         /// </summary>
         public static StudioTrackColorConfig FromCurrent() => new() {
             RainbowStartHue = StudioTrackColorParams.RainbowStartHue,
@@ -113,10 +113,10 @@ namespace OpenUtau.App.Studio {
             GradientHueSpanPerTrack = StudioTrackColorParams.GradientHueSpanPerTrack,
             GradientMaxHueSpan = StudioTrackColorParams.GradientMaxHueSpan,
             GradientLowChromaSeed = StudioTrackColorParams.GradientLowChromaSeed,
-            GradientNeighborDistinctMin = StudioTrackColorParams.GradientNeighborDistinctMin,
-            GradientNeighborLightnessPush = StudioTrackColorParams.GradientNeighborLightnessPush,
+            GradientNeighborHueMin = StudioTrackColorParams.GradientNeighborHueMin,
+            GradientNeighborHuePush = StudioTrackColorParams.GradientNeighborHuePush,
+            GradientLowChromaSatScale = StudioTrackColorParams.GradientLowChromaSatScale,
             GradientLowChromaFallbackS = StudioTrackColorParams.GradientLowChromaFallbackS,
-            GradientLowChromaDistinctMin = StudioTrackColorParams.GradientLowChromaDistinctMin,
             GradientDarkLumaAmp = StudioTrackColorParams.GradientDarkLumaAmp,
             GradientLightLumaAmp = StudioTrackColorParams.GradientLightLumaAmp,
             GradientLumaWaveDivisor = StudioTrackColorParams.GradientLumaWaveDivisor,

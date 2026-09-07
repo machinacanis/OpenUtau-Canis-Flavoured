@@ -17,8 +17,8 @@ namespace OpenUtau.App {
             Assert.NotNull(back);
             Assert.Equal(StudioTrackColorParams.RainbowStartHue,
                 back!.Ui.TrackColorConfig!.RainbowStartHueOrDefault);
-            Assert.Equal(StudioTrackColorParams.GradientNeighborDistinctMin,
-                back.Ui.TrackColorConfig.GradientNeighborDistinctMinOrDefault);
+            Assert.Equal(StudioTrackColorParams.GradientNeighborHueMin,
+                back.Ui.TrackColorConfig.GradientNeighborHueMinOrDefault);
             Assert.Equal(StudioTrackColorParams.GradientLightLumaAmp,
                 back.Ui.TrackColorConfig.GradientLightLumaAmpOrDefault);
         }

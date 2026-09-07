@@ -132,10 +132,10 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial double GradientHueSpanPerTrack { get; set; }
         [Reactive] public partial double GradientMaxHueSpan { get; set; }
         [Reactive] public partial double GradientLowChromaSeed { get; set; }
-        [Reactive] public partial double GradientNeighborDistinctMin { get; set; }
-        [Reactive] public partial double GradientNeighborLightnessPush { get; set; }
+        [Reactive] public partial double GradientNeighborHueMin { get; set; }
+        [Reactive] public partial double GradientNeighborHuePush { get; set; }
         [Reactive] public partial double GradientLowChromaFallbackS { get; set; }
-        [Reactive] public partial double GradientLowChromaDistinctMin { get; set; }
+        [Reactive] public partial double GradientLowChromaSatScale { get; set; }
         [Reactive] public partial double GradientDarkLumaAmp { get; set; }
         [Reactive] public partial double GradientLightLumaAmp { get; set; }
         [Reactive] public partial double GradientLumaWaveDivisor { get; set; }
@@ -153,10 +153,10 @@ namespace OpenUtau.App.ViewModels {
             nameof(GradientHueSpanPerTrack),
             nameof(GradientMaxHueSpan),
             nameof(GradientLowChromaSeed),
-            nameof(GradientNeighborDistinctMin),
-            nameof(GradientNeighborLightnessPush),
+            nameof(GradientNeighborHueMin),
+            nameof(GradientNeighborHuePush),
             nameof(GradientLowChromaFallbackS),
-            nameof(GradientLowChromaDistinctMin),
+            nameof(GradientLowChromaSatScale),
             nameof(GradientDarkLumaAmp),
             nameof(GradientLightLumaAmp),
             nameof(GradientLumaWaveDivisor),
@@ -353,10 +353,10 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             GradientHueSpanPerTrack = Preferences.Default.GradientHueSpanPerTrack;
             GradientMaxHueSpan = Preferences.Default.GradientMaxHueSpan;
             GradientLowChromaSeed = Preferences.Default.GradientLowChromaSeed;
-            GradientNeighborDistinctMin = Preferences.Default.GradientNeighborDistinctMin;
-            GradientNeighborLightnessPush = Preferences.Default.GradientNeighborLightnessPush;
+            GradientNeighborHueMin = Preferences.Default.GradientNeighborHueMin;
+            GradientNeighborHuePush = Preferences.Default.GradientNeighborHuePush;
             GradientLowChromaFallbackS = Preferences.Default.GradientLowChromaFallbackS;
-            GradientLowChromaDistinctMin = Preferences.Default.GradientLowChromaDistinctMin;
+            GradientLowChromaSatScale = Preferences.Default.GradientLowChromaSatScale;
             GradientDarkLumaAmp = Preferences.Default.GradientDarkLumaAmp;
             GradientLightLumaAmp = Preferences.Default.GradientLightLumaAmp;
             GradientLumaWaveDivisor = Preferences.Default.GradientLumaWaveDivisor;
@@ -544,14 +544,14 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                 .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientMaxHueSpan = v));
             this.WhenAnyValue(vm => vm.GradientLowChromaSeed)
                 .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientLowChromaSeed = v));
-            this.WhenAnyValue(vm => vm.GradientNeighborDistinctMin)
-                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientNeighborDistinctMin = v));
-            this.WhenAnyValue(vm => vm.GradientNeighborLightnessPush)
-                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientNeighborLightnessPush = v));
+            this.WhenAnyValue(vm => vm.GradientNeighborHueMin)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientNeighborHueMin = v));
+            this.WhenAnyValue(vm => vm.GradientNeighborHuePush)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientNeighborHuePush = v));
             this.WhenAnyValue(vm => vm.GradientLowChromaFallbackS)
                 .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientLowChromaFallbackS = v));
-            this.WhenAnyValue(vm => vm.GradientLowChromaDistinctMin)
-                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientLowChromaDistinctMin = v));
+            this.WhenAnyValue(vm => vm.GradientLowChromaSatScale)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientLowChromaSatScale = v));
             this.WhenAnyValue(vm => vm.GradientDarkLumaAmp)
                 .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientDarkLumaAmp = v));
             this.WhenAnyValue(vm => vm.GradientLightLumaAmp)
@@ -1103,10 +1103,10 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                 if (c.GradientHueSpanPerTrack.HasValue) Preferences.Default.GradientHueSpanPerTrack = c.GradientHueSpanPerTrack.Value;
                 if (c.GradientMaxHueSpan.HasValue) Preferences.Default.GradientMaxHueSpan = c.GradientMaxHueSpan.Value;
                 if (c.GradientLowChromaSeed.HasValue) Preferences.Default.GradientLowChromaSeed = c.GradientLowChromaSeed.Value;
-                if (c.GradientNeighborDistinctMin.HasValue) Preferences.Default.GradientNeighborDistinctMin = c.GradientNeighborDistinctMin.Value;
-                if (c.GradientNeighborLightnessPush.HasValue) Preferences.Default.GradientNeighborLightnessPush = c.GradientNeighborLightnessPush.Value;
+                if (c.GradientNeighborHueMin.HasValue) Preferences.Default.GradientNeighborHueMin = c.GradientNeighborHueMin.Value;
+                if (c.GradientNeighborHuePush.HasValue) Preferences.Default.GradientNeighborHuePush = c.GradientNeighborHuePush.Value;
                 if (c.GradientLowChromaFallbackS.HasValue) Preferences.Default.GradientLowChromaFallbackS = c.GradientLowChromaFallbackS.Value;
-                if (c.GradientLowChromaDistinctMin.HasValue) Preferences.Default.GradientLowChromaDistinctMin = c.GradientLowChromaDistinctMin.Value;
+                if (c.GradientLowChromaSatScale.HasValue) Preferences.Default.GradientLowChromaSatScale = c.GradientLowChromaSatScale.Value;
                 if (c.GradientDarkLumaAmp.HasValue) Preferences.Default.GradientDarkLumaAmp = c.GradientDarkLumaAmp.Value;
                 if (c.GradientLightLumaAmp.HasValue) Preferences.Default.GradientLightLumaAmp = c.GradientLightLumaAmp.Value;
                 if (c.GradientLumaWaveDivisor.HasValue) Preferences.Default.GradientLumaWaveDivisor = c.GradientLumaWaveDivisor.Value;
@@ -1188,10 +1188,10 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             GradientHueSpanPerTrack = Preferences.Default.GradientHueSpanPerTrack;
             GradientMaxHueSpan = Preferences.Default.GradientMaxHueSpan;
             GradientLowChromaSeed = Preferences.Default.GradientLowChromaSeed;
-            GradientNeighborDistinctMin = Preferences.Default.GradientNeighborDistinctMin;
-            GradientNeighborLightnessPush = Preferences.Default.GradientNeighborLightnessPush;
+            GradientNeighborHueMin = Preferences.Default.GradientNeighborHueMin;
+            GradientNeighborHuePush = Preferences.Default.GradientNeighborHuePush;
             GradientLowChromaFallbackS = Preferences.Default.GradientLowChromaFallbackS;
-            GradientLowChromaDistinctMin = Preferences.Default.GradientLowChromaDistinctMin;
+            GradientLowChromaSatScale = Preferences.Default.GradientLowChromaSatScale;
             GradientDarkLumaAmp = Preferences.Default.GradientDarkLumaAmp;
             GradientLightLumaAmp = Preferences.Default.GradientLightLumaAmp;
             GradientLumaWaveDivisor = Preferences.Default.GradientLumaWaveDivisor;
@@ -1208,10 +1208,10 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                 && Match(config.GradientHueSpanPerTrack, Preferences.Default.GradientHueSpanPerTrack)
                 && Match(config.GradientMaxHueSpan, Preferences.Default.GradientMaxHueSpan)
                 && Match(config.GradientLowChromaSeed, Preferences.Default.GradientLowChromaSeed)
-                && Match(config.GradientNeighborDistinctMin, Preferences.Default.GradientNeighborDistinctMin)
-                && Match(config.GradientNeighborLightnessPush, Preferences.Default.GradientNeighborLightnessPush)
+                && Match(config.GradientNeighborHueMin, Preferences.Default.GradientNeighborHueMin)
+                && Match(config.GradientNeighborHuePush, Preferences.Default.GradientNeighborHuePush)
                 && Match(config.GradientLowChromaFallbackS, Preferences.Default.GradientLowChromaFallbackS)
-                && Match(config.GradientLowChromaDistinctMin, Preferences.Default.GradientLowChromaDistinctMin)
+                && Match(config.GradientLowChromaSatScale, Preferences.Default.GradientLowChromaSatScale)
                 && Match(config.GradientDarkLumaAmp, Preferences.Default.GradientDarkLumaAmp)
                 && Match(config.GradientLightLumaAmp, Preferences.Default.GradientLightLumaAmp)
                 && Match(config.GradientLumaWaveDivisor, Preferences.Default.GradientLumaWaveDivisor);
@@ -1251,10 +1251,10 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                 GradientHueSpanPerTrack = Preferences.Default.GradientHueSpanPerTrack,
                 GradientMaxHueSpan = Preferences.Default.GradientMaxHueSpan,
                 GradientLowChromaSeed = Preferences.Default.GradientLowChromaSeed,
-                GradientNeighborDistinctMin = Preferences.Default.GradientNeighborDistinctMin,
-                GradientNeighborLightnessPush = Preferences.Default.GradientNeighborLightnessPush,
+                GradientNeighborHueMin = Preferences.Default.GradientNeighborHueMin,
+                GradientNeighborHuePush = Preferences.Default.GradientNeighborHuePush,
                 GradientLowChromaFallbackS = Preferences.Default.GradientLowChromaFallbackS,
-                GradientLowChromaDistinctMin = Preferences.Default.GradientLowChromaDistinctMin,
+                GradientLowChromaSatScale = Preferences.Default.GradientLowChromaSatScale,
                 GradientDarkLumaAmp = Preferences.Default.GradientDarkLumaAmp,
                 GradientLightLumaAmp = Preferences.Default.GradientLightLumaAmp,
                 GradientLumaWaveDivisor = Preferences.Default.GradientLumaWaveDivisor,

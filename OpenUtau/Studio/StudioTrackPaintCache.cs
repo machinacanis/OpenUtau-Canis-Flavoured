@@ -104,8 +104,9 @@ namespace OpenUtau.App.Studio {
 
         /// <summary>
         /// Builds the tunable set from the global preferences (the runtime
-        /// "current values" the settings page edits directly). Legacy defaults
-        /// match the pre-config algorithm constants exactly.
+        /// "current values" the settings page edits directly). The defaults in
+        /// <see cref="StudioTrackColorParams"/> reproduce the fixed algorithm
+        /// constants exactly when a preset omits a field.
         /// </summary>
         static StudioTrackColorConfig LoadConfig() => new() {
             RainbowStartHue = Preferences.Default.RainbowStartHue,
@@ -115,10 +116,10 @@ namespace OpenUtau.App.Studio {
             GradientHueSpanPerTrack = Preferences.Default.GradientHueSpanPerTrack,
             GradientMaxHueSpan = Preferences.Default.GradientMaxHueSpan,
             GradientLowChromaSeed = Preferences.Default.GradientLowChromaSeed,
-            GradientNeighborDistinctMin = Preferences.Default.GradientNeighborDistinctMin,
-            GradientNeighborLightnessPush = Preferences.Default.GradientNeighborLightnessPush,
+            GradientNeighborHueMin = Preferences.Default.GradientNeighborHueMin,
+            GradientNeighborHuePush = Preferences.Default.GradientNeighborHuePush,
             GradientLowChromaFallbackS = Preferences.Default.GradientLowChromaFallbackS,
-            GradientLowChromaDistinctMin = Preferences.Default.GradientLowChromaDistinctMin,
+            GradientLowChromaSatScale = Preferences.Default.GradientLowChromaSatScale,
             GradientDarkLumaAmp = Preferences.Default.GradientDarkLumaAmp,
             GradientLightLumaAmp = Preferences.Default.GradientLightLumaAmp,
             GradientLumaWaveDivisor = Preferences.Default.GradientLumaWaveDivisor,
