@@ -149,4 +149,13 @@
   </LinearGradientBrush >
   <SolidColorBrush x:Key="BlackKeyNameBrush"
                    Color="{DynamicResource BlackKeyNameColor}"/>
+
+  <!-- Studio UI: Studio One style mute / solo button states.
+       Fixed colors so they read the same in every Studio palette. -->
+  <SolidColorBrush x:Key="TrackMuteBrush" Color="#E04A4A"/>
+  <SolidColorBrush x:Key="TrackMuteBorderBrush" Color="#F07070"/>
+  <SolidColorBrush x:Key="OnTrackMuteBrush" Color="#FFFFFF"/>
+  <SolidColorBrush x:Key="TrackSoloBrush" Color="#E8B84B"/>
+  <SolidColorBrush x:Key="TrackSoloBorderBrush" Color="#F5D07A"/>
+  <SolidColorBrush x:Key="OnTrackSoloBrush" Color="#1A1A1A"/>
 </ResourceDictionary>

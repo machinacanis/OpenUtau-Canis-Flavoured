@@ -1,6 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <!-- Studio-only chrome. Loaded only when Preferences.UseStudioUI is on. -->
+  <StyleInclude Source="avares://OpenUtau/Styles/StudioOneControls.axaml"/>
   <Style Selector="GridSplitter.panel">
     <Setter Property="Background" Value="{DynamicResource AccentBrush2}"/>
     <Setter Property="MinHeight" Value="2"/>

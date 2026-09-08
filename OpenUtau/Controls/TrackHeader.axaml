@@ -210,8 +210,8 @@
           </Button.Flyout>
         </Button>
       </Grid>
-      <StackPanel Grid.Column="2">
-        <ToggleButton Classes="toolbar" Grid.Row="1" Grid.Column="3" Margin="1" Padding="0" Height="17"
+      <StackPanel x:Name="HeaderButtons" Grid.Column="2">
+        <ToggleButton x:Name="MuteButton" Classes="toolbar s1 mute" Grid.Row="1" Grid.Column="3" Margin="1" Padding="0" Height="17"
                       HorizontalAlignment="Stretch" ToolTip.Tip="{DynamicResource tracks.mute}"
                       IsChecked="{Binding Mute, Mode=OneWay}" Command="{Binding ToggleMute}">
           <Path Classes="filled" Width="24" Height="24"
@@ -225,7 +225,7 @@
             </ContextMenu>
           </ToggleButton.ContextMenu>
         </ToggleButton>
-        <ToggleButton Classes="toolbar" Grid.Row="2" Grid.Column="3" Margin="1" Padding="0" Height="17"
+        <ToggleButton x:Name="SoloButton" Classes="toolbar s1 solo" Grid.Row="2" Grid.Column="3" Margin="1" Padding="0" Height="17"
                       HorizontalAlignment="Stretch" ToolTip.Tip="{DynamicResource tracks.solo}"
                       IsChecked="{Binding Solo, Mode=OneWay}" Command="{Binding ToggleSolo}">
           <Path Classes="filled" Width="24" Height="24"
@@ -238,7 +238,7 @@
             </ContextMenu>
           </ToggleButton.ContextMenu>
         </ToggleButton>
-        <Button Grid.Row="3" Grid.Column="3" Classes="toolbar fxButton" Margin="1" Height="17"
+        <Button x:Name="FxButton" Grid.Row="3" Grid.Column="3" Classes="toolbar s1 fxButton" Margin="1" Height="17"
                       HorizontalAlignment="Stretch" ToolTip.Tip="{DynamicResource tracks.mixfx}"
                       Classes.fxOn="{Binding MixFxEnabled}"
                       Command="{Binding OpenMixFxDialog}">
