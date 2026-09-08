@@ -164,10 +164,12 @@ public static class StudioTrackLayout {
 
 ## 8. 提交拆分
 
-1. `feat(studio ui): compact default track height`
-2. `feat(studio ui): track header color bar`
-3. `feat(studio ui): reusable studio one button skin`
-4. `test(studio ui): headless chrome tests and test app bootstrap`
+1. `test(studio ui): bootstrap headless UI tests and thread-safe track colors`
+2. `feat(studio ui): compact default track height`
+3. `feat(studio ui): track header color bar`
+4. `feat(studio ui): reusable studio one button skin`
+5. `feat(studio ui): refine the button skin to the studio one look`（见 §10）
+6. `docs(studio ui): record the track header plan and conventions`
 
 配套：`AGENTS.md` Studio UI 段落已补 3 条（默认高度/彩色条；`.s1` 皮肤约定；样式优先级）。
 `MERGE_LOG.md` 不涉及（非上游合并）。
@@ -177,3 +179,29 @@ public static class StudioTrackLayout {
 - 皮肤复用的后续候选（本次不做）：钢琴卷帘工具栏、表情面板、走带按钮——届时只加类名。
 - 63px 偏紧：按钮可退 `Height=17`（已是），或色条降到 4px（一行常量）。
 - 范围外：轨道头整体重排（M/S 移到色条右侧、名字行加波形缩略图）。
+
+## 10. 第二轮：按钮质感细化（验收后返工）
+
+第一版（§4）上线后用户验收：功能正确，但按钮质感与 Studio One 差距明显。对照截图定位到 4 个问题并逐条修：
+
+| 问题 | 第一版 | 第二版 |
+| --- | --- | --- |
+| 亮色描边（wireframe 感） | `BorderBrush = NeutralAccentBrushPointerOver`（比填充亮） | 发丝级暗边 `StudioButtonEdgeBrush`（= `BackgroundColorPressed`） |
+| 平面填充 | 单色 `NeutralAccentBrush` | 顶部微亮的渐变 `StudioButtonBrush`（`NeutralAccentColorPointerOver` → `NeutralAccentColor`），给出体积感 |
+| 字形又细又灰 | `Path` 仅 `Fill`，色为 `ForegroundColor` | `Fill` + `Stroke` 同色 + `StrokeThickness=0.5`（细描边让矢量字变粗），色为纯白 `ForegroundColorPointerOver`；fx 文字同理转白 |
+| 比例过宽 | 拉伸到列宽 26px | `Width=22` 居中（去掉冗余的 `HorizontalAlignment="Stretch"`，经典模式默认仍是 Stretch，无回归） |
+
+另外：激活态改为**平色块**（边框跟随填充，不再有亮边），悬停仍提亮一档；圆角 3 → 4。
+
+新增固定/主题驱动刷子（`Colors/Brushes.axaml`）：`StudioButtonBrush`（渐变）、
+`StudioButtonHoverBrush`、`StudioButtonPressedBrush`、`StudioButtonEdgeBrush`。
+
+**验证方式（可复现）**：写一个临时控制台工程引用 `OpenUtau.csproj`，用
+`AppBuilder.Configure<App>().UseReactiveUI(...).UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })`
+起一个离屏 app，`App.SetTheme()` 后把若干 `TrackHeader` 放进 `Window`，
+`window.SetRenderScaling(2)` + `window.CaptureRenderedFrame()` 存 PNG。
+这比真机截图快，且能在提交前逐版对照 Studio One。
+
+**已知剩余差距**（接受）：fx 文字仍有亚像素彩边（Avalonia 12 的
+`TextOptions/RenderOptions.TextRenderingMode` 在 XAML 里解析不到，无法在样式里切灰度 AA）；
+M/S 字形仍受 24×24 矢量盒限制，无法再放大；按钮高度固定 17px（63px 高度下 3 键只能占 59px）。
