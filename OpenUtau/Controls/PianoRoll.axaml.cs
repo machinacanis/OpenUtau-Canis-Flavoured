@@ -2130,10 +2130,6 @@ namespace OpenUtau.App.Controls {
                 } else {
                     LoadingWindow.EndLoading();
                 }
-            } else if (cmd is WaveformReadyNotification) {
-                Dispatcher.UIThread.Post(() => {
-                    MessageBus.Current.SendMessage(new WaveformRefreshEvent());
-                }, Avalonia.Threading.DispatcherPriority.Normal);
             }
         }
     }

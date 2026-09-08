@@ -182,9 +182,7 @@ namespace OpenUtau.Classic {
                         var samplesCopy = (float[])result.samples.Clone();
                         Task.Run(() => {
                             try {
-                                var source = new WaveSource(0, 0, 0, 1);
-                                source.SetSamples(samplesCopy);
-                                WaveFileWriter.CreateWaveFile16(wavPath, new ExportAdapter(source).ToMono(1, 0));
+                                Wave.WriteMono16Wav(wavPath, samplesCopy);
                             } catch (Exception e) {
                                 Serilog.Log.Error(e, $"Failed to write cache file: {wavPath}");
                             }
@@ -194,15 +192,6 @@ namespace OpenUtau.Classic {
                 progress.Complete(phrase.phones.Length, progressInfo);
                 if (result.samples != null) {
                     Renderers.ApplyDynamics(phrase, result);
-                    PlaybackManager.Inst.LiveWaveformCache[phrase.hash.ToString()] = (
-                        trackNo, 
-                        phrase.positionMs - phrase.leadingMs, 
-                        result.samples, 
-                        DateTime.Now
-                    );
-                    Task.Factory.StartNew(() => {
-                        DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
-                    }, CancellationToken.None, TaskCreationOptions.None, DocManager.Inst.MainScheduler);
                 }
                 return result;
             });

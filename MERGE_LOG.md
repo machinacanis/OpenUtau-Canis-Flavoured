@@ -84,3 +84,52 @@
 - `dotnet build OpenUtau -c Debug`：0 错误（1735 个警告为存量：Enunu CS0649/CS0414、AVLN3001 等，与上次合并记录一致）。
 - `dotnet test OpenUtau.Test`：**351 通过 / 60 失败 / 1 跳过**——与合并前 fork master `0afa4739` 的基线完全一致（在干净 master 上复跑全量测试得到相同 60 失败）。60 个失败（集中于 `EnToJaTest`、`PluginRunnerTest`、完整套件时序下的 `StringsTest` 等）为 fork master 存量问题，与本次合并无关：本次合并对 C# 代码零改动，仅 `build.yml`。`AppTest`（StringsTest）单独运行通过，失败仅在完整套件并行/时序下出现，属另一待查议题，不在本次合并范围。
 - `git diff --check`：无冲突标记残留。
+
+---
+
+## Merge 2026-09-08 7c68a087
+
+- **时间**（UTC）：`2026-09-08T05:37:18Z`
+- **合并方式**：`git merge --no-ff --no-commit upstream/master`（merge-base `bfb01058821a01e0f59b8196e42eb34390f9acae`，即 HEAD `84c90c22` 的第二父提交；合并范围 `bfb01058..7c68a087`）
+- **上游基线**：`7c68a0876052f1e3befe3cc01674e8853f9cd75a` — render: precomputed phrase layout and a coalesced projection read seam
+
+### 引入的上游 commit（3 个）
+
+| # | SHA | 主题 |
+| --- | --- | --- |
+| 1 | `6196917f599a3e2fabc4ca0ed3f3f77fb8c55e22` | audio: replace WaveSource transport with frozen slot planner |
+| 2 | `f773f377e15fa12e4aabf8276301d515e38b1539` | render: document-driven waveform reads and render-pass safety fixes |
+| 3 | `7c68a0876052f1e3befe3cc01674e8853f9cd75a` | render: precomputed phrase layout and a coalesced projection read seam |
+
+补注：同批上游历史里的 `994d55a1800a9cda91991b52ee8ab444bf5a3cd2`（fix c+v #2375）与 `bfb01058821a01e0f59b8196e42eb34390f9acae`（Fix Memory Leaks #2299）已由合并提交 `84c90c22`（Merge branch 'openutau:master' into master）先行引入，故本次不重复列出；`84c90c22` 当时未写 MERGE_LOG，属历史缺口，此处补注不改写旧记录。
+
+### 冲突
+
+仅 2 个文件出现冲突标记；其余 40 个文件自动合并（21 M / 16 A / 3 D）。冲突文件及来源：
+
+| 文件 | fork 侧来源 | 上游侧来源 |
+| --- | --- | --- |
+| `OpenUtau.Core/Render/RenderPhrase.cs`（1 处） | `fa88ca2c7684bd7bafd774fc8ca7916f07e788eb`（HiFiUTAU/Custom Server note-level 字段：phonemeType/stretchMode/spliceMode/stretchMs + readonly `oto`，经 `84c90c22` 汇入 master） | `f773f377e15fa12e4aabf8276301d515e38b1539`（`oto` 改 `{ get; private set; }` 以支持新增 `WithOto()`；`7c68a087` 继续改 RenderPhrase） |
+| `OpenUtau/Controls/WaveformImage.cs`（5 处） | `f22f3a13ff9611b4575edb7440492268510972ff`（Studio 波形重写）+ `bb832af75092d213fb4c4d28d4a3d46a3df601ee`（无音频留白）等 fork Studio 波形实现 | `f773f377e15fa12e4aabf8276301d515e38b1539` + `7c68a0876052f1e3befe3cc01674e8853f9cd75a`（RenderView/MixPlanner 数据管线重写） |
+
+另有非文本冲突的编译适配 1 处：`OpenUtau/ViewModels/NotesViewModel.cs`——上游 `7c68a087` 删除了 `WaveformRefreshEvent` 类与旧的 `PartRenderedNotification → MessageBus` 通知路径；fork 的 `PreferencesViewModel`/`WaveformImage` 仍以 MessageBus 使用该类，故在 fork UI 代码处恢复该类定义（其余上游改动如 `MixPlanner.EvictPart` 全部采纳）。
+
+### 决策记录
+
+- **`RenderPhrase.cs`：合并两侧**。保留 fork 4 个 HiFi/Custom Server note-level 字段；`oto` 采纳上游 `public UOto oto { get; private set; }`（合并后同文件内并入上游 `WithOto`/`PhraseLayout` 用法，需允许类内克隆赋值）。
+- **`WaveformImage.cs`：数据层取上游、绘制层取 fork（手动重组合并 5 处冲突）**：
+  - H1 字段区：保留 fork 的 `refreshTimer`/`mixUnlockTime`/`wasRendering` 等字段。
+  - H2 构造函数：新增 `RenderView.Inst.Observe(_ => InvalidateVisual())` 作为渲染完成刷新源，同时保留 fork 50ms `DispatcherTimer` + `MessageBus`（主题 / Studio UI / 偏好）订阅。
+  - H3 样本填充：删除对已删 API（`IsWaveformBlanked`/`LiveWaveformCache`/`part.Mix`）的引用，改为上游 `RenderView.Current(part)` → `MixPlanner.TryGetPartPlacements` → `SampleSlot[]` → `SlotMixSource.Mix`；保留 `snapEase`（播放停止回位）与 `needsAnotherFrame` 重绘。
+  - H4 列统计：保留 fork 写入 `colMin/colMax`（供后续 Studio 布局绘制），不采用上游立即 `DrawPeak` 的极简画法。
+  - H5 布局绘制：整段保留 fork 的 `DrawClassicStrip`/`DrawFixed`/`DrawFollowSmart`/逐 note 绘制与主题色/alpha/淡入淡出。
+  - 效果：上游极简经典波形外观不采纳（fork Studio 波形特性保留）；因 `LiveWaveformCache` 已删，fork 原 300ms 渐显动画移除，波形改为随 MixPlanner 发布逐段出现。
+- **`NotesViewModel.cs`**：恢复 `WaveformRefreshEvent` 类（见冲突表下说明），其余采纳上游（`ClearPhraseCache` 改用 `MixPlanner.EvictPart` 等）。
+- **自动合并的其余文件全部采纳**：音频传输/渲染重构（MixPlanner/SampleSlot/Frozen/ThreadGuard/WaveformRefresh/RenderView/RenderProjection/PhraseLayout 等）、删除 RenderCache/WaveSource 及旧测试、DAW 测试适配、上游新增测试全部保留。
+- **字符串同步**：本次未触碰任何 `Strings.*.axaml`，无需运行 `Misc/sync_strings.py`。
+
+### 已验证
+
+- `dotnet build OpenUtau -c Debug`：0 错误（存量 warning 与历次记录一致）。
+- `dotnet test OpenUtau.Test`：**413 通过 / 4 失败 / 1 跳过**。4 个失败均为存量/环境问题，与本次合并无关：3 个 `PluginRunnerTest.ExecuteTest` 因沙箱 `~/.cache/OpenUtau` 只读无法写 `temp.tmp`（单独复跑同样失败）；1 个 `StringsTest` 仅在完整套件并行/时序下触发 Avalonia 线程问题（单独运行通过，与 2b03ad56 合并记录中的已知现象一致）。上游新增测试（RenderViewTest、MixPlanTest、WaveformRefreshTest、FrozenTest、XsyVariantTest 等）全部通过；跳过项为 `DawRealPluginTest.RealPluginCompletesTheHandshakeAndPullsAudio`（需真实 DAW 插件，与上游一致）。
+- `git diff --check`：无冲突标记残留。

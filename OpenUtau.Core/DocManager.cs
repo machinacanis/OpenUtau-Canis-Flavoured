@@ -38,6 +38,22 @@ namespace OpenUtau.Core {
 
         public TaskScheduler MainScheduler => mainScheduler;
         public Action<Action> PostOnUIThread { get; set; }
+
+        /// <summary>
+        /// Test seam: when set, commands are routed here instead of the normal
+        /// main-thread post/execute path.
+        /// </summary>
+        internal Action<UCommand> CommandSink { get; set; }
+
+        /// <summary>
+        /// Test seam: installs a project without the load notification; returns the
+        /// previous one for restoration.
+        /// </summary>
+        internal UProject TakeProjectForTest(UProject project) {
+            var previous = Project;
+            Project = project;
+            return previous;
+        }
         public Plugin[] Plugins { get; private set; }
         public PhonemizerFactory[] PhonemizerFactories { get; private set; }
         public UProject Project { get; private set; }
@@ -46,6 +62,13 @@ namespace OpenUtau.Core {
         public List<UNote>? NotesClipboard { get; set; }
         public CurveSelection? CurvesClipboard { get; set; }
         internal PhonemizerRunner PhonemizerRunner { get; private set; }
+
+        /// <summary>
+        /// Test seam: installs a phonemizer runner for the duration of a test.
+        /// </summary>
+        internal void SetPhonemizerRunnerForTest(PhonemizerRunner runner) {
+            PhonemizerRunner = runner;
+        }
         public List<Type> ExternalBatchEditTypes { get; private set; } = new List<Type>();
 
         public void Initialize(Thread mainThread, TaskScheduler mainScheduler) {
@@ -56,6 +79,7 @@ namespace OpenUtau.Core {
             SearchAllLegacyPlugins();
             this.mainThread = mainThread;
             this.mainScheduler = mainScheduler;
+            Util.ThreadGuard.SetUiThread(mainThread);
             PhonemizerRunner = new PhonemizerRunner(mainScheduler);
             RealTimePitchGenerationService.Inst.Initialize();
         }
@@ -205,7 +229,19 @@ namespace OpenUtau.Core {
             }
         }
 
+        // Every validate path: rebuild derived data, release unused singers,
+        // mark the render projections stale.
+        private void ValidateAndRefresh() {
+            Project.ValidateFull();
+            SingerManager.Inst.ReleaseSingersNotInUse(Project);
+            RenderView.Inst.InvalidateAll();
+        }
+
         public void ExecuteCmd(UCommand cmd) {
+            if (CommandSink != null) {
+                CommandSink(cmd);
+                return;
+            }
             if (mainThread != Thread.CurrentThread) {
                 if (!(cmd is ProgressBarNotification)) {
                     Log.Warning($"{cmd} not on main thread");
@@ -213,6 +249,7 @@ namespace OpenUtau.Core {
                 PostOnUIThread(() => ExecuteCmd(cmd));
                 return;
             }
+            Util.ThreadGuard.AssertUi();
             if (cmd is UNotification) {
                 if (cmd is SaveProjectNotification saveProjectNotif) {
                     if (undoQueue.Count > 0) {
@@ -234,6 +271,7 @@ namespace OpenUtau.Core {
                     rangeStartTick = 0;
                     rangeEndTick = 0;
                     SingerManager.Inst.ReleaseSingersNotInUse(Project);
+                    RenderView.Inst.ForgetAll();
                     DiffSingerRealCurveScheduler.CancelAll();
                 } else if (cmd is SetPlayPosTickNotification setPlayPosTickNotif) {
                     playPosTick = setPlayPosTickNotif.playPosTick;
@@ -252,15 +290,19 @@ namespace OpenUtau.Core {
                     SingerManager.Inst.SearchAllSingers();
                     SingerManager.Inst.ReleaseSingersNotInUse(Project);
                 } else if (cmd is ValidateProjectNotification) {
-                    Project.ValidateFull();
+                    ValidateAndRefresh();
                 } else if (cmd is SingersRefreshedNotification || cmd is OtoChangedNotification) {
                     foreach (var track in Project.tracks) {
                         track.OnSingerRefreshed();
                     }
-                    Project.ValidateFull();
+                    ValidateAndRefresh();
                     if (cmd is OtoChangedNotification) {
                         ExecuteCmd(new PreRenderNotification());
                     }
+                }
+                if (cmd is WaveformReadyNotification) {
+                    RenderView.Inst.InvalidateAll();
+                    return;
                 }
                 Publish(cmd);
                 if (!cmd.Silent) {
@@ -328,7 +370,7 @@ namespace OpenUtau.Core {
                 undoQueue.RemoveFromFront();
             }
             if (undoGroup.DeferValidate) {
-                Project.ValidateFull();
+                ValidateAndRefresh();
             }
             undoGroup.Merge();
             ScheduleRealCurveRefresh(undoGroup.Commands);
@@ -373,7 +415,7 @@ namespace OpenUtau.Core {
                 var cmd = undoGroup.Commands[i];
                 cmd.Unexecute();
                 if (i == 0) {
-                    Project.ValidateFull();
+                    ValidateAndRefresh();
                 }
                 Publish(cmd, true);
             }
@@ -391,7 +433,7 @@ namespace OpenUtau.Core {
                 var cmd = group.Commands[i];
                 cmd.Unexecute();
                 if (i == 0) {
-                    Project.ValidateFull();
+                    ValidateAndRefresh();
                 }
                 Publish(cmd, true);
             }
@@ -409,7 +451,7 @@ namespace OpenUtau.Core {
                 var cmd = group.Commands[i];
                 cmd.Execute();
                 if (i == group.Commands.Count - 1) {
-                    Project.ValidateFull();
+                    ValidateAndRefresh();
                 }
                 Publish(cmd);
             }

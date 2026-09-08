@@ -97,6 +97,9 @@ namespace OpenUtau.App.Controls {
         int waveformRgb = PackRgb(ThemeManager.WaveformColor);
 
         public WaveformImage() {
+            // The projection payload is not read here; deliveries are repaint signals.
+            OpenUtau.Core.Render.RenderView.Inst.Observe(_ => InvalidateVisual());
+
             // 渲染过程中每个片段完成都会触发一次刷新，合并为 50ms 一次，
             // 避免播放/预渲染时反复全量重画波形。
             refreshTimer = new DispatcherTimer(
@@ -163,40 +166,33 @@ namespace OpenUtau.App.Controls {
                         if (sampleData.Length < sampleCount) {
                             Array.Resize(ref sampleData, sampleCount);
                         }
-
                         bool needsAnotherFrame = false;
                         Array.Clear(sampleData, 0, sampleData.Length);
 
-                        if (OpenUtau.Core.PlaybackManager.Inst.IsWaveformBlanked) {
-                            // sampleData is already empty
-                        } else if (OpenUtau.Core.PlaybackManager.Inst.StartingToPlay || part.Mix == null) {
-                            foreach (var cacheItem in PlaybackManager.Inst.LiveWaveformCache.Values) {
-                                if (cacheItem.trackNo != part.trackNo) continue;
+                        // The part's current projection: phrase hashes and
+                        // precomputed layouts, shared by the placement list below
+                        // and the draw coverage further down.
+                        var projection = OpenUtau.Core.Render.RenderView.Inst.Current(part);
+                        var phraseView = new (ulong hash, double startMs, double endMs)[projection.Phrases.Count];
+                        for (int p = 0; p < projection.Phrases.Count; ++p) {
+                            var view = projection.Phrases[p];
+                            phraseView[p] = (view.Hash, view.Layout.StartMs, view.Layout.EndMs);
+                        }
 
-                                double phraseStartMs = cacheItem.posMs;
-                                float[] phraseSamples = cacheItem.samples;
-                                int phraseStartSampleIdx = (int)((phraseStartMs - leftMs) * 44100 / 1000);
-
-                                double ageMs = (DateTime.Now - cacheItem.renderTime).TotalMilliseconds;
-                                double animProgress = Math.Clamp(ageMs / 300.0, 0.0, 1.0);
-
-                                if (animProgress < 1.0) needsAnotherFrame = true;
-
-                                float ease = 1.0f - (float)Math.Pow(1.0 - animProgress, 3);
-                                float visualScale = 1.0f * ease;
-
-                                int startJ = Math.Max(0, -phraseStartSampleIdx);
-                                int endJ = Math.Min(phraseSamples.Length, (sampleCount / 2) - phraseStartSampleIdx);
-
-                                for (int j = startJ; j < endJ; j++) {
-                                    int targetIdx = (phraseStartSampleIdx + j) * 2;
-                                    float scaledSample = phraseSamples[j] * visualScale;
-                                    sampleData[targetIdx] += scaledSample;
-                                    sampleData[targetIdx + 1] += scaledSample;
-                                }
+                        // Only phrases whose pcm has rendered appear, so a part still
+                        // rendering draws only what has finished.
+                        var planner = OpenUtau.Core.PlaybackManager.Inst.MixPlanner;
+                        if (MixPlanner.TryGetPartPlacements(planner, part, phraseView, out var pcmList)) {
+                            var slots = new OpenUtau.Core.SignalChain.SampleSlot[pcmList.Count];
+                            for (int i = 0; i < pcmList.Count; ++i) {
+                                var p = pcmList[i];
+                                slots[i] = new OpenUtau.Core.SignalChain.SampleSlot(
+                                    p.posMs, p.durMs, 0, p.channels, p.pcm,
+                                    OpenUtau.Core.SignalChain.SlotState.Ready);
                             }
-                        } else {
-                            part.Mix.Mix(samplePos, sampleData, 0, sampleCount);
+                            var source = new OpenUtau.Core.SignalChain.SlotMixSource();
+                            source.SetSlots(slots);
+                            source.Mix(samplePos, sampleData, 0, sampleCount);
                         }
 
                         bool isRendering = PlaybackManager.Inst.StartingToPlay;
@@ -221,16 +217,15 @@ int drawWidth = Math.Min((int)Bounds.Width, bitmap.PixelSize.Width);
                         Array.Clear(colMax, 0, drawWidth);
 
                         // Phrase audio ranges as [startMs, endMs] pairs, matching
-                        // the WaveSource layout of the mix, so that time ranges
+                        // the slot layout of the mix, so that time ranges
                         // without any phrase are left blank instead of drawing a
                         // zero-volume line. Silence inside a phrase still draws.
                         double[]? phraseRanges = null;
-                        if (part.renderPhrases.Count > 0) {
-                            phraseRanges = new double[part.renderPhrases.Count * 2];
-                            for (int p = 0; p < part.renderPhrases.Count; ++p) {
-                                (double rangeStartMs, double rangeEndMs) = part.renderPhrases[p].AudioRange;
-                                phraseRanges[p * 2] = rangeStartMs;
-                                phraseRanges[p * 2 + 1] = rangeEndMs;
+                        if (phraseView.Length > 0) {
+                            phraseRanges = new double[phraseView.Length * 2];
+                            for (int p = 0; p < phraseView.Length; ++p) {
+                                phraseRanges[p * 2] = phraseView[p].startMs;
+                                phraseRanges[p * 2 + 1] = phraseView[p].endMs;
                             }
                         }
 
