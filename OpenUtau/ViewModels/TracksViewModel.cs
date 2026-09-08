@@ -150,8 +150,21 @@ namespace OpenUtau.App.ViewModels {
                 });
 
             TickWidth = ViewConstants.TickWidthDefault;
-            TrackHeight = ViewConstants.TrackHeightDefault;
+            TrackHeight = StudioTrackLayout.DefaultTrackHeight;
             Notify();
+
+            // Studio UI swaps the default zoom level. Follow it on toggle, but
+            // only while the user has not picked a track height of their own.
+            MessageBus.Current.Listen<StudioUIChangedEvent>()
+                .Subscribe(_ => {
+                    if (TrackHeight != ViewConstants.TrackHeightDefault &&
+                        TrackHeight != StudioTrackLayout.CompactTrackHeight) {
+                        return;
+                    }
+                    TrackHeight = StudioTrackLayout.DefaultTrackHeight;
+                    TrackOffset = Math.Clamp(TrackOffset, 0, VScrollBarMax);
+                    Notify();
+                });
 
             DocManager.Inst.AddSubscriber(this);
         }

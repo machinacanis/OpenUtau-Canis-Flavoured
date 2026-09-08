@@ -16,11 +16,20 @@ using Serilog;
 
 namespace OpenUtau.App {
     public class App : Application {
+#if DEBUG
+        static bool developerToolsAttached;
+#endif
+
         public override void Initialize() {
             Log.Information("Initializing application.");
             AvaloniaXamlLoader.Load(this);
 #if DEBUG
-            this.AttachDeveloperTools();
+            // Headless test sessions build the app more than once per process,
+            // and developer tools can only be attached to one app instance.
+            if (!developerToolsAttached) {
+                developerToolsAttached = true;
+                this.AttachDeveloperTools();
+            }
 #endif
             InitializeCulture();
             InitializeTheme();
@@ -150,14 +159,21 @@ namespace OpenUtau.App {
         }
 
         static void ApplyStudioStyles(bool enable) {
-            studioStyles ??= new StyleInclude(new Uri("avares://OpenUtau/App.axaml")) {
-                Source = new Uri("avares://OpenUtau/Styles/StudioStyles.axaml")
-            };
-            bool present = Current!.Styles.Contains(studioStyles);
+            // An IStyle instance can only belong to one Styles collection, and
+            // headless test sessions build the app more than once per process.
+            var app = Current;
+            if (app == null) {
+                return;
+            }
+            bool present = studioStyles != null && app.Styles.Contains(studioStyles);
             if (enable && !present) {
-                Current.Styles.Add(studioStyles);
+                studioStyles = new StyleInclude(new Uri("avares://OpenUtau/App.axaml")) {
+                    Source = new Uri("avares://OpenUtau/Styles/StudioStyles.axaml")
+                };
+                app.Styles.Add(studioStyles);
             } else if (!enable && present) {
-                Current.Styles.Remove(studioStyles);
+                app.Styles.Remove(studioStyles!);
+                studioStyles = null;
             }
         }
 

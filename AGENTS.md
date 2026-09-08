@@ -96,6 +96,9 @@ Avalonia 12 + ReactiveUI。ViewModel 继承 `ViewModelBase`（`ReactiveObject`�
 - 共享：`NotesViewModel`、Command、hit testing、`NoteEditStates` 仍是唯一编辑逻辑。
 - Studio 专属：`OpenUtau/Studio/`。以后只在 Studio 里出现的功能或布局改动放这里，不要在 ViewModel 里散落 `if (UseStudioUI)`。
 - 绘制：`NotesCanvas` / `WaveformImage` 读 `ThemeManager`；`ApplyPianoRollStyle` 在开关关闭时回到经典刷子。
+- 轨道头：默认高度取 `StudioTrackLayout.DefaultTrackHeight`（Studio 开 63 = 105 − 2×21，关 105）；头像左侧彩色条宽度取 `StudioTrackLayout.ColorBarWidth`（0 / 6）。
+- 按钮皮肤：Studio One 风格按钮 = `Styles/StudioOneControls.axaml` 的 `.s1` 类（`mute` / `solo` 角色，`fxOn` 表示非开关按钮的开启态）。新按钮加类名即可复用，不要在控件里另写 chrome 样式；该文件只由 `StudioStyles.axaml` 在 Studio UI 开启时载入。
+- 样式优先级：控件自身 `Styles` 高于应用级 `Styles`（`TrackHeader.axaml` 的 `ToggleButton{Background=Transparent}` 就是这样压掉 `Styles.axaml` 的）。所以 Studio 的按钮 chrome 必须放在模板内部（`StudioOneControls.axaml`），而彩色条宽度这类必须走绑定——XAML 局部值高于任何样式 setter。
 
 `OpenUtau.csproj` 开了 `TreatWarningsAsErrors`。
 

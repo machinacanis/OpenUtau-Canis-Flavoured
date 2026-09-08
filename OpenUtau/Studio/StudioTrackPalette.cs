@@ -59,10 +59,10 @@ namespace OpenUtau.App.Studio {
                 FillSelected: ctx.Accent2,
                 Waveform: White,
                 NoteThumbnail: White,
-                HeaderAccent: lut.AccentColor.Color,
+                HeaderAccent: lut.AccentValue,
                 OnFill: White,
                 OnHeaderAccent: White,
-                CenterKey: lut.AccentColorCenterKey.Color,
+                CenterKey: lut.CenterKeyValue,
                 FillMuted: ctx.Accent1,
                 DrawSelectedStroke: false);
         }
@@ -130,7 +130,7 @@ namespace OpenUtau.App.Studio {
             if (IsDefaultBlue(name)) {
                 return IdentityStudioBlue(ctx);
             }
-            Color lut = ThemeManager.GetTrackColor(name).AccentColor.Color;
+            Color lut = ThemeManager.GetTrackColor(name).AccentValue;
             var (h, s, l) = StudioColorMath.RgbToHsl(lut);
             TargetSL(ctx, out double sFill, out double lFill);
             s = Lerp(s, sFill, 0.30);
@@ -149,7 +149,7 @@ namespace OpenUtau.App.Studio {
                 HeaderAccent: LutBlue,
                 OnFill: White,
                 OnHeaderAccent: White,
-                CenterKey: blue.AccentColorCenterKey.Color,
+                CenterKey: blue.CenterKeyValue,
                 FillMuted: MixMuted(ctx.Accent1, ctx),
                 DrawSelectedStroke: false);
         }

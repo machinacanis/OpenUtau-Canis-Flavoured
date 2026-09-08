@@ -5,6 +5,7 @@ using OpenUtau.Core.Util;
 using Xunit;
 
 namespace OpenUtau.App {
+    [Collection(StudioUiSerialCollection.Name)]
     public class StudioUITest {
         [Fact]
         public void Default_IsClassicEditor() {
