@@ -54,7 +54,7 @@ namespace OpenUtau.App {
         }
 
         [AvaloniaFact]
-        public void MuteSoloFx_OptIntoTheStudioSkin() {
+        public void MuteSolo_OptIntoTheStudioSkin_FxDoesNot() {
             using var skin = new StudioSkinScope();
             var header = ShowHeader(63);
 
@@ -65,11 +65,26 @@ namespace OpenUtau.App {
             Assert.Contains("mute", mute.Classes);
             Assert.Contains("s1", solo.Classes);
             Assert.Contains("solo", solo.Classes);
-            Assert.Contains("s1", fx.Classes);
 
             Assert.NotNull(StudioSkinTestHelpers.Chrome(mute));
             Assert.NotNull(StudioSkinTestHelpers.Chrome(solo));
-            Assert.NotNull(StudioSkinTestHelpers.Chrome(fx));
+
+            // Fx keeps the classic transparent look on purpose.
+            Assert.DoesNotContain("s1", fx.Classes);
+            Assert.Null(StudioSkinTestHelpers.Chrome(fx));
+        }
+
+        [AvaloniaFact]
+        public void TrackNoBadge_SitsBesideTheName_NotOverTheAvatar() {
+            var header = ShowHeader(105);
+            var badge = header.GetVisualDescendants().OfType<Border>()
+                .First(border => border.Name == "TrackNoBadge");
+            var avatarPanel = header.GetVisualDescendants().OfType<Panel>()
+                .First(panel => panel.Name == "AvatarPanel");
+            var name = Find<Button>(header, "TrackNameButton");
+
+            Assert.DoesNotContain(badge, avatarPanel.GetVisualDescendants());
+            Assert.Same(badge.Parent, name.Parent);
         }
 
         [AvaloniaFact]

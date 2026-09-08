@@ -205,3 +205,21 @@ public static class StudioTrackLayout {
 **已知剩余差距**（接受）：fx 文字仍有亚像素彩边（Avalonia 12 的
 `TextOptions/RenderOptions.TextRenderingMode` 在 XAML 里解析不到，无法在样式里切灰度 AA）；
 M/S 字形仍受 24×24 矢量盒限制，无法再放大；按钮高度固定 17px（63px 高度下 3 键只能占 59px）。
+
+## 11. 第三轮：fx 回退 + 编号徽章移位（验收后调整）
+
+1. **fx 按钮不再用 Studio One 皮肤**：去掉 `Classes` 里的 `s1`，恢复经典外观
+   （透明底 + 11px SemiBold 文字，`fxOn` 时仍是 `NeutralAccentBrushSemi` 底）。
+   皮肤本身仍保留 `Button.s1` + `fxOn` 的能力与测试，供其它按钮复用。
+2. **编号徽章移到轨道名左侧**：`TrackNoBadge` 从头像面板移到名字行的
+   `Grid ColumnDefinitions="auto,*"` 第 0 列（名字按钮在第 1 列），
+   `CornerRadius` 由 `1,0,2,0` 改为 `2`，`Margin="1,0,2,0"`。头像不再被遮挡，
+   可完整显示；两种 UI 模式都生效（徽章不是 Studio 专属）。
+
+测试更新：`TrackHeaderChromeTest` 新增 `TrackNoBadge_SitsBesideTheName_NotOverTheAvatar`
+（断言徽章与名字按钮同父、且不在 `AvatarPanel` 里），原 fx 断言改为
+`MuteSolo_OptIntoTheStudioSkin_FxDoesNot`（fx 不带 `s1`、无 chrome）。
+
+顺带核实：**Avalonia 控件级样式确实优先于应用级样式**。用一个最小探针
+（同一属性：控件级 Red vs 应用级 Blue）验证结果为 Red，§0 的结论成立，
+皮肤必须把 chrome 放在模板内部这一设计前提成立。
