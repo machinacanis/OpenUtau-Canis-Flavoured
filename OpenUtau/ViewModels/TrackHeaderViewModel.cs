@@ -49,6 +49,9 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool MixFxEnabled { get; set; }
         [Reactive] public partial IBrush HeaderBorderBrush { get; set; } = ThemeManager.NeutralAccentBrushSemi;
 
+        /// <summary>Width of the Studio track color bar; 0 keeps the classic header.</summary>
+        public double ColorBarWidth => StudioTrackLayout.ColorBarWidth;
+
         public ViewModelActivator Activator { get; }
 
         private readonly UTrack track;
@@ -544,6 +547,7 @@ namespace OpenUtau.App.ViewModels {
             this.RaisePropertyChanged(nameof(MixFxEnabled));
             this.RaisePropertyChanged(nameof(Volume));
             this.RaisePropertyChanged(nameof(Pan));
+            this.RaisePropertyChanged(nameof(ColorBarWidth));
             RefreshAvatar();
         }
 
