@@ -14,6 +14,14 @@ namespace OpenUtau.App.Studio {
         public const double RainbowHueSpan = 250.0;
         /// <summary>Tracks after which the rainbow strip cycles.</summary>
         public const int RainbowCycleTracks = 12;
+        /// <summary>Walk the hue strip upward (increasing hue) instead of downward.</summary>
+        public const bool RainbowReverse = false;
+        /// <summary>Dark-theme amplitude of the optional per-track rainbow luma wave (0 = off).</summary>
+        public const double RainbowLumaAmpDark = 0.0;
+        /// <summary>Light-theme amplitude of the optional per-track rainbow luma wave (0 = off).</summary>
+        public const double RainbowLumaAmpLight = 0.0;
+        /// <summary>Rainbow luma-wave phase divisor (2.5 ≈ 5/2 rad per track step).</summary>
+        public const double RainbowLumaWaveDivisor = 2.5;
 
         // Theme gradient
         /// <summary>Base hue span around the theme accent (degrees).</summary>
@@ -50,6 +58,10 @@ namespace OpenUtau.App.Studio {
         public double? RainbowStartHue { get; set; }
         public double? RainbowHueSpan { get; set; }
         public int? RainbowCycleTracks { get; set; }
+        public bool? RainbowReverse { get; set; }
+        public double? RainbowLumaAmpDark { get; set; }
+        public double? RainbowLumaAmpLight { get; set; }
+        public double? RainbowLumaWaveDivisor { get; set; }
         public double? GradientBaseHueSpan { get; set; }
         public double? GradientHueSpanPerTrack { get; set; }
         public double? GradientMaxHueSpan { get; set; }
@@ -68,6 +80,13 @@ namespace OpenUtau.App.Studio {
             Sanitize(RainbowHueSpan, StudioTrackColorParams.RainbowHueSpan, 0, 360);
         public int RainbowCycleTracksOrDefault =>
             (int)Math.Round(Sanitize(RainbowCycleTracks, StudioTrackColorParams.RainbowCycleTracks, 1, 24));
+        public bool RainbowReverseOrDefault => RainbowReverse ?? StudioTrackColorParams.RainbowReverse;
+        public double RainbowLumaAmpDarkOrDefault =>
+            Sanitize(RainbowLumaAmpDark, StudioTrackColorParams.RainbowLumaAmpDark, 0, 0.3);
+        public double RainbowLumaAmpLightOrDefault =>
+            Sanitize(RainbowLumaAmpLight, StudioTrackColorParams.RainbowLumaAmpLight, 0, 0.3);
+        public double RainbowLumaWaveDivisorOrDefault =>
+            Sanitize(RainbowLumaWaveDivisor, StudioTrackColorParams.RainbowLumaWaveDivisor, 0.1, 10);
         public double GradientBaseHueSpanOrDefault =>
             Sanitize(GradientBaseHueSpan, StudioTrackColorParams.GradientBaseHueSpan, 0, 180);
         public double GradientHueSpanPerTrackOrDefault =>
@@ -109,6 +128,10 @@ namespace OpenUtau.App.Studio {
             RainbowStartHue = StudioTrackColorParams.RainbowStartHue,
             RainbowHueSpan = StudioTrackColorParams.RainbowHueSpan,
             RainbowCycleTracks = StudioTrackColorParams.RainbowCycleTracks,
+            RainbowReverse = StudioTrackColorParams.RainbowReverse,
+            RainbowLumaAmpDark = StudioTrackColorParams.RainbowLumaAmpDark,
+            RainbowLumaAmpLight = StudioTrackColorParams.RainbowLumaAmpLight,
+            RainbowLumaWaveDivisor = StudioTrackColorParams.RainbowLumaWaveDivisor,
             GradientBaseHueSpan = StudioTrackColorParams.GradientBaseHueSpan,
             GradientHueSpanPerTrack = StudioTrackColorParams.GradientHueSpanPerTrack,
             GradientMaxHueSpan = StudioTrackColorParams.GradientMaxHueSpan,

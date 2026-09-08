@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace OpenUtau.App.Studio {
     /// <summary>
@@ -42,6 +42,14 @@ namespace OpenUtau.App.Studio {
         public bool? WaveformColorInvert { get; set; }
         public int? WaveformScalePercent { get; set; }
         public int? WaveformFixedBottomPx { get; set; }
+        public double? WaveformAmpScaleRows { get; set; }
+        public double? WaveformFollowOffsetRows { get; set; }
+        public double? WaveformSmartSplitDown { get; set; }
+        public double? WaveformSmartSplitUp { get; set; }
+        public double? WaveformSmartReturnSlop { get; set; }
+        public int? WaveformSmartLookAhead { get; set; }
+        public double? WaveformFallbackLeadMs { get; set; }
+        public int? WaveformAlphaPercent { get; set; }
         public int? NoteStrokeColorMode { get; set; }
         public string? NoteStrokeColorHex { get; set; }
         public bool? NoteStrokeColorInvert { get; set; }
@@ -62,5 +70,7 @@ namespace OpenUtau.App.Studio {
         public int? NoteLyricColorMode { get; set; }
         public string? NoteLyricColorHex { get; set; }
         public bool? NoteLyricColorInvert { get; set; }
+        public int? NoteLyricPaddingPx { get; set; }
+        public bool? NoteLyricShrinkToFit { get; set; }
     }
 }

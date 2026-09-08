@@ -217,6 +217,15 @@ namespace OpenUtau.Core.Util {
             public bool ShowPlaybackNoteHighlight = true;
             public bool ShowPlaybackNoteBounce = false;
             /// <summary>
+            /// Note interaction animation tuning (classic and Studio share these
+            /// effects; defaults keep the pre-advanced-config looks).
+            /// </summary>
+            public double NoteHoverGlowDurationSec = 0.12;
+            public double PlaybackHighlightFadeInPerSec = 8.0;
+            public double PlaybackHighlightFadeOutPerSec = 6.2;
+            public double PlaybackNoteBounceDurationSec = 0.25;
+            public double PlaybackNoteBounceHeightPx = 12.0;
+            /// <summary>
             /// Studio UI chrome, piano-roll appearance, and Studio-only editor
             /// layout. Enabled by default; classic editing is unchanged while
             /// this is false.
@@ -240,6 +249,10 @@ namespace OpenUtau.Core.Util {
             public double RainbowStartHue = 8.0;
             public double RainbowHueSpan = 250.0;
             public int RainbowCycleTracks = 12;
+            public bool RainbowReverse = false;
+            public double RainbowLumaAmpDark = 0.0;
+            public double RainbowLumaAmpLight = 0.0;
+            public double RainbowLumaWaveDivisor = 2.5;
             public double GradientBaseHueSpan = 14.0;
             public double GradientHueSpanPerTrack = 4.0;
             public double GradientMaxHueSpan = 52.0;
@@ -271,6 +284,18 @@ namespace OpenUtau.Core.Util {
             public bool WaveformColorInvert = false;
             public int WaveformScalePercent = 150;
             public int WaveformFixedBottomPx = 120;
+            /// <summary>
+            /// Waveform drawing tuning (Studio layouts). Legacy values equal the
+            /// former hard-coded constants in WaveformImage.
+            /// </summary>
+            public double WaveformAmpScaleRows = 1.5;
+            public double WaveformFollowOffsetRows = 2.0;
+            public double WaveformSmartSplitDown = 2.0;
+            public double WaveformSmartSplitUp = 2.0;
+            public double WaveformSmartReturnSlop = 1.5;
+            public int WaveformSmartLookAhead = 2;
+            public double WaveformFallbackLeadMs = 80.0;
+            public int WaveformAlphaPercent = 69;
             public int NoteStrokeColorMode = 1;
             public string NoteStrokeColorHex = "#FFFFFFFF";
             public bool NoteStrokeColorInvert = false;
@@ -291,6 +316,8 @@ namespace OpenUtau.Core.Util {
             public int NoteLyricColorMode = 3;
             public string NoteLyricColorHex = "#FFFFFFFF";
             public bool NoteLyricColorInvert = false;
+            public int NoteLyricPaddingPx = 5;
+            public bool NoteLyricShrinkToFit = false;
             public bool ShowPhoneme = true;
             public bool ShowExpressions = true;
             public bool ShowPhonemizerTags = true;

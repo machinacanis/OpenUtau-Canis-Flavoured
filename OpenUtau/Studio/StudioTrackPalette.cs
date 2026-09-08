@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Media;
@@ -163,7 +163,8 @@ namespace OpenUtau.App.Studio {
             int i, int n, StudioTrackPaletteContext ctx, StudioTrackColorConfig config) {
             double h = HueAt(i, n, config);
             TargetSL(ctx, out double s, out double l);
-            return FinishFill(h, s, l, ctx.IsDark);
+            double lWave = RainbowLuma(i, ctx.IsDark, l, config);
+            return FinishFill(h, s, lWave, ctx.IsDark);
         }
 
         static Color ThemeFill(
@@ -205,7 +206,8 @@ namespace OpenUtau.App.Studio {
                 return HueMod(h0);
             }
             double t = n <= cycle ? i / (double)(n - 1) : (i % cycle) / (double)(cycle - 1);
-            return HueMod(h0 - t * span);
+            double direction = config.RainbowReverseOrDefault ? 1.0 : -1.0;
+            return HueMod(h0 + direction * t * span);
         }
 
         static double ThemeHue(int i, int n, double hs, StudioTrackColorConfig config) {
@@ -230,14 +232,30 @@ namespace OpenUtau.App.Studio {
             double amp = isDark
                 ? config.GradientDarkLumaAmpOrDefault
                 : config.GradientLightLumaAmpOrDefault;
+            return LumaWave(i, lFill, amp, config.GradientLumaWaveDivisorOrDefault);
+        }
+
+        /// <summary>
+        /// Rainbow lightness, mirrors the Theme luma knobs so a rainbow can
+        /// breathe per track instead of sitting on one flat lightness.
+        /// </summary>
+        static double RainbowLuma(
+            int i, bool isDark, double lFill, StudioTrackColorConfig config) {
+            double amp = isDark
+                ? config.RainbowLumaAmpDarkOrDefault
+                : config.RainbowLumaAmpLightOrDefault;
+            return LumaWave(i, lFill, amp, config.RainbowLumaWaveDivisorOrDefault);
+        }
+
+        static double LumaWave(int i, double lFill, double amp, double divisor) {
             if (Math.Abs(amp) < 1e-9) {
                 return lFill;
             }
-            double divisor = Math.Abs(config.GradientLumaWaveDivisorOrDefault) < 1e-9
+            double d = Math.Abs(divisor) < 1e-9
                 ? StudioTrackColorParams.GradientLumaWaveDivisor
-                : config.GradientLumaWaveDivisorOrDefault;
+                : divisor;
             return StudioColorMath.Clamp(
-                lFill + amp * Math.Sin(i * Math.PI / divisor), 0.34, 0.70);
+                lFill + amp * Math.Sin(i * Math.PI / d), 0.34, 0.70);
         }
 
         /// <summary>

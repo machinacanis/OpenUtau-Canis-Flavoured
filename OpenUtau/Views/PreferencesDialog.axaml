@@ -334,6 +334,33 @@
             <TextBlock Text="{DynamicResource prefs.appearance.detachpianoroll}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding DetachPianoRoll}"/>
           </Grid>
+          <Expander Header="{DynamicResource prefs.appearance.noteefx.advanced}"
+                    HorizontalAlignment="Stretch" IsExpanded="False" Margin="0,8,0,0">
+            <StackPanel Margin="0,4,0,0">
+              <TextBlock FontSize="11" TextWrapping="Wrap"
+                         Text="{DynamicResource prefs.appearance.noteefx.advancedhint}"/>
+              <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.appearance.noteefx.hoverduration}"/>
+                <c:UnboundedSlider Grid.Column="2" Value="{Binding NoteHoverGlowDurationSec}" Minimum="0.02" Maximum="1" TickFrequency="0.01"/>
+              </Grid>
+              <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.appearance.noteefx.highlightfadein}"/>
+                <c:UnboundedSlider Grid.Column="2" Value="{Binding PlaybackHighlightFadeInPerSec}" Minimum="0.5" Maximum="30" TickFrequency="0.5"/>
+              </Grid>
+              <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.appearance.noteefx.highlightfadeout}"/>
+                <c:UnboundedSlider Grid.Column="2" Value="{Binding PlaybackHighlightFadeOutPerSec}" Minimum="0.5" Maximum="30" TickFrequency="0.5"/>
+              </Grid>
+              <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.appearance.noteefx.bounceduration}"/>
+                <c:UnboundedSlider Grid.Column="2" Value="{Binding PlaybackNoteBounceDurationSec}" Minimum="0.05" Maximum="1" TickFrequency="0.01"/>
+              </Grid>
+              <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.appearance.noteefx.bounceheight}"/>
+                <c:UnboundedSlider Grid.Column="2" Value="{Binding PlaybackNoteBounceHeightPx}" Minimum="0" Maximum="40" TickFrequency="1"/>
+              </Grid>
+            </StackPanel>
+          </Expander>
         </StackPanel>
 
         <!-- Studio UI -->
@@ -367,6 +394,27 @@
                 <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.rainbow.cycle}"/>
                 <c:UnboundedSlider Grid.Column="2" Value="{Binding RainbowCycleTracks}" Minimum="1" Maximum="24" TickFrequency="1"/>
               </Grid>
+              <Expander Header="{DynamicResource prefs.studioui.trackcolor.rainbow.advanced}"
+                        HorizontalAlignment="Stretch" IsExpanded="False" Margin="0,8,0,0">
+                <StackPanel Margin="0,4,0,0">
+                  <Grid Margin="0,4,0,0">
+                    <TextBlock Text="{DynamicResource prefs.studioui.trackcolor.rainbow.reverse}" HorizontalAlignment="Left"/>
+                    <ToggleSwitch IsChecked="{Binding RainbowReverse}"/>
+                  </Grid>
+                  <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.rainbow.lumaamp.dark}"/>
+                    <c:UnboundedSlider Grid.Column="2" Value="{Binding RainbowLumaAmpDark}" Minimum="0" Maximum="0.3" TickFrequency="0.01"/>
+                  </Grid>
+                  <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.rainbow.lumaamp.light}"/>
+                    <c:UnboundedSlider Grid.Column="2" Value="{Binding RainbowLumaAmpLight}" Minimum="0" Maximum="0.3" TickFrequency="0.01"/>
+                  </Grid>
+                  <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.rainbow.lumadivisor}"/>
+                    <c:UnboundedSlider Grid.Column="2" Value="{Binding RainbowLumaWaveDivisor}" Minimum="0.1" Maximum="10" TickFrequency="0.1"/>
+                  </Grid>
+                </StackPanel>
+              </Expander>
             </StackPanel>
             <StackPanel IsVisible="{Binding GradientTrackOptionsVisible}">
               <TextBlock Text="{DynamicResource prefs.studioui.trackcolor.gradient.title}" Margin="0,12,0,0" FontWeight="Bold"/>
@@ -382,41 +430,45 @@
                 <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.maxspan}"/>
                 <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientMaxHueSpan}" Minimum="10" Maximum="120" TickFrequency="1"/>
               </Grid>
-              <TextBlock Text="{DynamicResource prefs.studioui.trackcolor.gradient.advanced}" Margin="0,12,0,0" FontWeight="Bold"/>
-              <TextBlock FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
-                         Text="{DynamicResource prefs.studioui.trackcolor.gradient.advancedhint}"/>
-              <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
-                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.lowchromaseed}"/>
-                <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientLowChromaSeed}" Minimum="0" Maximum="0.5" TickFrequency="0.01"/>
-              </Grid>
-              <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
-                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.fallbackhue}"/>
-                <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientLowChromaSatScale}" Minimum="0" Maximum="1" TickFrequency="0.01"/>
-              </Grid>
-              <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
-                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.fallbacks}"/>
-                <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientLowChromaFallbackS}" Minimum="0" Maximum="1" TickFrequency="0.01"/>
-              </Grid>
-              <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
-                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.neighbordistinct}"/>
-                <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientNeighborHueMin}" Minimum="0" Maximum="360" TickFrequency="1"/>
-              </Grid>
-              <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
-                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.neighborpush}"/>
-                <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientNeighborHuePush}" Minimum="0" Maximum="360" TickFrequency="1"/>
-              </Grid>
-              <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
-                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.lumaamp}"/>
-                <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientDarkLumaAmp}" Minimum="0" Maximum="0.3" TickFrequency="0.01"/>
-              </Grid>
-              <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
-                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.lumaamp.light}"/>
-                <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientLightLumaAmp}" Minimum="0" Maximum="0.3" TickFrequency="0.01"/>
-              </Grid>
-              <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
-                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.lumadivisor}"/>
-                <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientLumaWaveDivisor}" Minimum="0.1" Maximum="10" TickFrequency="0.1"/>
-              </Grid>
+              <Expander Header="{DynamicResource prefs.studioui.trackcolor.gradient.advanced}"
+                        HorizontalAlignment="Stretch" IsExpanded="False" Margin="0,8,0,0">
+                <StackPanel Margin="0,4,0,0">
+                  <TextBlock FontSize="11" TextWrapping="Wrap"
+                             Text="{DynamicResource prefs.studioui.trackcolor.gradient.advancedhint}"/>
+                  <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.lowchromaseed}"/>
+                    <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientLowChromaSeed}" Minimum="0" Maximum="0.5" TickFrequency="0.01"/>
+                  </Grid>
+                  <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.fallbackhue}"/>
+                    <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientLowChromaSatScale}" Minimum="0" Maximum="1" TickFrequency="0.01"/>
+                  </Grid>
+                  <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.fallbacks}"/>
+                    <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientLowChromaFallbackS}" Minimum="0" Maximum="1" TickFrequency="0.01"/>
+                  </Grid>
+                  <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.neighbordistinct}"/>
+                    <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientNeighborHueMin}" Minimum="0" Maximum="360" TickFrequency="1"/>
+                  </Grid>
+                  <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.neighborpush}"/>
+                    <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientNeighborHuePush}" Minimum="0" Maximum="360" TickFrequency="1"/>
+                  </Grid>
+                  <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.lumaamp}"/>
+                    <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientDarkLumaAmp}" Minimum="0" Maximum="0.3" TickFrequency="0.01"/>
+                  </Grid>
+                  <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.lumaamp.light}"/>
+                    <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientLightLumaAmp}" Minimum="0" Maximum="0.3" TickFrequency="0.01"/>
+                  </Grid>
+                  <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.studioui.trackcolor.gradient.lumadivisor}"/>
+                    <c:UnboundedSlider Grid.Column="2" Value="{Binding GradientLumaWaveDivisor}" Minimum="0.1" Maximum="10" TickFrequency="0.1"/>
+                  </Grid>
+                </StackPanel>
+              </Expander>
             </StackPanel>
             <TextBlock Text="{DynamicResource prefs.appearance.waveform}" Margin="0,10,0,0" FontWeight="Bold"/>
             <TextBlock Text="{DynamicResource prefs.appearance.waveform.layout}" Margin="0,10,0,0"/>
@@ -463,6 +515,43 @@
                 <c:UnboundedSlider Grid.Column="2" Value="{Binding WaveformFadeOutMs}" Minimum="10" Maximum="300" TickFrequency="10"/>
               </Grid>
             </StackPanel>
+            <Expander Header="{DynamicResource prefs.appearance.waveform.advanced}"
+                      HorizontalAlignment="Stretch" IsExpanded="False" Margin="0,8,0,0">
+              <StackPanel Margin="0,4,0,0">
+                <Grid ColumnDefinitions="Auto,8,*" Margin="0,4,0,0">
+                  <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.appearance.waveform.amprows}"/>
+                  <c:UnboundedSlider Grid.Column="2" Value="{Binding WaveformAmpScaleRows}" Minimum="0.5" Maximum="4" TickFrequency="0.1"/>
+                </Grid>
+                <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                  <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.appearance.waveform.followoffset}"/>
+                  <c:UnboundedSlider Grid.Column="2" Value="{Binding WaveformFollowOffsetRows}" Minimum="0" Maximum="8" TickFrequency="0.5"/>
+                </Grid>
+                <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                  <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.appearance.waveform.smartsplitdown}"/>
+                  <c:UnboundedSlider Grid.Column="2" Value="{Binding WaveformSmartSplitDown}" Minimum="0" Maximum="10" TickFrequency="0.5"/>
+                </Grid>
+                <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                  <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.appearance.waveform.smartsplitup}"/>
+                  <c:UnboundedSlider Grid.Column="2" Value="{Binding WaveformSmartSplitUp}" Minimum="0" Maximum="10" TickFrequency="0.5"/>
+                </Grid>
+                <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                  <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.appearance.waveform.smartreturnslop}"/>
+                  <c:UnboundedSlider Grid.Column="2" Value="{Binding WaveformSmartReturnSlop}" Minimum="0" Maximum="10" TickFrequency="0.5"/>
+                </Grid>
+                <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                  <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.appearance.waveform.smartlookahead}"/>
+                  <c:UnboundedSlider Grid.Column="2" Value="{Binding WaveformSmartLookAhead}" Minimum="0" Maximum="8" TickFrequency="1"/>
+                </Grid>
+                <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                  <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.appearance.waveform.fallbacklead}"/>
+                  <c:UnboundedSlider Grid.Column="2" Value="{Binding WaveformFallbackLeadMs}" Minimum="0" Maximum="500" TickFrequency="10"/>
+                </Grid>
+                <Grid ColumnDefinitions="Auto,8,*" Margin="0,8,0,0">
+                  <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.appearance.waveform.opacity}"/>
+                  <c:UnboundedSlider Grid.Column="2" Value="{Binding WaveformAlphaPercent}" Minimum="0" Maximum="100" TickFrequency="1"/>
+                </Grid>
+              </StackPanel>
+            </Expander>
             <TextBlock Text="{DynamicResource prefs.appearance.pitchprediction}" Margin="0,10,0,0" FontWeight="Bold"/>
             <c:AppearanceColorPicker Mode="{Binding PitchPredictionColorMode}"
                                      Hex="{Binding PitchPredictionColorHex}"
@@ -522,6 +611,19 @@
             <c:AppearanceColorPicker Mode="{Binding NoteLyricColorMode}"
                                      Hex="{Binding NoteLyricColorHex}"
                                      Invert="{Binding NoteLyricColorInvert}"/>
+            <Expander Header="{DynamicResource prefs.appearance.notelyric.advanced}"
+                      HorizontalAlignment="Stretch" IsExpanded="False" Margin="0,8,0,0">
+              <StackPanel Margin="0,4,0,0">
+                <Grid ColumnDefinitions="Auto,8,*" Margin="0,4,0,0">
+                  <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource prefs.appearance.notelyric.padding}"/>
+                  <c:UnboundedSlider Grid.Column="2" Value="{Binding NoteLyricPaddingPx}" Minimum="0" Maximum="20" TickFrequency="1"/>
+                </Grid>
+                <Grid Margin="0,8,0,0">
+                  <TextBlock Text="{DynamicResource prefs.appearance.notelyric.shrinktofit}" HorizontalAlignment="Left"/>
+                  <ToggleSwitch IsChecked="{Binding NoteLyricShrinkToFit}"/>
+                </Grid>
+              </StackPanel>
+            </Expander>
           </StackPanel>
         </StackPanel>
 
