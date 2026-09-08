@@ -1,4 +1,4 @@
-﻿<Styles xmlns="https://github.com/avaloniaui"
+<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <!--
     Studio One style button skin (Studio UI only: loaded through StudioStyles.axaml).
@@ -11,9 +11,10 @@
       <ToggleButton Classes="s1"      .../>   checked = theme accent (no role)
 
     Add a role by adding one `^:checked.<role> /template/ Border#PART_Chrome` style
-    to the ToggleButton rule below. Spacing (Margin) stays at the call site.
+    to the ToggleButton rule below. Spacing (Margin) and size overrides stay at the
+    call site; the skin owns the chrome, the glyph weight, and the compact size.
 
-    The chrome lives inside the template instead of the control's Background /
+    Chrome lives inside the template instead of the control's Background /
     BorderBrush: control-level styles (e.g. TrackHeader.axaml's
     `ToggleButton { Background: Transparent }`) outrank application styles, so
     property setters here would be swallowed. Template-owned chrome cannot be.
@@ -22,15 +23,16 @@
     so both match and the later Template setter wins.
   -->
   <Style Selector="Button.s1">
+    <Setter Property="Width" Value="22"/>
     <Setter Property="Height" Value="18"/>
-    <Setter Property="MinWidth" Value="18"/>
     <Setter Property="Padding" Value="0"/>
     <Setter Property="Margin" Value="0"/>
     <Setter Property="HorizontalContentAlignment" Value="Center"/>
     <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrushPointerOver}"/>
     <Setter Property="Template">
       <ControlTemplate>
-        <Border x:Name="PART_Chrome" BorderThickness="1" CornerRadius="3">
+        <Border x:Name="PART_Chrome" BorderThickness="1" CornerRadius="4">
           <ContentPresenter x:Name="PART_Content"
                             Content="{TemplateBinding Content}"
                             ContentTemplate="{TemplateBinding ContentTemplate}"
@@ -40,16 +42,16 @@
         </Border>
       </ControlTemplate>
     </Setter>
+    <!-- Flat chip with a hairline edge: no bright outline, unlike the classic look. -->
     <Style Selector="^ /template/ Border#PART_Chrome">
-      <Setter Property="Background" Value="{DynamicResource NeutralAccentBrush}"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource NeutralAccentBrushPointerOver}"/>
+      <Setter Property="Background" Value="{DynamicResource StudioButtonBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource StudioButtonEdgeBrush}"/>
     </Style>
     <Style Selector="^:pointerover /template/ Border#PART_Chrome">
-      <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushPointerOver}"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightBaseMediumHighBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource StudioButtonHoverBrush}"/>
     </Style>
     <Style Selector="^:pressed /template/ Border#PART_Chrome">
-      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrushPointerOver}"/>
+      <Setter Property="Background" Value="{DynamicResource StudioButtonPressedBrush}"/>
     </Style>
     <Style Selector="^:focus-visible /template/ Border#PART_Chrome">
       <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush2}"/>
@@ -62,24 +64,30 @@
       <Setter Property="Background" Value="{DynamicResource AccentBrush2}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush2Semi}"/>
     </Style>
-    <Style Selector="^.fxOn">
-      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrushPointerOver}"/>
-    </Style>
+    <!-- Studio One glyphs are bold and near-white; the stroke fattens the vector. -->
     <Style Selector="^ Path.filled">
-      <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+      <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrushPointerOver}"/>
+      <Setter Property="Stroke" Value="{DynamicResource SystemControlForegroundBaseHighBrushPointerOver}"/>
+      <Setter Property="StrokeThickness" Value="0.5"/>
+    </Style>
+    <Style Selector="^ TextBlock">
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrushPointerOver}"/>
     </Style>
   </Style>
 
   <Style Selector="ToggleButton.s1">
+    <Setter Property="Width" Value="22"/>
     <Setter Property="Height" Value="18"/>
-    <Setter Property="MinWidth" Value="18"/>
     <Setter Property="Padding" Value="0"/>
     <Setter Property="Margin" Value="0"/>
     <Setter Property="HorizontalContentAlignment" Value="Center"/>
     <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrushPointerOver}"/>
     <Setter Property="Template">
       <ControlTemplate>
-        <Border x:Name="PART_Chrome" BorderThickness="1" CornerRadius="3">
+        <Border x:Name="PART_Chrome" BorderThickness="1" CornerRadius="4">
           <ContentPresenter x:Name="PART_Content"
                             Content="{TemplateBinding Content}"
                             ContentTemplate="{TemplateBinding ContentTemplate}"
@@ -90,15 +98,14 @@
       </ControlTemplate>
     </Setter>
     <Style Selector="^ /template/ Border#PART_Chrome">
-      <Setter Property="Background" Value="{DynamicResource NeutralAccentBrush}"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource NeutralAccentBrushPointerOver}"/>
+      <Setter Property="Background" Value="{DynamicResource StudioButtonBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource StudioButtonEdgeBrush}"/>
     </Style>
     <Style Selector="^:pointerover /template/ Border#PART_Chrome">
-      <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushPointerOver}"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightBaseMediumHighBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource StudioButtonHoverBrush}"/>
     </Style>
     <Style Selector="^:pressed /template/ Border#PART_Chrome">
-      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrushPointerOver}"/>
+      <Setter Property="Background" Value="{DynamicResource StudioButtonPressedBrush}"/>
     </Style>
     <Style Selector="^:focus-visible /template/ Border#PART_Chrome">
       <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush2}"/>
@@ -107,35 +114,36 @@
       <Setter Property="Opacity" Value="0.5"/>
     </Style>
     <Style Selector="^ Path.filled">
-      <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+      <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrushPointerOver}"/>
+      <Setter Property="Stroke" Value="{DynamicResource SystemControlForegroundBaseHighBrushPointerOver}"/>
+      <Setter Property="StrokeThickness" Value="0.5"/>
     </Style>
     <!-- Checked: theme accent by default, role classes override below. -->
     <Style Selector="^:checked /template/ Border#PART_Chrome">
       <Setter Property="Background" Value="{DynamicResource AccentBrush2}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush2Semi}"/>
     </Style>
-    <Style Selector="^:checked Path.filled">
-      <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrushPointerOver}"/>
-    </Style>
     <Style Selector="^:checked.mute /template/ Border#PART_Chrome">
       <Setter Property="Background" Value="{DynamicResource TrackMuteBrush}"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource TrackMuteBorderBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource TrackMuteBrush}"/>
     </Style>
     <Style Selector="^:checked.mute:pointerover /template/ Border#PART_Chrome">
       <Setter Property="Background" Value="{DynamicResource TrackMuteBorderBrush}"/>
     </Style>
     <Style Selector="^:checked.mute Path.filled">
       <Setter Property="Fill" Value="{DynamicResource OnTrackMuteBrush}"/>
+      <Setter Property="Stroke" Value="{DynamicResource OnTrackMuteBrush}"/>
     </Style>
     <Style Selector="^:checked.solo /template/ Border#PART_Chrome">
       <Setter Property="Background" Value="{DynamicResource TrackSoloBrush}"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource TrackSoloBorderBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource TrackSoloBrush}"/>
     </Style>
     <Style Selector="^:checked.solo:pointerover /template/ Border#PART_Chrome">
       <Setter Property="Background" Value="{DynamicResource TrackSoloBorderBrush}"/>
     </Style>
     <Style Selector="^:checked.solo Path.filled">
       <Setter Property="Fill" Value="{DynamicResource OnTrackSoloBrush}"/>
+      <Setter Property="Stroke" Value="{DynamicResource OnTrackSoloBrush}"/>
     </Style>
   </Style>
 </Styles>

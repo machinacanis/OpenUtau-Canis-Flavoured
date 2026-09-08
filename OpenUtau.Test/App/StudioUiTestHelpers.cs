@@ -58,5 +58,12 @@ namespace OpenUtau.App {
                 $"resource {resourceKey} not found");
             Assert.Equal(((ISolidColorBrush)expected!).Color, ((ISolidColorBrush)actual!).Color);
         }
+
+        /// <summary>For brushes that are not solid, e.g. the chrome gradient.</summary>
+        public static void AssertResourceBrush(string resourceKey, IBrush actual) {
+            Assert.True(Application.Current!.TryFindResource(resourceKey, out var expected),
+                $"resource {resourceKey} not found");
+            Assert.Same(expected, actual);
+        }
     }
 }

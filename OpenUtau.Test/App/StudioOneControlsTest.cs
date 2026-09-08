@@ -55,8 +55,9 @@ namespace OpenUtau.App {
             var chrome = StudioSkinTestHelpers.Chrome(button);
             Assert.NotNull(chrome);
             StudioSkinTestHelpers.AssertResourceColor("TrackSoloBrush", chrome!.Background);
-            StudioSkinTestHelpers.AssertResourceColor("TrackSoloBorderBrush", chrome.BorderBrush);
+            StudioSkinTestHelpers.AssertResourceColor("TrackSoloBrush", chrome.BorderBrush);
             StudioSkinTestHelpers.AssertResourceColor("OnTrackSoloBrush", glyph.Fill);
+            StudioSkinTestHelpers.AssertResourceColor("OnTrackSoloBrush", glyph.Stroke);
         }
 
         [AvaloniaFact]
@@ -67,8 +68,26 @@ namespace OpenUtau.App {
             var chrome = StudioSkinTestHelpers.Chrome(button);
             Assert.NotNull(chrome);
             StudioSkinTestHelpers.AssertResourceColor("TrackMuteBrush", chrome!.Background);
-            StudioSkinTestHelpers.AssertResourceColor("TrackMuteBorderBrush", chrome.BorderBrush);
+            StudioSkinTestHelpers.AssertResourceColor("TrackMuteBrush", chrome.BorderBrush);
             StudioSkinTestHelpers.AssertResourceColor("OnTrackMuteBrush", glyph.Fill);
+            StudioSkinTestHelpers.AssertResourceColor("OnTrackMuteBrush", glyph.Stroke);
+        }
+
+        [AvaloniaFact]
+        public void UncheckedGlyph_IsBoldWhite() {
+            using var skin = new StudioSkinScope();
+            var glyph = new Path { Data = Geometry.Parse("M0,0 L10,0 L10,10 Z") };
+            glyph.Classes.Add("filled");
+            var button = new ToggleButton { Content = glyph };
+            button.Classes.Add("s1");
+            Host(button);
+
+            StudioSkinTestHelpers.AssertResourceColor(
+                "SystemControlForegroundBaseHighBrushPointerOver", glyph.Fill);
+            StudioSkinTestHelpers.AssertResourceColor(
+                "SystemControlForegroundBaseHighBrushPointerOver", glyph.Stroke);
+            // A hairline stroke is what makes the thin vector glyph read as Studio One bold.
+            Assert.InRange(glyph.StrokeThickness, 0.3, 1.0);
         }
 
         [AvaloniaFact]
@@ -111,9 +130,12 @@ namespace OpenUtau.App {
             Host(button);
             var chrome = StudioSkinTestHelpers.Chrome(button);
             Assert.NotNull(chrome);
-            StudioSkinTestHelpers.AssertResourceColor("NeutralAccentBrush", chrome!.Background);
+            // Flat chip: gradient fill with a hairline dark edge, no bright outline.
+            StudioSkinTestHelpers.AssertResourceBrush("StudioButtonBrush", chrome!.Background);
+            StudioSkinTestHelpers.AssertResourceBrush("StudioButtonEdgeBrush", chrome.BorderBrush);
             Assert.Equal(1, chrome.BorderThickness.Left);
-            Assert.Equal(3, chrome.CornerRadius.TopLeft);
+            Assert.Equal(4, chrome.CornerRadius.TopLeft);
+            Assert.Equal(22, button.Width);
         }
 
         /// <summary>
