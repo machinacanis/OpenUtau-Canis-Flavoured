@@ -223,3 +223,24 @@ M/S 字形仍受 24×24 矢量盒限制，无法再放大；按钮高度固定 1
 顺带核实：**Avalonia 控件级样式确实优先于应用级样式**。用一个最小探针
 （同一属性：控件级 Red vs 应用级 Blue）验证结果为 Red，§0 的结论成立，
 皮肤必须把 chrome 放在模板内部这一设计前提成立。
+
+## 12. 第三轮补丁：fx 对齐回归
+
+第三轮把三个按钮上"冗余"的 `HorizontalAlignment="Stretch"` 删掉后，fx 文字明显偏左。
+实测（headless 布局探针，63px 轨道头）：
+
+| 控件 | x | 宽 | 中心 | HorizontalAlignment |
+| --- | --- | --- | --- | --- |
+| HeaderButtons 列 | 274 | 24 | — | — |
+| MuteButton | 275 | 22 | 286 | **Left** |
+| FxButton（修复前） | 275 | **11** | **280.5** | **Left** |
+| FxButton（修复后） | 275 | 22 | 286 | Stretch |
+
+原因：`HorizontalAlignment` 的默认值虽然是 Stretch，但 Avalonia 的 Button 主题把它设成了
+**Left**，所以那条"冗余"的本地 Stretch 其实是在覆盖主题值。删掉之后 fx 按钮收缩到文字宽度
+（11px）并左对齐，中心比 M/S 芯片左移 5.5px。恢复三个按钮的本地 `HorizontalAlignment="Stretch"`
+后，fx 宽度回到 22（与芯片同宽），中心与芯片中心一致。
+
+回归测试：`TrackHeaderChromeTest.FxButton_KeepsTheClassicFullWidthSlot`
+（断言 `fx.HorizontalAlignment == Stretch` 且 `fx.Bounds.Width == mute.Bounds.Width`）。
+教训：**本仓里给按钮写 `HorizontalAlignment="Stretch"` 不是冗余**，删之前先查主题默认值。

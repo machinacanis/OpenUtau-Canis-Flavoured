@@ -216,7 +216,7 @@
       </Grid>
       <StackPanel x:Name="HeaderButtons" Grid.Column="2">
         <ToggleButton x:Name="MuteButton" Classes="toolbar s1 mute" Grid.Row="1" Grid.Column="3" Margin="1" Padding="0" Height="17"
-                      ToolTip.Tip="{DynamicResource tracks.mute}"
+                      HorizontalAlignment="Stretch" ToolTip.Tip="{DynamicResource tracks.mute}"
                       IsChecked="{Binding Mute, Mode=OneWay}" Command="{Binding ToggleMute}">
           <Path Classes="filled" Width="24" Height="24"
                 Data="M 15.31,17 A 0.51,0.56 0 0 1 14.81,16.44 V 9.2 A 0.07,0.08 0 0 0 14.66,9.17 L 12.39,14.5 a 0.29,0.32 0 0 1 -0.26,0.19 h -0.35 a 0.29,0.32 0 0 1 -0.26,-0.19 L 9.27,9.17 9.12,9.2 V 16.44 A 0.51,0.56 0 0 1 8.62,17 H 8.51 A 0.51,0.56 0 0 1 8,16.44 V 7.56 A 0.51,0.56 0 0 1 8.51,7 h 0.84 a 0.43,0.48 0 0 1 0.39,0.28 l 2.23,5.2 a 0.04,0.05 0 0 0 0.07,0 l 2.16,-5.2 a 0.43,0.48 0 0 1 0.41,-0.28 h 0.88 A 0.51,0.56 0 0 1 16,7.56 V 16.44 A 0.51,0.56 0 0 1 15.5,17 Z"/>
@@ -230,7 +230,7 @@
           </ToggleButton.ContextMenu>
         </ToggleButton>
         <ToggleButton x:Name="SoloButton" Classes="toolbar s1 solo" Grid.Row="2" Grid.Column="3" Margin="1" Padding="0" Height="17"
-                      ToolTip.Tip="{DynamicResource tracks.solo}"
+                      HorizontalAlignment="Stretch" ToolTip.Tip="{DynamicResource tracks.solo}"
                       IsChecked="{Binding Solo, Mode=OneWay}" Command="{Binding ToggleSolo}">
           <Path Classes="filled" Width="24" Height="24"
                 Data="m 15.99,14.08 c 0,-0.7 -0.2,-1.23 -0.58,-1.62 C 15.03,12.07 14.44,11.79 13.68,11.6 13.29,11.51 12.84,11.43 12.28,11.33 11.74,11.24 11.31,11.18 11.01,11.12 10.46,11 10.06,10.82 9.84,10.6 9.61,10.36 9.51,10.04 9.51,9.64 c 0,-0.45 0.22,-0.82 0.67,-1.1 0.45,-0.28 1.04,-0.43 1.78,-0.43 0.67,0 1.33,0.1 1.97,0.31 0.64,0.2 1.58,0.49 1.99,0.81 H 16 V 7.71 C 15.53,7.51 14.58,7.33 13.97,7.2 13.37,7.07 12.69,7 11.96,7 10.84,7 9.91,7.26 9.17,7.78 8.44,8.28 8.07,8.95 8.07,9.76 c 0,0.71 0.21,1.27 0.65,1.72 0.45,0.44 1.13,0.75 2.06,0.93 0.45,0.09 0.88,0.16 1.29,0.21 0.41,0.06 0.79,0.13 1.13,0.22 0.47,0.11 0.79,0.28 1.03,0.47 0.23,0.21 0.34,0.52 0.34,0.95 0,0.5 -0.24,0.89 -0.71,1.19 -0.47,0.3 -1.14,0.43 -1.99,0.43 -0.61,0 -1.24,-0.11 -1.94,-0.33 C 9.23,15.32 8.62,15.02 8.09,14.61 H 8 v 1.61 C 8.61,16.48 9.22,16.68 9.82,16.81 10.41,16.93 11.08,17 11.83,17 c 0.7,0 1.29,-0.07 1.78,-0.23 0.5,-0.16 0.94,-0.38 1.3,-0.65 0.33,-0.26 0.6,-0.56 0.79,-0.93 C 15.89,14.82 15.99,14.45 15.99,14.07 Z"/>
@@ -243,7 +243,7 @@
           </ToggleButton.ContextMenu>
         </ToggleButton>
         <Button x:Name="FxButton" Grid.Row="3" Grid.Column="3" Classes="toolbar fxButton" Margin="1" Height="17"
-                      ToolTip.Tip="{DynamicResource tracks.mixfx}"
+                      HorizontalAlignment="Stretch" ToolTip.Tip="{DynamicResource tracks.mixfx}"
                       Classes.fxOn="{Binding MixFxEnabled}"
                       Command="{Binding OpenMixFxDialog}">
           <TextBlock Text="fx" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Center"/>

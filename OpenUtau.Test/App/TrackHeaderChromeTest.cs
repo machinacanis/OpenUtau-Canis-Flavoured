@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless.XUnit;
+using Avalonia.Layout;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using OpenUtau.App.Controls;
@@ -72,6 +73,18 @@ namespace OpenUtau.App {
             // Fx keeps the classic transparent look on purpose.
             Assert.DoesNotContain("s1", fx.Classes);
             Assert.Null(StudioSkinTestHelpers.Chrome(fx));
+        }
+
+        [AvaloniaFact]
+        public void FxButton_KeepsTheClassicFullWidthSlot() {
+            var header = ShowHeader(63);
+            var fx = Find<Button>(header, "FxButton");
+            var mute = Find<ToggleButton>(header, "MuteButton");
+
+            // Without the explicit Stretch the theme's Left default shrink-wraps
+            // the label, so the fx text drifts left of the M/S chips.
+            Assert.Equal(HorizontalAlignment.Stretch, fx.HorizontalAlignment);
+            Assert.Equal(mute.Bounds.Width, fx.Bounds.Width);
         }
 
         [AvaloniaFact]
