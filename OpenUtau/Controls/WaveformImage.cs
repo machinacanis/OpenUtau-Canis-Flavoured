@@ -80,20 +80,10 @@ namespace OpenUtau.App.Controls {
         private DateTime mixUnlockTime = DateTime.MinValue;
         private bool wasRendering = false;
 
-        // ±1.0 spans AmpScaleRows pitch rows. Shared by embed, follow, and fixed
-        // so layout only moves the waveform, not its amplitude.
-        const double AmpScaleRows = 1.5;
-        // Follow layouts sit this many pitch rows below the note center.
-        const double FollowOffsetRows = 2.0;
-        // Candidate new shelf: this far from the group's running minimum.
-        const float SmartSplitDown = 2f;
-        const float SmartSplitUp = 2f;
-        // A leap/drop is a peak/valley (keep) if one of the next few notes
-        // returns this close to the old floor; otherwise it is a new shelf.
-        const float SmartReturnSlop = 1.5f;
-        const int SmartLookAhead = 2;
-        const double FallbackLeadMs = 80;
-        const int WaveformAlpha = 0xB0;
+        // Legacy tuning constants now live on preferences
+        // (WaveformAmpScaleRows / WaveformFollowOffsetRows /
+        // WaveformSmartSplit* / WaveformFallbackLeadMs / WaveformAlphaPercent)
+        // so Studio UI users can tune the layouts without rebuilding.
         int waveformRgb = PackRgb(ThemeManager.WaveformColor);
 
         public WaveformImage() {
@@ -269,7 +259,7 @@ int drawWidth = Math.Min((int)Bounds.Width, bitmap.PixelSize.Width);
                         }
 
                         int layout = Preferences.Default.WaveformLayout;
-                        double scale = viewModel.TrackHeight * AmpScaleRows
+                        double scale = viewModel.TrackHeight * Preferences.Default.WaveformAmpScaleRows
                             * (Math.Max(1, Preferences.Default.WaveformScalePercent) / 100.0);
                         double leftTick = viewModel.TickOffset;
                         double rightTick = viewModel.TickOffset + viewModel.ViewportTicks;
@@ -297,7 +287,7 @@ int drawWidth = Math.Min((int)Bounds.Width, bitmap.PixelSize.Width);
                                 }
                                 float tone = note.AdjustedTone - 0.5f;
                                 if (followAbsolute) {
-                                    tone -= (float)FollowOffsetRows;
+                                    tone -= (float)Preferences.Default.WaveformFollowOffsetRows;
                                 }
                                 double yCenter = viewModel.TickToneToPoint(note.position, tone).Y;
                                 double fadeInSpan = note.position - waveStart;
@@ -487,10 +477,12 @@ int drawWidth = Math.Min((int)Bounds.Width, bitmap.PixelSize.Width);
 
         static bool ReturnsToFloor(List<UNote> notes, int i, float groupMin) {
             int seen = 0;
+            int lookAhead = Math.Max(0, Preferences.Default.WaveformSmartLookAhead);
+            float returnSlop = (float)Preferences.Default.WaveformSmartReturnSlop;
             for (int j = i + 1;
-                j < notes.Count && notes[j - 1].End >= notes[j].position && seen < SmartLookAhead;
+                j < notes.Count && notes[j - 1].End >= notes[j].position && seen < lookAhead;
                 j++, seen++) {
-                if (notes[j].AdjustedTone <= groupMin + SmartReturnSlop) {
+                if (notes[j].AdjustedTone <= groupMin + returnSlop) {
                     return true;
                 }
             }
@@ -499,10 +491,12 @@ int drawWidth = Math.Min((int)Bounds.Width, bitmap.PixelSize.Width);
 
         static bool ShouldSplitSmart(List<UNote> notes, int i, float groupMin) {
             float tone = notes[i].AdjustedTone;
-            if (tone <= groupMin - SmartSplitDown) {
+            float splitDown = (float)Preferences.Default.WaveformSmartSplitDown;
+            float splitUp = (float)Preferences.Default.WaveformSmartSplitUp;
+            if (tone <= groupMin - splitDown) {
                 return !ReturnsToFloor(notes, i, groupMin);
             }
-            if (tone >= groupMin + SmartSplitUp) {
+            if (tone >= groupMin + splitUp) {
                 return !ReturnsToFloor(notes, i, groupMin);
             }
             return false;
@@ -512,7 +506,7 @@ int drawWidth = Math.Min((int)Bounds.Width, bitmap.PixelSize.Width);
             List<UNote> notes, int start, int end, float minTone,
             int[] data, int stride, int drawWidth, int drawHeight,
             double scale, double leftTick, double rightTick) {
-            float bandTone = minTone - 0.5f - (float)FollowOffsetRows;
+            float bandTone = minTone - 0.5f - (float)Preferences.Default.WaveformFollowOffsetRows;
             bool gradient = Preferences.Default.WaveformStyle == 0;
             bool splitPrev = start > 0 && notes[start - 1].End >= notes[start].position;
             bool splitNext = end < notes.Count && notes[end - 1].End >= notes[end].position;
@@ -577,7 +571,7 @@ int drawWidth = Math.Min((int)Bounds.Width, bitmap.PixelSize.Width);
             if (first != null && first.preutter > 0) {
                 return MsDeltaTicks(project, first.PositionMs, first.preutter);
             }
-            return MsDeltaTicks(project, note.PositionMs, FallbackLeadMs);
+            return MsDeltaTicks(project, note.PositionMs, Preferences.Default.WaveformFallbackLeadMs);
         }
 
         static int TailTicks(UProject project, UVoicePart part, UNote note) {
@@ -588,7 +582,7 @@ int drawWidth = Math.Min((int)Bounds.Width, bitmap.PixelSize.Width);
                     return p4 - note.End;
                 }
             }
-            return MsDeltaTicks(project, note.EndMs, FallbackLeadMs);
+            return MsDeltaTicks(project, note.EndMs, Preferences.Default.WaveformFallbackLeadMs);
         }
 
 
@@ -610,7 +604,9 @@ int drawWidth = Math.Min((int)Bounds.Width, bitmap.PixelSize.Width);
             }
             y1 = Math.Max(0, y1);
             y2 = Math.Min(height - 1, y2);
-            int a = Math.Clamp((int)(WaveformAlpha * alpha), 0, 255);
+            int maxAlpha = Math.Clamp(
+                (int)Math.Round(Math.Clamp(Preferences.Default.WaveformAlphaPercent, 0, 100) * 2.55), 0, 255);
+            int a = Math.Clamp((int)(maxAlpha * alpha), 0, 255);
             int color = waveformRgb | (a << 24);
             for (var y = y1; y <= y2; ++y) {
                 data[x + width * y] = color;

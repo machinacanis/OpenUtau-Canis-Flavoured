@@ -128,6 +128,10 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial double RainbowStartHue { get; set; }
         [Reactive] public partial double RainbowHueSpan { get; set; }
         [Reactive] public partial int RainbowCycleTracks { get; set; }
+        [Reactive] public partial bool RainbowReverse { get; set; }
+        [Reactive] public partial double RainbowLumaAmpDark { get; set; }
+        [Reactive] public partial double RainbowLumaAmpLight { get; set; }
+        [Reactive] public partial double RainbowLumaWaveDivisor { get; set; }
         [Reactive] public partial double GradientBaseHueSpan { get; set; }
         [Reactive] public partial double GradientHueSpanPerTrack { get; set; }
         [Reactive] public partial double GradientMaxHueSpan { get; set; }
@@ -149,6 +153,10 @@ namespace OpenUtau.App.ViewModels {
             nameof(RainbowStartHue),
             nameof(RainbowHueSpan),
             nameof(RainbowCycleTracks),
+            nameof(RainbowReverse),
+            nameof(RainbowLumaAmpDark),
+            nameof(RainbowLumaAmpLight),
+            nameof(RainbowLumaWaveDivisor),
             nameof(GradientBaseHueSpan),
             nameof(GradientHueSpanPerTrack),
             nameof(GradientMaxHueSpan),
@@ -170,6 +178,14 @@ namespace OpenUtau.App.ViewModels {
             nameof(WaveformColorInvert),
             nameof(WaveformScalePercent),
             nameof(WaveformFixedBottomPx),
+            nameof(WaveformAmpScaleRows),
+            nameof(WaveformFollowOffsetRows),
+            nameof(WaveformSmartSplitDown),
+            nameof(WaveformSmartSplitUp),
+            nameof(WaveformSmartReturnSlop),
+            nameof(WaveformSmartLookAhead),
+            nameof(WaveformFallbackLeadMs),
+            nameof(WaveformAlphaPercent),
             nameof(NoteStrokeColorMode),
             nameof(NoteStrokeColorHex),
             nameof(NoteStrokeColorInvert),
@@ -190,6 +206,8 @@ namespace OpenUtau.App.ViewModels {
             nameof(NoteLyricColorMode),
             nameof(NoteLyricColorHex),
             nameof(NoteLyricColorInvert),
+            nameof(NoteLyricPaddingPx),
+            nameof(NoteLyricShrinkToFit),
         };
         [Reactive] public partial int WaveformStyle { get; set; }
         [Reactive] public partial int WaveformLayout { get; set; }
@@ -201,6 +219,14 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool WaveformColorInvert { get; set; }
         [Reactive] public partial int WaveformScalePercent { get; set; }
         [Reactive] public partial int WaveformFixedBottomPx { get; set; }
+        [Reactive] public partial double WaveformAmpScaleRows { get; set; }
+        [Reactive] public partial double WaveformFollowOffsetRows { get; set; }
+        [Reactive] public partial double WaveformSmartSplitDown { get; set; }
+        [Reactive] public partial double WaveformSmartSplitUp { get; set; }
+        [Reactive] public partial double WaveformSmartReturnSlop { get; set; }
+        [Reactive] public partial int WaveformSmartLookAhead { get; set; }
+        [Reactive] public partial double WaveformFallbackLeadMs { get; set; }
+        [Reactive] public partial int WaveformAlphaPercent { get; set; }
         [Reactive] public partial int NoteStrokeColorMode { get; set; }
         [Reactive] public partial string NoteStrokeColorHex { get; set; }
         [Reactive] public partial bool NoteStrokeColorInvert { get; set; }
@@ -221,6 +247,13 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial int NoteLyricColorMode { get; set; }
         [Reactive] public partial string NoteLyricColorHex { get; set; }
         [Reactive] public partial bool NoteLyricColorInvert { get; set; }
+        [Reactive] public partial int NoteLyricPaddingPx { get; set; }
+        [Reactive] public partial bool NoteLyricShrinkToFit { get; set; }
+        [Reactive] public partial double NoteHoverGlowDurationSec { get; set; }
+        [Reactive] public partial double PlaybackHighlightFadeInPerSec { get; set; }
+        [Reactive] public partial double PlaybackHighlightFadeOutPerSec { get; set; }
+        [Reactive] public partial double PlaybackNoteBounceDurationSec { get; set; }
+        [Reactive] public partial double PlaybackNoteBounceHeightPx { get; set; }
         public bool WaveformGradientOptionsVisible => WaveformStyle == 0 && WaveformLayout != 2;
         public bool WaveformFollowOptionsVisible => WaveformLayout == 1;
         public bool WaveformFixedOptionsVisible => WaveformLayout == 2;
@@ -343,12 +376,21 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             NoteHoverGlow = Preferences.Default.NoteHoverGlow;
             ShowPlaybackNoteHighlight = Preferences.Default.ShowPlaybackNoteHighlight;
             ShowPlaybackNoteBounce = Preferences.Default.ShowPlaybackNoteBounce;
+            NoteHoverGlowDurationSec = Preferences.Default.NoteHoverGlowDurationSec;
+            PlaybackHighlightFadeInPerSec = Preferences.Default.PlaybackHighlightFadeInPerSec;
+            PlaybackHighlightFadeOutPerSec = Preferences.Default.PlaybackHighlightFadeOutPerSec;
+            PlaybackNoteBounceDurationSec = Preferences.Default.PlaybackNoteBounceDurationSec;
+            PlaybackNoteBounceHeightPx = Preferences.Default.PlaybackNoteBounceHeightPx;
             DetachPianoRoll = Preferences.Default.DetachPianoRoll;
             UseStudioUI = Preferences.Default.UseStudioUI;
             StudioTrackColorMode = Preferences.Default.StudioTrackColorMode;
             RainbowStartHue = Preferences.Default.RainbowStartHue;
             RainbowHueSpan = Preferences.Default.RainbowHueSpan;
             RainbowCycleTracks = Preferences.Default.RainbowCycleTracks;
+            RainbowReverse = Preferences.Default.RainbowReverse;
+            RainbowLumaAmpDark = Preferences.Default.RainbowLumaAmpDark;
+            RainbowLumaAmpLight = Preferences.Default.RainbowLumaAmpLight;
+            RainbowLumaWaveDivisor = Preferences.Default.RainbowLumaWaveDivisor;
             GradientBaseHueSpan = Preferences.Default.GradientBaseHueSpan;
             GradientHueSpanPerTrack = Preferences.Default.GradientHueSpanPerTrack;
             GradientMaxHueSpan = Preferences.Default.GradientMaxHueSpan;
@@ -371,6 +413,14 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             WaveformColorInvert = Preferences.Default.WaveformColorInvert;
             WaveformScalePercent = Preferences.Default.WaveformScalePercent;
             WaveformFixedBottomPx = Preferences.Default.WaveformFixedBottomPx;
+            WaveformAmpScaleRows = Preferences.Default.WaveformAmpScaleRows;
+            WaveformFollowOffsetRows = Preferences.Default.WaveformFollowOffsetRows;
+            WaveformSmartSplitDown = Preferences.Default.WaveformSmartSplitDown;
+            WaveformSmartSplitUp = Preferences.Default.WaveformSmartSplitUp;
+            WaveformSmartReturnSlop = Preferences.Default.WaveformSmartReturnSlop;
+            WaveformSmartLookAhead = Preferences.Default.WaveformSmartLookAhead;
+            WaveformFallbackLeadMs = Preferences.Default.WaveformFallbackLeadMs;
+            WaveformAlphaPercent = Preferences.Default.WaveformAlphaPercent;
             NoteStrokeColorMode = Preferences.Default.NoteStrokeColorMode;
             NoteStrokeColorHex = Preferences.Default.NoteStrokeColorHex;
             NoteStrokeColorInvert = Preferences.Default.NoteStrokeColorInvert;
@@ -391,6 +441,8 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             NoteLyricColorMode = Preferences.Default.NoteLyricColorMode;
             NoteLyricColorHex = Preferences.Default.NoteLyricColorHex;
             NoteLyricColorInvert = Preferences.Default.NoteLyricColorInvert;
+            NoteLyricPaddingPx = Preferences.Default.NoteLyricPaddingPx;
+            NoteLyricShrinkToFit = Preferences.Default.NoteLyricShrinkToFit;
             Channel = Preferences.Default.Channel switch {
                 "beta" => 1,
                 "alpha" => 2,
@@ -536,6 +588,14 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                 .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.RainbowHueSpan = v));
             this.WhenAnyValue(vm => vm.RainbowCycleTracks)
                 .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.RainbowCycleTracks = v));
+            this.WhenAnyValue(vm => vm.RainbowReverse)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.RainbowReverse = v));
+            this.WhenAnyValue(vm => vm.RainbowLumaAmpDark)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.RainbowLumaAmpDark = v));
+            this.WhenAnyValue(vm => vm.RainbowLumaAmpLight)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.RainbowLumaAmpLight = v));
+            this.WhenAnyValue(vm => vm.RainbowLumaWaveDivisor)
+                .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.RainbowLumaWaveDivisor = v));
             this.WhenAnyValue(vm => vm.GradientBaseHueSpan)
                 .Subscribe(v => OnTrackColorTuned(() => Preferences.Default.GradientBaseHueSpan = v));
             this.WhenAnyValue(vm => vm.GradientHueSpanPerTrack)
@@ -639,6 +699,54 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             this.WhenAnyValue(vm => vm.WaveformFixedBottomPx)
                 .Subscribe(px => {
                     Preferences.Default.WaveformFixedBottomPx = px;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new WaveformRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.WaveformAmpScaleRows)
+                .Subscribe(v => {
+                    Preferences.Default.WaveformAmpScaleRows = v;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new WaveformRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.WaveformFollowOffsetRows)
+                .Subscribe(v => {
+                    Preferences.Default.WaveformFollowOffsetRows = v;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new WaveformRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.WaveformSmartSplitDown)
+                .Subscribe(v => {
+                    Preferences.Default.WaveformSmartSplitDown = v;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new WaveformRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.WaveformSmartSplitUp)
+                .Subscribe(v => {
+                    Preferences.Default.WaveformSmartSplitUp = v;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new WaveformRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.WaveformSmartReturnSlop)
+                .Subscribe(v => {
+                    Preferences.Default.WaveformSmartReturnSlop = v;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new WaveformRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.WaveformSmartLookAhead)
+                .Subscribe(v => {
+                    Preferences.Default.WaveformSmartLookAhead = v;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new WaveformRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.WaveformFallbackLeadMs)
+                .Subscribe(v => {
+                    Preferences.Default.WaveformFallbackLeadMs = v;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new WaveformRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.WaveformAlphaPercent)
+                .Subscribe(v => {
+                    Preferences.Default.WaveformAlphaPercent = v;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new WaveformRefreshEvent());
                 });
@@ -763,6 +871,18 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                     Preferences.Save();
                     ThemeManager.ApplyPianoRollStyle();
                 });
+            this.WhenAnyValue(vm => vm.NoteLyricPaddingPx)
+                .Subscribe(px => {
+                    Preferences.Default.NoteLyricPaddingPx = px;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.NoteLyricShrinkToFit)
+                .Subscribe(shrink => {
+                    Preferences.Default.NoteLyricShrinkToFit = shrink;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                });
             this.WhenAnyValue(vm => vm.DegreeStyle)
                 .Subscribe(degreeStyle => {
                     Preferences.Default.DegreeStyle = degreeStyle;
@@ -810,6 +930,31 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                     Preferences.Default.ShowPlaybackNoteBounce = showPlaybackNoteBounce;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("PlaybackNoteBounce"));
+                });
+            this.WhenAnyValue(vm => vm.NoteHoverGlowDurationSec)
+                .Subscribe(v => {
+                    Preferences.Default.NoteHoverGlowDurationSec = v;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.PlaybackHighlightFadeInPerSec)
+                .Subscribe(v => {
+                    Preferences.Default.PlaybackHighlightFadeInPerSec = v;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.PlaybackHighlightFadeOutPerSec)
+                .Subscribe(v => {
+                    Preferences.Default.PlaybackHighlightFadeOutPerSec = v;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.PlaybackNoteBounceDurationSec)
+                .Subscribe(v => {
+                    Preferences.Default.PlaybackNoteBounceDurationSec = v;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.PlaybackNoteBounceHeightPx)
+                .Subscribe(v => {
+                    Preferences.Default.PlaybackNoteBounceHeightPx = v;
+                    Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DetachPianoRoll)
                 .Subscribe(detachPianoRoll => {
@@ -1083,6 +1228,11 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                     set(value.Value);
                 }
             }
+            static void ApplyDouble(double? value, Action<double> set) {
+                if (value.HasValue) {
+                    set(value.Value);
+                }
+            }
             static void ApplyBool(bool? value, Action<bool> set) {
                 if (value.HasValue) {
                     set(value.Value);
@@ -1099,6 +1249,10 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                 if (c.RainbowStartHue.HasValue) Preferences.Default.RainbowStartHue = c.RainbowStartHue.Value;
                 if (c.RainbowHueSpan.HasValue) Preferences.Default.RainbowHueSpan = c.RainbowHueSpan.Value;
                 if (c.RainbowCycleTracks.HasValue) Preferences.Default.RainbowCycleTracks = c.RainbowCycleTracks.Value;
+                if (c.RainbowReverse.HasValue) Preferences.Default.RainbowReverse = c.RainbowReverse.Value;
+                if (c.RainbowLumaAmpDark.HasValue) Preferences.Default.RainbowLumaAmpDark = c.RainbowLumaAmpDark.Value;
+                if (c.RainbowLumaAmpLight.HasValue) Preferences.Default.RainbowLumaAmpLight = c.RainbowLumaAmpLight.Value;
+                if (c.RainbowLumaWaveDivisor.HasValue) Preferences.Default.RainbowLumaWaveDivisor = c.RainbowLumaWaveDivisor.Value;
                 if (c.GradientBaseHueSpan.HasValue) Preferences.Default.GradientBaseHueSpan = c.GradientBaseHueSpan.Value;
                 if (c.GradientHueSpanPerTrack.HasValue) Preferences.Default.GradientHueSpanPerTrack = c.GradientHueSpanPerTrack.Value;
                 if (c.GradientMaxHueSpan.HasValue) Preferences.Default.GradientMaxHueSpan = c.GradientMaxHueSpan.Value;
@@ -1122,6 +1276,14 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             ApplyBool(ui.WaveformColorInvert, v => WaveformColorInvert = v);
             ApplyInt(ui.WaveformScalePercent, v => WaveformScalePercent = v);
             ApplyInt(ui.WaveformFixedBottomPx, v => WaveformFixedBottomPx = v);
+            ApplyDouble(ui.WaveformAmpScaleRows, v => WaveformAmpScaleRows = v);
+            ApplyDouble(ui.WaveformFollowOffsetRows, v => WaveformFollowOffsetRows = v);
+            ApplyDouble(ui.WaveformSmartSplitDown, v => WaveformSmartSplitDown = v);
+            ApplyDouble(ui.WaveformSmartSplitUp, v => WaveformSmartSplitUp = v);
+            ApplyDouble(ui.WaveformSmartReturnSlop, v => WaveformSmartReturnSlop = v);
+            ApplyInt(ui.WaveformSmartLookAhead, v => WaveformSmartLookAhead = v);
+            ApplyDouble(ui.WaveformFallbackLeadMs, v => WaveformFallbackLeadMs = v);
+            ApplyInt(ui.WaveformAlphaPercent, v => WaveformAlphaPercent = v);
             ApplyInt(ui.NoteStrokeColorMode, v => NoteStrokeColorMode = v);
             ApplyString(ui.NoteStrokeColorHex, v => NoteStrokeColorHex = v);
             ApplyBool(ui.NoteStrokeColorInvert, v => NoteStrokeColorInvert = v);
@@ -1142,6 +1304,8 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             ApplyInt(ui.NoteLyricColorMode, v => NoteLyricColorMode = v);
             ApplyString(ui.NoteLyricColorHex, v => NoteLyricColorHex = v);
             ApplyBool(ui.NoteLyricColorInvert, v => NoteLyricColorInvert = v);
+            ApplyInt(ui.NoteLyricPaddingPx, v => NoteLyricPaddingPx = v);
+            ApplyBool(ui.NoteLyricShrinkToFit, v => NoteLyricShrinkToFit = v);
         }
 
         bool PresetMatches(StudioPreset preset) {
@@ -1158,6 +1322,14 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                 && Match(ui.WaveformColorInvert, Preferences.Default.WaveformColorInvert)
                 && Match(ui.WaveformScalePercent, Preferences.Default.WaveformScalePercent)
                 && Match(ui.WaveformFixedBottomPx, Preferences.Default.WaveformFixedBottomPx)
+                && Match(ui.WaveformAmpScaleRows, Preferences.Default.WaveformAmpScaleRows)
+                && Match(ui.WaveformFollowOffsetRows, Preferences.Default.WaveformFollowOffsetRows)
+                && Match(ui.WaveformSmartSplitDown, Preferences.Default.WaveformSmartSplitDown)
+                && Match(ui.WaveformSmartSplitUp, Preferences.Default.WaveformSmartSplitUp)
+                && Match(ui.WaveformSmartReturnSlop, Preferences.Default.WaveformSmartReturnSlop)
+                && Match(ui.WaveformSmartLookAhead, Preferences.Default.WaveformSmartLookAhead)
+                && Match(ui.WaveformFallbackLeadMs, Preferences.Default.WaveformFallbackLeadMs)
+                && Match(ui.WaveformAlphaPercent, Preferences.Default.WaveformAlphaPercent)
                 && Match(ui.NoteStrokeColorMode, Preferences.Default.NoteStrokeColorMode)
                 && Match(ui.NoteStrokeColorHex, Preferences.Default.NoteStrokeColorHex)
                 && Match(ui.NoteStrokeColorInvert, Preferences.Default.NoteStrokeColorInvert)
@@ -1177,13 +1349,19 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                 && Match(ui.NoteLyricItalic, Preferences.Default.NoteLyricItalic)
                 && Match(ui.NoteLyricColorMode, Preferences.Default.NoteLyricColorMode)
                 && Match(ui.NoteLyricColorHex, Preferences.Default.NoteLyricColorHex)
-                && Match(ui.NoteLyricColorInvert, Preferences.Default.NoteLyricColorInvert);
+                && Match(ui.NoteLyricColorInvert, Preferences.Default.NoteLyricColorInvert)
+                && Match(ui.NoteLyricPaddingPx, Preferences.Default.NoteLyricPaddingPx)
+                && Match(ui.NoteLyricShrinkToFit, Preferences.Default.NoteLyricShrinkToFit);
         }
 
         void SyncTrackColorToView() {
             RainbowStartHue = Preferences.Default.RainbowStartHue;
             RainbowHueSpan = Preferences.Default.RainbowHueSpan;
             RainbowCycleTracks = Preferences.Default.RainbowCycleTracks;
+            RainbowReverse = Preferences.Default.RainbowReverse;
+            RainbowLumaAmpDark = Preferences.Default.RainbowLumaAmpDark;
+            RainbowLumaAmpLight = Preferences.Default.RainbowLumaAmpLight;
+            RainbowLumaWaveDivisor = Preferences.Default.RainbowLumaWaveDivisor;
             GradientBaseHueSpan = Preferences.Default.GradientBaseHueSpan;
             GradientHueSpanPerTrack = Preferences.Default.GradientHueSpanPerTrack;
             GradientMaxHueSpan = Preferences.Default.GradientMaxHueSpan;
@@ -1204,6 +1382,10 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             return Match(config.RainbowStartHue, Preferences.Default.RainbowStartHue)
                 && Match(config.RainbowHueSpan, Preferences.Default.RainbowHueSpan)
                 && Match(config.RainbowCycleTracks, Preferences.Default.RainbowCycleTracks)
+                && Match(config.RainbowReverse, Preferences.Default.RainbowReverse)
+                && Match(config.RainbowLumaAmpDark, Preferences.Default.RainbowLumaAmpDark)
+                && Match(config.RainbowLumaAmpLight, Preferences.Default.RainbowLumaAmpLight)
+                && Match(config.RainbowLumaWaveDivisor, Preferences.Default.RainbowLumaWaveDivisor)
                 && Match(config.GradientBaseHueSpan, Preferences.Default.GradientBaseHueSpan)
                 && Match(config.GradientHueSpanPerTrack, Preferences.Default.GradientHueSpanPerTrack)
                 && Match(config.GradientMaxHueSpan, Preferences.Default.GradientMaxHueSpan)
@@ -1247,6 +1429,10 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                 RainbowStartHue = Preferences.Default.RainbowStartHue,
                 RainbowHueSpan = Preferences.Default.RainbowHueSpan,
                 RainbowCycleTracks = Preferences.Default.RainbowCycleTracks,
+                RainbowReverse = Preferences.Default.RainbowReverse,
+                RainbowLumaAmpDark = Preferences.Default.RainbowLumaAmpDark,
+                RainbowLumaAmpLight = Preferences.Default.RainbowLumaAmpLight,
+                RainbowLumaWaveDivisor = Preferences.Default.RainbowLumaWaveDivisor,
                 GradientBaseHueSpan = Preferences.Default.GradientBaseHueSpan,
                 GradientHueSpanPerTrack = Preferences.Default.GradientHueSpanPerTrack,
                 GradientMaxHueSpan = Preferences.Default.GradientMaxHueSpan,
@@ -1269,6 +1455,14 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             WaveformColorInvert = Preferences.Default.WaveformColorInvert,
             WaveformScalePercent = Preferences.Default.WaveformScalePercent,
             WaveformFixedBottomPx = Preferences.Default.WaveformFixedBottomPx,
+            WaveformAmpScaleRows = Preferences.Default.WaveformAmpScaleRows,
+            WaveformFollowOffsetRows = Preferences.Default.WaveformFollowOffsetRows,
+            WaveformSmartSplitDown = Preferences.Default.WaveformSmartSplitDown,
+            WaveformSmartSplitUp = Preferences.Default.WaveformSmartSplitUp,
+            WaveformSmartReturnSlop = Preferences.Default.WaveformSmartReturnSlop,
+            WaveformSmartLookAhead = Preferences.Default.WaveformSmartLookAhead,
+            WaveformFallbackLeadMs = Preferences.Default.WaveformFallbackLeadMs,
+            WaveformAlphaPercent = Preferences.Default.WaveformAlphaPercent,
             NoteStrokeColorMode = Preferences.Default.NoteStrokeColorMode,
             NoteStrokeColorHex = Preferences.Default.NoteStrokeColorHex,
             NoteStrokeColorInvert = Preferences.Default.NoteStrokeColorInvert,
@@ -1289,6 +1483,8 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             NoteLyricColorMode = Preferences.Default.NoteLyricColorMode,
             NoteLyricColorHex = Preferences.Default.NoteLyricColorHex,
             NoteLyricColorInvert = Preferences.Default.NoteLyricColorInvert,
+            NoteLyricPaddingPx = Preferences.Default.NoteLyricPaddingPx,
+            NoteLyricShrinkToFit = Preferences.Default.NoteLyricShrinkToFit,
         };
 
         static bool Match(int? a, int b) => !a.HasValue || a.Value == b;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Media;
@@ -73,6 +73,55 @@ namespace OpenUtau.App {
                 double expected = Mod360(120 - i * (120.0 / 3));
                 Assert.True(HueDelta(h, expected) <= 8,
                     $"track {i}: hue {h:0.0} expected ~{expected:0.0} (custom start/span)");
+            }
+        }
+
+        [Fact]
+        public void Rainbow_ConfigReverseWalksHuesUpward() {
+            var ctx = StudioDark(StudioTrackColorMode.Rainbow);
+            var custom = new StudioTrackColorConfig {
+                RainbowStartHue = 120,
+                RainbowHueSpan = 120,
+                RainbowReverse = true,
+            };
+            var swatches = StudioTrackPalette.ResolveAll(Tracks(4), ctx, custom);
+            for (int i = 0; i < 4; i++) {
+                var (h, _, _) = StudioColorMath.RgbToHsl(swatches[i].Fill);
+                double expected = Mod360(120 + i * (120.0 / 3));
+                Assert.True(HueDelta(h, expected) <= 8,
+                    $"track {i}: hue {h:0.0} expected ~{expected:0.0} (reversed)");
+            }
+        }
+
+        [Fact]
+        public void Rainbow_LumaWaveBrightensAlternateTracks() {
+            var ctx = StudioDark(StudioTrackColorMode.Rainbow);
+            // Single hue keeps every track on the same hue so lightness
+            // differences come from the luma wave alone.
+            var custom = new StudioTrackColorConfig {
+                RainbowStartHue = 8,
+                RainbowHueSpan = 0,
+                RainbowLumaAmpDark = 0.15,
+            };
+            var amp0 = new StudioTrackColorConfig {
+                RainbowStartHue = 8,
+                RainbowHueSpan = 0,
+                RainbowLumaAmpDark = 0.0,
+            };
+            var flat = StudioTrackPalette.ResolveAll(Tracks(3), ctx, amp0);
+            var waved = StudioTrackPalette.ResolveAll(Tracks(3), ctx, custom);
+            for (int i = 0; i < 3; i++) {
+                var (_, _, lFlat) = StudioColorMath.RgbToHsl(flat[i].Fill);
+                var (_, _, lWave) = StudioColorMath.RgbToHsl(waved[i].Fill);
+                Assert.InRange(lWave, 0.34, 0.71);
+                if (i == 0) {
+                    // sin(0) == 0: the first track keeps the flat lightness.
+                    Assert.True(Math.Abs(lFlat - lWave) < 0.01,
+                        $"track {i}: luma wave moved the first track (flat {lFlat:0.00}, waved {lWave:0.00})");
+                } else {
+                    Assert.True(Math.Abs(lWave - lFlat) > 0.05,
+                        $"track {i}: luma wave L {lWave:0.00} vs flat {lFlat:0.00} expected a visible step");
+                }
             }
         }
 

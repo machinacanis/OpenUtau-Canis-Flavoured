@@ -24,7 +24,7 @@ namespace OpenUtau.App.Studio {
         /// Current built-in preset format version. Bump this when built-in
         /// preset contents change so existing seeded files are regenerated.
         /// </summary>
-        public const int BuiltInVersion = 2;
+        public const int BuiltInVersion = 3;
 
         static readonly string[] BuiltInNames = [
             StudioThemeGenerator.StudioDark,
@@ -136,6 +136,14 @@ namespace OpenUtau.App.Studio {
             WaveformColorInvert = false,
             WaveformScalePercent = 150,
             WaveformFixedBottomPx = 120,
+            WaveformAmpScaleRows = 1.5,
+            WaveformFollowOffsetRows = 2.0,
+            WaveformSmartSplitDown = 2.0,
+            WaveformSmartSplitUp = 2.0,
+            WaveformSmartReturnSlop = 1.5,
+            WaveformSmartLookAhead = 2,
+            WaveformFallbackLeadMs = 80.0,
+            WaveformAlphaPercent = 69,
             NoteStrokeColorMode = 1,
             NoteStrokeColorHex = "#FFFFFFFF",
             NoteStrokeColorInvert = false,
@@ -156,6 +164,8 @@ namespace OpenUtau.App.Studio {
             NoteLyricColorMode = 3,
             NoteLyricColorHex = "#FFFFFFFF",
             NoteLyricColorInvert = false,
+            NoteLyricPaddingPx = 5,
+            NoteLyricShrinkToFit = false,
         };
 
         static string GetPath(string name) {

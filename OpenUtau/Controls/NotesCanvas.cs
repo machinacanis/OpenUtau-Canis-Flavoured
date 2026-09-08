@@ -152,11 +152,10 @@ namespace OpenUtau.App.Controls {
         private bool renderPassActive;
         private bool invalidatePending;
 
-        private const double HoverGlowDuration = 0.12;
-        private const float PlaybackHighlightFadeInPerSecond = 8.0f;
-        private const float PlaybackHighlightFadeOutPerSecond = 6.2f;
-        private const float PlaybackNoteBounceDuration = 0.25f;
-        private const double PlaybackNoteBounceHeight = 12.0;
+        // Note interaction animation timings live on preferences
+        // (NoteHoverGlowDurationSec / PlaybackHighlightFadeIn|OutPerSec /
+        // PlaybackNoteBounceDurationSec / PlaybackNoteBounceHeightPx) so users
+        // can tune them in Preferences without rebuilding.
         private UNote? hoverNote;
         private UNote? fadingHoverNote;
         private float hoverGlow;
@@ -305,7 +304,7 @@ namespace OpenUtau.App.Controls {
             var now = DateTime.UtcNow;
             float dt = (float)Math.Clamp((now - hoverLastFrame).TotalSeconds, 0, 0.1);
             hoverLastFrame = now;
-            float step = dt / (float)HoverGlowDuration;
+            float step = dt / (float)Math.Max(0.001, Preferences.Default.NoteHoverGlowDurationSec);
             bool changed = false;
             float newActive = MoveTowards(hoverGlow, hoverNote == null ? 0f : 1f, step);
             if (newActive != hoverGlow) {
@@ -455,13 +454,13 @@ namespace OpenUtau.App.Controls {
                 changed = true;
             }
             float newActive = MoveTowards(activeHighlight, !ShowPlaybackNoteHighlight || activePlaybackNote == null ? 0 : 1,
-                PlaybackHighlightFadeInPerSecond * dt);
+                (float)Math.Max(0, Preferences.Default.PlaybackHighlightFadeInPerSec) * dt);
             if (newActive != activeHighlight) {
                 activeHighlight = newActive;
                 changed = true;
             }
             float newFading = MoveTowards(fadingHighlight, 0,
-                PlaybackHighlightFadeOutPerSecond * dt);
+                (float)Math.Max(0, Preferences.Default.PlaybackHighlightFadeOutPerSec) * dt);
             if (newFading != fadingHighlight) {
                 fadingHighlight = newFading;
                 changed = true;
@@ -470,8 +469,9 @@ namespace OpenUtau.App.Controls {
                 fadingPlaybackNote = null;
                 fadingHighlight = 0;
             }
+            double bounceDuration = Math.Max(0.001, Preferences.Default.PlaybackNoteBounceDurationSec);
             bool bouncing = ShowPlaybackNoteBounce && activePlaybackNote != null &&
-                activeBounceElapsed < PlaybackNoteBounceDuration;
+                activeBounceElapsed < bounceDuration;
             if (bouncing) {
                 activeBounceElapsed += dt;
                 changed = true;
@@ -508,8 +508,9 @@ namespace OpenUtau.App.Controls {
             if (!ShowPlaybackNoteBounce || note != activePlaybackNote || !PlaybackManager.Inst.PlayingMaster) {
                 return default;
             }
-            double progress = Math.Clamp(activeBounceElapsed / PlaybackNoteBounceDuration, 0, 1);
-            double height = Math.Min(PlaybackNoteBounceHeight, TrackHeight * 0.4);
+            double bounceDuration = Math.Max(0.001, Preferences.Default.PlaybackNoteBounceDurationSec);
+            double progress = Math.Clamp(activeBounceElapsed / bounceDuration, 0, 1);
+            double height = Math.Min(Preferences.Default.PlaybackNoteBounceHeightPx, TrackHeight * 0.4);
             return new Vector(0, -Math.Sin(progress * Math.PI) * height);
         }
 
@@ -697,12 +698,19 @@ DrawHoverGlow(context, leftTop, size, radius, brush, GetHoverGlow(note));
             var typeface = ThemeManager.NoteLyricTypeface;
             var brush = ThemeManager.NoteLyricBrush;
             double fontSize = ThemeManager.NoteLyricFontSize;
-            const double pad = 5;
+            double pad = Math.Max(0, Preferences.Default.NoteLyricPaddingPx);
 
             var textLayout = TextLayoutCache.Get(lyric, brush, fontSize, typeface);
             if (vAlign == 1) {
                 if (fontSize > size.Height) {
                     return;
+                }
+                if (Preferences.Default.NoteLyricShrinkToFit && textLayout.Width + pad > size.Width) {
+                    double floor = Math.Max(6, fontSize * 0.5);
+                    while (fontSize > floor && textLayout.Width + pad > size.Width) {
+                        fontSize = Math.Max(floor, fontSize - 1);
+                        textLayout = TextLayoutCache.Get(lyric, brush, fontSize, typeface);
+                    }
                 }
                 if (textLayout.Width + pad > size.Width) {
                     string truncated = lyric[0] + "..";
