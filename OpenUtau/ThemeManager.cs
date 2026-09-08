@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -517,6 +517,13 @@ namespace OpenUtau.App {
         public SolidColorBrush AccentColorLightSemi { get; set; } // BackGround
         public SolidColorBrush AccentColorCenterKey { get; set; } // Keyboard
 
+        /// <summary>
+        /// Plain sRGB copies of the brushes above. Brushes have thread affinity,
+        /// so code that may run off the UI thread (Studio palette) must use these.
+        /// </summary>
+        public Color AccentValue { get; }
+        public Color CenterKeyValue { get; }
+
         public TrackColor(string name, string accentColor, string darkColor, string lightColor, string centerKey) {
             Name = name;
             AccentColor = SolidColorBrush.Parse(accentColor);
@@ -525,6 +532,8 @@ namespace OpenUtau.App {
             AccentColorLightSemi = SolidColorBrush.Parse(lightColor);
             AccentColorLightSemi.Opacity = 0.5;
             AccentColorCenterKey = SolidColorBrush.Parse(centerKey);
+            AccentValue = AccentColor.Color;
+            CenterKeyValue = AccentColorCenterKey.Color;
         }
     }
 }

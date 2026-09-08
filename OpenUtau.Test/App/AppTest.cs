@@ -1,13 +1,18 @@
-﻿using Xunit;
+using Xunit;
 using Avalonia;
 using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
 using Avalonia.Styling;
 using OpenUtau.App;
+using ReactiveUI.Avalonia;
 
 [assembly: AvaloniaTestApplication(typeof(TestAppBuilder))]
 
 public class TestAppBuilder {
+    // Mirrors Program.BuildAvaloniaApp: ViewModels use ReactiveUI's WhenAnyValue,
+    // so the headless test app must initialize ReactiveUI too.
     public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>()
+        .UseReactiveUI(_ => { })
         .UseHeadless(new AvaloniaHeadlessPlatformOptions());
 }
 
@@ -19,11 +24,11 @@ namespace OpenUtau.App {
             Assert.False(typeof(Program).IsAbstract);
         }
 
-        [Fact]
+        [AvaloniaFact]
         public void StringsTest() {
-            var appBuilder = TestAppBuilder.BuildAvaloniaApp()
-                .SetupWithoutStarting();
-            var app = appBuilder.Instance as App;
+            // The headless test session already built the app on its dispatcher
+            // thread; building a second one from the test thread breaks it.
+            var app = Application.Current as App;
             Assert.NotNull(app);
 
             var languages = App.GetLanguages();
