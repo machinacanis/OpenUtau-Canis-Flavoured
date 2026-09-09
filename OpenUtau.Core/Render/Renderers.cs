@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -88,6 +88,24 @@ namespace OpenUtau.Core.Render {
                 return new CustomRender.CustomServerRenderer();
             }
             return null;
+        }
+
+        // One instance per renderer id. Renderers are stateless or globally
+        // serialized (the static lockObj fields), so sharing an instance across
+        // tracks is behaviourally identical to today while an undo/redo that
+        // toggles the renderer no longer re-creates the pipeline object.
+        static readonly ConcurrentDictionary<string, IRenderer> rendererCache =
+            new ConcurrentDictionary<string, IRenderer>();
+
+        public static IRenderer GetOrCreate(string renderer) {
+            // CUSTOM_SERVER is the exception: its ServerUrl / Endpoint are
+            // per-track settings mutated by URenderSettings.Validate and read
+            // back by the track settings dialog, so tracks must not share one
+            // instance (fork).
+            if (renderer == CUSTOM_SERVER) {
+                return CreateRenderer(renderer);
+            }
+            return rendererCache.GetOrAdd(renderer ?? string.Empty, CreateRenderer);
         }
 
         readonly static ConcurrentDictionary<string, object> cacheLockMap

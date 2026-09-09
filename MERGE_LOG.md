@@ -133,3 +133,43 @@
 - `dotnet build OpenUtau -c Debug`：0 错误（存量 warning 与历次记录一致）。
 - `dotnet test OpenUtau.Test`：**413 通过 / 4 失败 / 1 跳过**。4 个失败均为存量/环境问题，与本次合并无关：3 个 `PluginRunnerTest.ExecuteTest` 因沙箱 `~/.cache/OpenUtau` 只读无法写 `temp.tmp`（单独复跑同样失败）；1 个 `StringsTest` 仅在完整套件并行/时序下触发 Avalonia 线程问题（单独运行通过，与 2b03ad56 合并记录中的已知现象一致）。上游新增测试（RenderViewTest、MixPlanTest、WaveformRefreshTest、FrozenTest、XsyVariantTest 等）全部通过；跳过项为 `DawRealPluginTest.RealPluginCompletesTheHandshakeAndPullsAudio`（需真实 DAW 插件，与上游一致）。
 - `git diff --check`：无冲突标记残留。
+
+---
+
+## Merge 2026-09-09 17bf25e7
+
+- **时间**（UTC）：`2026-09-09T17:03:45Z`（验证完成时间）
+- **合并方式**：`git merge --no-ff --no-commit upstream/master`（merge-base `7c68a0876052f1e3befe3cc01674e8853f9cd75a`，即上次合并记录的上游基线；合并范围 `7c68a087..17bf25e7`）
+- **上游基线**：`17bf25e7f78c5f88a6c5bce437bf6d592f012e46` — render: run phrase build off the UI thread from immutable snapshots
+
+### 引入的上游 commit（1 个）
+
+| # | SHA | 主题 |
+| --- | --- | --- |
+| 1 | `17bf25e7f78c5f88a6c5bce437bf6d592f012e46` | render: run phrase build off the UI thread from immutable snapshots |
+
+合并前先把本地 `master` 快进到 `origin/master`（`3220b3a8..3a31b1d6`，10 个 fork commit，含 PR #9/#10）。
+
+### 冲突
+
+仅 1 个文件出现冲突标记；其余 16 个文件自动合并（6 A / 10 M）。冲突文件及来源：
+
+| 文件 | fork 侧来源 | 上游侧来源 |
+| --- | --- | --- |
+| `OpenUtau.Core/Render/RenderPhrase.cs`（1 处，`RenderPhone` 构造函数体） | `fa88ca2c7684bd7bafd774fc8ca7916f07e788eb`（HiFiUTAU / Custom Server note-level 字段 `phonemeType`/`stretchMode`/`spliceMode`/`stretchMs` 的取值与 `Hash()` 写入；同 commit 的 `lowcut`/`warmth`/`hcmp`/`breathLow`/`breathHigh` 曲线数组） | `17bf25e7`（`RenderPhone`/`RenderPhrase` 改吃 `Pipeline.PhraseSource` 不可变快照，表达式解析上移到快照层） |
+
+### 决策记录
+
+- **`RenderPhrase.cs`：构造体取上游、fork 的 4 个字段改为读快照**。冲突段（旧 `UProject`/`UTrack`/`UPhoneme` 取值逻辑）整体丢弃，采纳上游 `oto = phoneme.Oto; oto2 = phoneme.Oto2;`；fork 的 4 个字段改由 `PhonemeSource` 提供（`phonemeType = phoneme.PhonemeType;` 等）。`Hash()` 中 4 个字段的写入与 `Hash(true)` 中 5 个曲线数组保持 fork 原样，位置不变。
+- **`OpenUtau.Core/Pipeline/PhraseSource.cs`（上游新文件）：就地加 fork 字段**。在 `PhonemeSource` 上新增 `PhonemeType`/`StretchMode`/`SpliceMode`/`StretchMs`，在构造函数里按上游既有的“快照时解析表达式”模式（同 `ENG`/`MODP` 写法）用 `TryGetExpDescriptor` 取值，descriptor 缺失即 0 —— 与 fork 快照前 `RenderPhone` 的行为逐字一致。这样 fork 的字段落在上游同构结构里，未来可回馈。
+- **`OpenUtau.Core/Render/Renderers.cs`：`GetOrCreate` 对 `CUSTOM_SERVER` 绕开实例缓存**。上游新增“按 renderer id 缓存实例”（理由是 renderer 无状态），但 fork 的 `CustomServerRenderer.ServerUrl`/`Endpoint` 是**每轨可变状态**（`URenderSettings.Validate` 写入、轨道设置对话框读回）；共用实例会让多轨的服务器地址互相覆盖。故 `GetOrCreate` 对 `CUSTOM_SERVER` 仍返回新实例，其余 renderer 照用上游缓存。`HIFIUTAU` 全静态，可安全共享。
+- **`OpenUtau.Test/Core/Pipeline/PhraseSourceHashTest.cs`（上游新文件）：golden 值改为 fork 值并加注说明**。该测试锁定 `phrase.hash`/`phone.hash` 的字节级取值。fork 的 `RenderPhone.Hash()` 额外覆盖 phtp/strt/splc/stms、`RenderPhrase.Hash(true)` 额外覆盖 lowc/warm/hcmp/brel/breh，故所有取值与上游不同。做法：先**实验验证**——只从合并后的代码里删掉这两处 fork 专属写入，测试即逐字节复现上游 golden 值（`p 421f4de4…` / `h 4b02f6dc…` 等），证明除 fork 专属输入外字节布局与上游完全一致；随后把 golden 换成 fork 的实际值（`p 871a0b45…` 等），等价于“锁定 fork 迁移前的取值”。
+- **自动合并的其余文件全部采纳**：`Pipeline/Identities.cs`、`PhraseSourceBuilder.cs`、`Snapshots.cs`（新增快照/身份/命令影响集）、`DocManager.cs`（`DocRevision` + 命令影响集）、`UPart.cs`（part 身份 + 快照回填槽 + 生成门）、`UCommand.cs`/`ExpCommands.cs`/`NoteCommands.cs`（影响集声明）、`RenderEngine.cs`（项目锁外等 `WaitPhraseSource`）、`DawAudio.cs`、`ThreadGuard.cs`、`UTrack.cs`（`Renderer = Renderers.GetOrCreate(...)` + `DocumentSnapshotStore.SetTrack`；fork 的 `serverUrl`/`endpoint`/`HIFIUTAU_LOCAL|ONLINE` 归一化自动保留）、`Renderers.cs` 的上游部分（`GetOrCreate` + `ConcurrentDictionary`）。`Renderers.cs` 与 `UTrack.cs` 是唯二两侧都改的自动合并文件，已逐个核对 fork 与上游改动都在。
+- **字符串同步**：本次未触碰任何 `Strings.*.axaml`，无需运行 `Misc/sync_strings.py`。
+
+### 已验证
+
+- `dotnet build OpenUtau -c Debug`：0 错误 / 0 警告（增量）。
+- `dotnet test OpenUtau.Test`：**475 通过 / 0 失败 / 1 跳过**（跳过项仍为 `DawRealPluginTest.RealPluginCompletesTheHandshakeAndPullsAudio`，需真实 DAW 插件，与上游一致）。上游新增测试 `PhraseSourceBuilderTest`、`PhraseSourceHashTest` 全部通过；fork 的 `HifiUtauCustomServerRendererTest`（断言 `phone.phonemeType` 等 4 个字段）经新快照路径通过，`TrackSettingsViewModel`/`CustomServerRenderer` 相关行为未回归。
+- 哈希等价实验：见决策记录第 4 条（临时删除 fork 专属写入 → 逐字节复现上游 golden → 恢复 → fork golden 通过）。
+- `git diff --check`：无冲突标记残留；本次无 `Strings.*.axaml` 变更，未运行 `Misc/sync_strings.py`。

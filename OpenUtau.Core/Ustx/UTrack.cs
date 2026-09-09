@@ -36,7 +36,7 @@ namespace OpenUtau.Core.Ustx {
                 renderer = Renderers.HIFIUTAU;
             }
             if (renderer != Renderer?.ToString()) {
-                Renderer = Renderers.CreateRenderer(renderer);
+                Renderer = Renderers.GetOrCreate(renderer);
             }
             if (renderer == Renderers.CUSTOM_SERVER) {
                 if (string.IsNullOrEmpty(serverUrl)) {
@@ -184,6 +184,7 @@ namespace OpenUtau.Core.Ustx {
             if (Singer != null && Singer.Found) {
                 Singer.EnsureLoaded();
             }
+            Pipeline.DocumentSnapshotStore.Inst.SetTrack(this);
             if (RendererSettings == null) {
                 RendererSettings = new URenderSettings();
             }
