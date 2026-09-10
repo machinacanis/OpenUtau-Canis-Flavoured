@@ -16,6 +16,7 @@ using ReactiveUI.Avalonia;
 using OpenUtau.App.Studio;
 using OpenUtau.Core.HiFiUtau;
 using OpenUtau.Core.Render;
+using ReactiveUI.Primitives.Concurrency;
 using Serilog;
 
 namespace OpenUtau.App.ViewModels {
@@ -90,7 +91,7 @@ namespace OpenUtau.App.ViewModels {
         public int LogicalCoreCount {
             get => Environment.ProcessorCount;
         }
-        [Reactive] public partial bool HighThreads { get; set; }
+        public bool HighThreads => highThreads.Value;
         public int SafeMaxThreadCount {
             get => Math.Min(8, LogicalCoreCount / 2);
         }
@@ -100,7 +101,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial string OnnxRunner { get; set; }
         public List<GpuInfo> OnnxGpuOptions { get; set; }
         [Reactive] public partial GpuInfo OnnxGpu { get; set; }
-        [Reactive] public partial bool ShowOnnxGpu { get; set; }
+        public bool ShowOnnxGpu => showOnnxGpu.Value;
 
         // GAME backend (onnx / ggml)
         public List<string> GameBackendOptions { get; } = new() { "ONNX", "GGML" };
@@ -117,7 +118,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowPlaybackNoteHighlight { get; set; }
         [Reactive] public partial bool ShowPlaybackNoteBounce { get; set; }
         [Reactive] public partial bool DetachPianoRoll { get; set; }
-        [Reactive] public partial bool ThemeEditable { get; set; }
+        public bool ThemeEditable => themeEditable.Value;
         public List<string> ThemeItems => ThemeManager.GetAvailableThemes();
         public bool IsThemeEditorOpen => Views.ThemeEditorWindow.IsOpen;
         public bool ThemeSelectionEnabled => !IsThemeEditorOpen && !UseStudioUI;
@@ -299,6 +300,22 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool Wayland { get; set; }
         public string WinePath => Preferences.Default.WinePath;
 
+        private readonly ObservableAsPropertyHelper<bool> highThreads;
+        private readonly ObservableAsPropertyHelper<bool> showOnnxGpu;
+        private readonly ObservableAsPropertyHelper<bool> themeEditable;
+
+        // WhenAnyValue emits the current value immediately on subscribe, not just on
+        // change. For preferences that just need to persist changes to disk, that
+        // means every subscription below would call Preferences.Save() once during
+        // construction with the value that was just loaded from disk - Skip(1) drops
+        // that redundant initial emission and keeps only real changes.
+        void PersistOn<T>(IObservable<T> source, Action<T> assign) {
+            source.Skip(1).Subscribe(v => {
+                assign(v);
+                Preferences.Save();
+            });
+        }
+
         public PreferencesViewModel() {
             var audioOutput = PlaybackManager.Inst.AudioOutput;
             if (audioOutput != null) {
@@ -344,7 +361,6 @@ namespace OpenUtau.App.ViewModels {
 OnnxGpu = OnnxGpuOptions.Count > 0
                 ? OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0])
                 : new GpuInfo();
-            ShowOnnxGpu = (OnnxRunner == "DirectML" || OnnxRunner == "CUDA");
             HifiUtauEmbedded = Preferences.Default.HifiUtauEmbedded;
             HifiUtauSplicerPath = Preferences.Default.HifiUtauSplicerPath;
             HifiUtauHnsepPath = Preferences.Default.HifiUtauHnsepPath;
@@ -459,13 +475,26 @@ OnnxGpu = OnnxGpuOptions.Count > 0
 
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
                 .Subscribe(_ => this.RaisePropertyChanged(nameof(IsThemeEditorOpen)));
-            
-            this.WhenAnyValue(vm => vm.UseSystemDefaultDevice)
-                .Subscribe(useDefault => {
-                    Preferences.Default.UseSystemDefaultAudioDevice = useDefault;
-                    Preferences.Save();
-                });
+
+            // Derived UI-only state: these should reflect the loaded value right
+            // away, so unlike the persistence subscriptions below they are not
+            // Skip(1)'d, and ToProperty raises change notifications for us instead
+            // of relying on a manual RaisePropertyChanged call in an unrelated
+            // subscription.
+            this.WhenAnyValue(vm => vm.NumRenderThreads)
+                .Select(n => n > SafeMaxThreadCount)
+                .ToProperty(this, vm => vm.HighThreads, out highThreads);
+            this.WhenAnyValue(vm => vm.OnnxRunner)
+                .Select(runner => runner == "DirectML" || runner == "CUDA")
+                .ToProperty(this, vm => vm.ShowOnnxGpu, out showOnnxGpu);
+            this.WhenAnyValue(vm => vm.ThemeName)
+                .Select(themeName => !ThemeManager.IsBuiltIn(themeName) && !Colors.CustomTheme.IsPackageTheme(themeName))
+                .ToProperty(this, vm => vm.ThemeEditable, out themeEditable);
+
+            PersistOn(this.WhenAnyValue(vm => vm.UseSystemDefaultDevice),
+                useDefault => Preferences.Default.UseSystemDefaultAudioDevice = useDefault);
             this.WhenAnyValue(vm => vm.AudioOutputDevice)
+                .Skip(1)
                 .OfType<AudioOutputDevice>()
                 .SubscribeOn(AvaloniaScheduler.Instance)
                 .Subscribe(device => {
@@ -480,62 +509,30 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                         }
                     }
                 });
-            this.WhenAnyValue(vm => vm.AudioBackEnd)
-                .Subscribe(index => {
-                    Preferences.Default.AudioBackEnd = index;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.PlaybackAutoScroll)
-                .Subscribe(autoScroll => {
-                    Preferences.Default.PlaybackAutoScroll = autoScroll;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.PlayPosMarkerMargin)
-                .Subscribe(playPosMarkerMargin => {
-                    Preferences.Default.PlayPosMarkerMargin = playPosMarkerMargin;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.MetronomeVolume)
-                .Subscribe(metronomeVolume => {
-                    Preferences.Default.MetronomeVolume = metronomeVolume;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.MetronomeHighFrequency)
-                .Subscribe(metronomeHighFrequency => {
-                    Preferences.Default.MetronomeHighFrequency = metronomeHighFrequency;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.MetronomeLowFrequency)
-                .Subscribe(metronomeLowFrequency => {
-                    Preferences.Default.MetronomeLowFrequency = metronomeLowFrequency;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.LockStartTime)
-                .Subscribe(lockStartTime => {
-                    Preferences.Default.LockStartTime = lockStartTime;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.InstallToAdditionalSingersPath)
-                .Subscribe(additionalSingersPath => {
-                    Preferences.Default.InstallToAdditionalSingersPath = additionalSingersPath;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.Wayland)
-                .Subscribe(additionalSingersPath => {
-                    Preferences.Default.UseWayland = Wayland;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.LoadDeepFolders)
-                .Subscribe(loadDeepFolders => {
-                    Preferences.Default.LoadDeepFolderSinger = loadDeepFolders;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.PreRender)
-                .Subscribe(preRender => {
-                    Preferences.Default.PreRender = preRender;
-                    Preferences.Save();
-                });
+            PersistOn(this.WhenAnyValue(vm => vm.AudioBackEnd),
+                index => Preferences.Default.AudioBackEnd = index);
+            PersistOn(this.WhenAnyValue(vm => vm.PlaybackAutoScroll),
+                autoScroll => Preferences.Default.PlaybackAutoScroll = autoScroll);
+            PersistOn(this.WhenAnyValue(vm => vm.PlayPosMarkerMargin),
+                playPosMarkerMargin => Preferences.Default.PlayPosMarkerMargin = playPosMarkerMargin);
+            PersistOn(this.WhenAnyValue(vm => vm.MetronomeVolume),
+                metronomeVolume => Preferences.Default.MetronomeVolume = metronomeVolume);
+            PersistOn(this.WhenAnyValue(vm => vm.MetronomeHighFrequency),
+                metronomeHighFrequency => Preferences.Default.MetronomeHighFrequency = metronomeHighFrequency);
+            PersistOn(this.WhenAnyValue(vm => vm.MetronomeLowFrequency),
+                metronomeLowFrequency => Preferences.Default.MetronomeLowFrequency = metronomeLowFrequency);
+            PersistOn(this.WhenAnyValue(vm => vm.LockStartTime),
+                lockStartTime => Preferences.Default.LockStartTime = lockStartTime);
+            PersistOn(this.WhenAnyValue(vm => vm.InstallToAdditionalSingersPath),
+                additionalSingersPath => Preferences.Default.InstallToAdditionalSingersPath = additionalSingersPath);
+            PersistOn(this.WhenAnyValue(vm => vm.Wayland),
+                wayland => Preferences.Default.UseWayland = wayland);
+            PersistOn(this.WhenAnyValue(vm => vm.LoadDeepFolders),
+                loadDeepFolders => Preferences.Default.LoadDeepFolderSinger = loadDeepFolders);
+            PersistOn(this.WhenAnyValue(vm => vm.PreRender),
+                preRender => Preferences.Default.PreRender = preRender);
             this.WhenAnyValue(vm => vm.Language)
+                .Skip(1)
                 .OfType<CultureInfo>()
                 .Subscribe(lang => {
                     Preferences.Default.Language = lang?.Name ?? string.Empty;
@@ -543,14 +540,15 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                     App.SetLanguage(Preferences.Default.Language);
                 });
             this.WhenAnyValue(vm => vm.SortingOrder)
+                .Skip(1)
                 .OfType<CultureInfo>()
                 .Subscribe(so => {
                     Preferences.Default.SortingOrder = so?.Name ?? null;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.ThemeName)
+                .Skip(1)
                 .Subscribe(themeName => {
-                    ThemeEditable = !ThemeManager.IsBuiltIn(themeName) && !Colors.CustomTheme.IsPackageTheme(themeName);
                     if (!IsThemeEditorOpen) {
                         Preferences.Default.ThemeName = themeName;
                         Preferences.Save();
@@ -884,48 +882,56 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.DegreeStyle)
+                .Skip(1)
                 .Subscribe(degreeStyle => {
                     Preferences.Default.DegreeStyle = degreeStyle;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Part"));
                 });
             this.WhenAnyValue(vm => vm.UseTrackColor)
+                .Skip(1)
                 .Subscribe(trackColor => {
                     Preferences.Default.UseTrackColor = trackColor;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("TrackColor"));
                 });
             this.WhenAnyValue(vm => vm.ShowPortrait)
+                .Skip(1)
                 .Subscribe(showPortrait => {
                     Preferences.Default.ShowPortrait = showPortrait;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Portrait"));
                 });
             this.WhenAnyValue(vm => vm.ShowIcon)
+                .Skip(1)
                 .Subscribe(showIcon => {
                     Preferences.Default.ShowIcon = showIcon;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Portrait"));
                 });
             this.WhenAnyValue(vm => vm.ShowGhostNotes)
+                .Skip(1)
                 .Subscribe(showGhostNotes => {
                     Preferences.Default.ShowGhostNotes = showGhostNotes;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Part"));
                 });
             this.WhenAnyValue(vm => vm.NoteHoverGlow)
+                .Skip(1)
                 .Subscribe(noteHoverGlow => {
                     Preferences.Default.NoteHoverGlow = noteHoverGlow;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.ShowPlaybackNoteHighlight)
+                .Skip(1)
                 .Subscribe(showPlaybackNoteHighlight => {
                     Preferences.Default.ShowPlaybackNoteHighlight = showPlaybackNoteHighlight;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("PlaybackNoteHighlight"));
                 });
             this.WhenAnyValue(vm => vm.ShowPlaybackNoteBounce)
+                .Skip(1)
                 .Subscribe(showPlaybackNoteBounce => {
                     Preferences.Default.ShowPlaybackNoteBounce = showPlaybackNoteBounce;
                     Preferences.Save();
@@ -957,163 +963,91 @@ OnnxGpu = OnnxGpuOptions.Count > 0
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DetachPianoRoll)
+                .Skip(1)
                 .Subscribe(detachPianoRoll => {
                     Preferences.Default.DetachPianoRoll = detachPianoRoll;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Attachment"));
                 });
-            this.WhenAnyValue(vm => vm.Channel)
-                .Subscribe(channel => {
-                    Preferences.Default.Channel = channel switch {
-                        1 => "beta",
-                        2 => "alpha",
-                        _ => "stable"
-                    };
-                    Preferences.Save();
-                });
+            PersistOn(this.WhenAnyValue(vm => vm.Channel), channel => {
+                Preferences.Default.Channel = channel switch {
+                    1 => "beta",
+                    2 => "alpha",
+                    _ => "stable"
+                };
+            });
             this.WhenAnyValue(vm => vm.LyricsHelper)
+                .Skip(1)
                 .OfType<LyricsHelperOption>()
                 .Subscribe(option => {
                     ActiveLyricsHelper.Inst.Set(option?.klass);
                     Preferences.Default.LyricHelper = option?.klass?.Name ?? string.Empty;
                     Preferences.Save();
                 });
-            this.WhenAnyValue(vm => vm.LyricsHelperBrackets)
-                .Subscribe(brackets => {
-                    Preferences.Default.LyricsHelperBrackets = brackets;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.OtoEditor)
-                .Subscribe(index => {
-                    Preferences.Default.OtoEditor = index;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.NumRenderThreads)
-                .Subscribe(index => {
-                    Preferences.Default.NumRenderThreads = index;
-                    HighThreads = index > SafeMaxThreadCount ? true : false;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.DefaultRenderer)
-                .Subscribe(index => {
-                    Preferences.Default.DefaultRenderer = index;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.OnnxRunner)
-                .Subscribe(index => {
-                    Preferences.Default.OnnxRunner = index;
-                    Preferences.Save();
-                    ToggleOnnxGpuDisplay(index == "DirectML" || index == "CUDA");
-                });
-            this.WhenAnyValue(vm => vm.OnnxGpu)
-                .Subscribe(index => {
-                    Preferences.Default.OnnxGpu = index.deviceId;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.HifiUtauEmbedded)
-                .Subscribe(value => {
+            PersistOn(this.WhenAnyValue(vm => vm.LyricsHelperBrackets),
+                brackets => Preferences.Default.LyricsHelperBrackets = brackets);
+            PersistOn(this.WhenAnyValue(vm => vm.OtoEditor),
+                index => Preferences.Default.OtoEditor = index);
+            PersistOn(this.WhenAnyValue(vm => vm.NumRenderThreads),
+                index => Preferences.Default.NumRenderThreads = index);
+            PersistOn(this.WhenAnyValue(vm => vm.DefaultRenderer),
+                index => Preferences.Default.DefaultRenderer = index);
+            PersistOn(this.WhenAnyValue(vm => vm.OnnxRunner),
+                index => Preferences.Default.OnnxRunner = index);
+            PersistOn(this.WhenAnyValue(vm => vm.OnnxGpu),
+                gpu => Preferences.Default.OnnxGpu = gpu.deviceId);
+            PersistOn(this.WhenAnyValue(vm => vm.GameBackend),
+                backend => Preferences.Default.GameBackend = backend == "GGML" ? "ggml" : "onnx");
+            PersistOn(this.WhenAnyValue(vm => vm.RememberMid),
+                value => Preferences.Default.RememberMid = value);
+            PersistOn(this.WhenAnyValue(vm => vm.RememberUst),
+                value => Preferences.Default.RememberUst = value);
+            PersistOn(this.WhenAnyValue(vm => vm.RememberVsqx),
+                value => Preferences.Default.RememberVsqx = value);
+            PersistOn(this.WhenAnyValue(vm => vm.ClearCacheOnQuit),
+                value => Preferences.Default.ClearCacheOnQuit = value);
+            PersistOn(this.WhenAnyValue(vm => vm.DiffSingerSteps),
+                value => Preferences.Default.DiffSingerSteps = value);
+            PersistOn(this.WhenAnyValue(vm => vm.DiffSingerStepsVariance),
+                value => Preferences.Default.DiffSingerStepsVariance = value);
+            PersistOn(this.WhenAnyValue(vm => vm.DiffSingerStepsPitch),
+                value => Preferences.Default.DiffSingerStepsPitch = value);
+            PersistOn(this.WhenAnyValue(vm => vm.DiffSingerDepth),
+                value => Preferences.Default.DiffSingerDepth = value / 100);
+            PersistOn(this.WhenAnyValue(vm => vm.DiffSingerTensorCache),
+                value => Preferences.Default.DiffSingerTensorCache = value);
+            PersistOn(this.WhenAnyValue(vm => vm.DiffSingerVarianceLocalPitchPatch),
+                value => Preferences.Default.DiffSingerVarianceLocalPitchPatch = value);
+            PersistOn(this.WhenAnyValue(vm => vm.DiffSingerLangCodeHide),
+                value => Preferences.Default.DiffSingerLangCodeHide = value);
+            PersistOn(this.WhenAnyValue(vm => vm.DiffSingerLocalRetaking),
+                value => Preferences.Default.DiffSingerLocalRetaking = value);
+            PersistOn(this.WhenAnyValue(vm => vm.SkipRenderingMutedTracks),
+                skipRenderingMutedTracks => Preferences.Default.SkipRenderingMutedTracks = skipRenderingMutedTracks);
+            PersistOn(this.WhenAnyValue(vm => vm.HifiUtauEmbedded),
+                value => {
                     Preferences.Default.HifiUtauEmbedded = value;
-                    Preferences.Save();
                     RefreshHifiUtauStatus();
                 });
-            this.WhenAnyValue(vm => vm.HifiUtauPreload)
-                .Subscribe(value => {
-                    Preferences.Default.HifiUtauPreload = value;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.HifiUtauSplicerPath)
-                .Subscribe(path => {
+            PersistOn(this.WhenAnyValue(vm => vm.HifiUtauPreload),
+                value => Preferences.Default.HifiUtauPreload = value);
+            PersistOn(this.WhenAnyValue(vm => vm.HifiUtauSplicerPath),
+                path => {
                     Preferences.Default.HifiUtauSplicerPath = path ?? string.Empty;
-                    Preferences.Save();
                     RefreshHifiUtauStatus();
                 });
-            this.WhenAnyValue(vm => vm.HifiUtauHnsepPath)
-                .Subscribe(path => {
+            PersistOn(this.WhenAnyValue(vm => vm.HifiUtauHnsepPath),
+                path => {
                     Preferences.Default.HifiUtauHnsepPath = path ?? string.Empty;
-                    Preferences.Save();
                     RefreshHifiUtauStatus();
                 });
-            this.WhenAnyValue(vm => vm.HifiUtauIntraOpThreads)
-                .Subscribe(value => {
-                    Preferences.Default.HifiUtauIntraOpThreads = value;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.CustomServerUrl)
-                .Subscribe(url => {
+            PersistOn(this.WhenAnyValue(vm => vm.HifiUtauIntraOpThreads),
+                value => Preferences.Default.HifiUtauIntraOpThreads = value);
+            PersistOn(this.WhenAnyValue(vm => vm.CustomServerUrl),
+                url => {
                     if (!string.IsNullOrWhiteSpace(url)) {
                         Preferences.Default.DefaultServerUrl = url;
-                        Preferences.Save();
                     }
-                });
-            this.WhenAnyValue(vm => vm.GameBackend)
-                .Subscribe(index => {
-                    Preferences.Default.GameBackend = index == "GGML" ? "ggml" : "onnx";
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.RememberMid)
-                .Subscribe(index => {
-                    Preferences.Default.RememberMid = index;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.RememberUst)
-                .Subscribe(index => {
-                    Preferences.Default.RememberUst = index;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.RememberVsqx)
-                .Subscribe(index => {
-                    Preferences.Default.RememberVsqx = index;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.ClearCacheOnQuit)
-                .Subscribe(index => {
-                    Preferences.Default.ClearCacheOnQuit = index;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.DiffSingerSteps)
-                .Subscribe(index => {
-                    Preferences.Default.DiffSingerSteps = index;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.DiffSingerStepsVariance)
-                 .Subscribe(index => {
-                     Preferences.Default.DiffSingerStepsVariance = index;
-                     Preferences.Save();
-                 });
-            this.WhenAnyValue(vm => vm.DiffSingerStepsPitch)
-                .Subscribe(index => {
-                    Preferences.Default.DiffSingerStepsPitch = index;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.DiffSingerDepth)
-                .Subscribe(index => {
-                    Preferences.Default.DiffSingerDepth = index / 100;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.DiffSingerTensorCache)
-                .Subscribe(useCache => {
-                    Preferences.Default.DiffSingerTensorCache = useCache;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.DiffSingerVarianceLocalPitchPatch)
-                .Subscribe(useLocalPatch => {
-                    Preferences.Default.DiffSingerVarianceLocalPitchPatch = useLocalPatch;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.DiffSingerLangCodeHide)
-                .Subscribe(useCache => {
-                    Preferences.Default.DiffSingerLangCodeHide = useCache;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.DiffSingerLocalRetaking)
-                .Subscribe(value => {
-                    Preferences.Default.DiffSingerLocalRetaking = value;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.SkipRenderingMutedTracks)
-                .Subscribe(skipRenderingMutedTracks => {
-                    Preferences.Default.SkipRenderingMutedTracks = skipRenderingMutedTracks;
-                    Preferences.Save();
                 });
         }
 
@@ -1531,10 +1465,6 @@ OnnxGpu = OnnxGpuOptions.Count > 0
             Colors.CustomTheme.ListThemes();
             _ = OudepLoaderRegistry.LoadAllAsync();
             this.RaisePropertyChanged(nameof(ThemeItems));
-        }
-
-        public void ToggleOnnxGpuDisplay(bool show) {
-            ShowOnnxGpu = show;
         }
 
         public void SetHifiUtauSplicerPath(string path) {

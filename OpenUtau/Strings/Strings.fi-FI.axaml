@@ -29,6 +29,7 @@
   <!--<system:String x:Key="command.import.track">Import track(s)</system:String>-->
   <!--<system:String x:Key="command.note.add">Add note</system:String>-->
   <!--<system:String x:Key="command.note.delete">Delete note(s)</system:String>-->
+  <!--<system:String x:Key="command.note.duplicate">Duplicate note(s)</system:String>-->
   <!--<system:String x:Key="command.note.edit">Edit note(s)</system:String>-->
   <!--<system:String x:Key="command.note.lyric">Edit lyric(s)</system:String>-->
   <!--<system:String x:Key="command.note.move">Move note(s)</system:String>-->
@@ -130,8 +131,7 @@
 
   <system:String x:Key="dialogs.about.caption">OpenUtausta</system:String>
   <system:String x:Key="dialogs.about.message">
-    OpenUtaun tavoitteena on olla avoimen lähdekoodin editointiympäristö UTAU-yhteisölle, jossa on moderni käyttökokemus ja älykäs foneettinen tuki. Vieraile Githubissa.
-  </system:String>
+OpenUtaun tavoitteena on olla avoimen lähdekoodin editointiympäristö UTAU-yhteisölle, jossa on moderni käyttökokemus ja älykäs foneettinen tuki. Vieraile Githubissa.</system:String>
   <system:String x:Key="dialogs.exitsave.caption">Lopeta OpenUtau</system:String>
   <system:String x:Key="dialogs.exitsave.message">Tämänhetkinen projekti sisältää tallentamattomia muutoksia. Haluatko tallentaa muutokset?</system:String>
   <system:String x:Key="dialogs.export.caption">Vie</system:String>
@@ -800,9 +800,7 @@ HN-SEP model: {3} ({4})</system:String>-->
   1. Set "resampler-compatibility" to "on" in moreconfig.txt.
   2. Set "auto-update-llsm-mrq" to "off" in moreconfig.txt.
   3. Patiently wait for moresampler to generate missing llsm files.</system:String>-->
-  <system:String x:Key="prefs.rendering.resampler.note">
-    HUOM: Jos haluat käyttää ulkoisia resamplereita, lisää resampler DLL tai EXE-tiedosto Resamplers-kansioon, joka sijaitsee OpenUtaun polulla ja valitse se asetuksista.
-  </system:String>
+  <system:String x:Key="prefs.rendering.resampler.note">HUOM: Jos haluat käyttää ulkoisia resamplereita, lisää resampler DLL tai EXE-tiedosto Resamplers-kansioon, joka sijaitsee OpenUtaun polulla ja valitse se asetuksista.</system:String>
   <!--<system:String x:Key="prefs.rendering.skipmuted">Skip muted tracks</system:String>-->
   <!--<system:String x:Key="prefs.rendering.threads.cpuwarn">Warning: too many render threads may cause OpenUtau to run slowly.</system:String>-->
   <!--<system:String x:Key="prefs.rendering.threads.numthreads">Maximum Render Threads</system:String>-->

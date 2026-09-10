@@ -173,3 +173,68 @@
 - `dotnet test OpenUtau.Test`：**475 通过 / 0 失败 / 1 跳过**（跳过项仍为 `DawRealPluginTest.RealPluginCompletesTheHandshakeAndPullsAudio`，需真实 DAW 插件，与上游一致）。上游新增测试 `PhraseSourceBuilderTest`、`PhraseSourceHashTest` 全部通过；fork 的 `HifiUtauCustomServerRendererTest`（断言 `phone.phonemeType` 等 4 个字段）经新快照路径通过，`TrackSettingsViewModel`/`CustomServerRenderer` 相关行为未回归。
 - 哈希等价实验：见决策记录第 4 条（临时删除 fork 专属写入 → 逐字节复现上游 golden → 恢复 → fork golden 通过）。
 - `git diff --check`：无冲突标记残留；本次无 `Strings.*.axaml` 变更，未运行 `Misc/sync_strings.py`。
+
+---
+
+## Merge 2026-09-10 4696de48
+
+- **时间**（UTC）：`2026-09-10T08:24:54Z`（验证完成时间）
+- **合并方式**：`git merge --no-ff --no-commit upstream/master`（merge-base `17bf25e7f78c5f88a6c5bce437bf6d592f012e46`，即上次合并记录的上游基线；合并范围 `17bf25e7..4696de48`）
+- **上游基线**：`4696de48e7cbf6ab2a4a3c2bdd21552c69f24073` — Fix pitch spike at merged-phrase gaps (DiffSinger) (#2388)
+- **fork 侧基线**：`6636147e3ad670f6960a3134472830d6c42eae30`（Merge upstream/master (17bf25e7) into master）
+
+### 引入的上游 commit（18 个）
+
+| # | SHA | 主题 |
+| --- | --- | --- |
+| 1 | `31c7c5d407b250dde2d6686ef1571c8a922ed44f` | 1 (#2387)（Avalonia/ReactiveUI 版本提升、`TopLevel.GetTopLevel` 换用） |
+| 2 | `a255be420d8a211215503cd1d097218a12ffc2d6` | 1 (#2386)（`Phonemizer.GetParentVoiceColor` 越界保护、`UTrack` 声部色默认值钳制） |
+| 3 | `4febd495b86d91753c37f85cea3fa719cad59560` | Add retry loop to NSIS Chocolatey install step |
+| 4 | `c5977c13a838560cf24524361e103acf5816ff30` | Fix Singer Selector Errors (#2383) |
+| 5 | `64fedd61362cd53109da15ea60a9229706ca2d70` | Fix EditTools Shortcut (#2377) |
+| 6 | `d53af641294f943024e12a8b41de6a982cb34bd6` | Fix for crashes when selecting a singer (#2374) |
+| 7 | `d420674510d439c31dccdfaca96a385d66d08700` | Wire the DAW integration API into the UI (#2376) |
+| 8 | `680959d9a72c0910e3d9e533f2a6a27a98eb3e1a` | Adds scroll function to BPM (#2385) |
+| 9 | `27b09aa73cda119bb007ec55e085c6580ec7b7ec` | Update translations (#2373) |
+| 10 | `0c934958560a9864d90f90233f27fbee9e2ac575` | Duplicate notes with Alt + dragging (#2267) |
+| 11 | `99f1def2e294493b64c17f37eb55a4065a699c9c` | Chinese VCV phonemizer BY樗儿 support (#2225) |
+| 12 | `07f4bdc4e99c4ede5d010446766ac885493cf889` | Guard TimeAxis against non-finite tempo values (#2347) |
+| 13 | `820928a54319a2d6558a5a0728e16b8fd82c19fc` | Fix PreferencesViewModel resave-on-open more robustly |
+| 14 | `535e6857e62b9b34f727bfd60ab9c1879925f3cf` | Migrate from Newtonsoft.Json to System.Text.Json (#2189) |
+| 15 | `468939a6f7620bb06e94050145aad5bbbe573b6d` | Rename default phonemizer menu label to "Select Phonemizer" (#2151) |
+| 16 | `138e3af3a1eae85ad5f52fc13c842b1874a169f6` | Remove auto-merge workflow |
+| 17 | `9138af6e52620968bb5e5becdc50be90b1c2d230` | Serialize WorldlineRenderer cache file access per path |
+| 18 | `4696de48e7cbf6ab2a4a3c2bdd21552c69f24073` | Fix pitch spike at merged-phrase gaps (DiffSinger) (#2388) |
+
+### 冲突（24 个文件）
+
+`git merge` 报 24 个冲突文件；另有 2 处 git 未标记、但语义重复的自动合并（见决策记录第 2、3 条）。
+
+| 文件 | fork 侧来源 | 上游侧来源 |
+| --- | --- | --- |
+| `OpenUtau/Strings/Strings.axaml`（4 处） | `7ab7714a77eb2161db5be09eb16eb15d1f569406`（DAW 集成字符串）、`6a3d3c7cb1f457f356e795e5c54e1bce244a897f`（HiFiUTAU 偏好字符串）、`39c12f7774b4e515b199f0b0975bed7e91d1c154` / `a65e4bac9d6f0eb3ffcb446217b266d6596b910a` / `c29b2b100c7ef67652a16fc23c9c7c9a0ce8a073`（Studio UI 外观键） | `d4206745`（DAW UI 字符串，与 fork 同名同文本）、`27b09aa7`（Crowdin 翻译更新）、`468939a6`（`command.note.duplicate` 等） |
+| `OpenUtau/Strings/Strings.de-DE / es-ES / es-MX / fi-FI / fr-FR / id-ID / it-IT / ja-JP / ko-KR / nl-NL / pl-PL / pt-BR / ro-RO / ru-RU / th-TH / tr-TR / vi-VN / zh-CN / zh-TW.axaml`（19 个） | `4f52cceecebc50f4df2db2a40d05578814c364e1`（sync_strings.py 全语言补键）、`dece045ef5c37853f5c2aa11d48dd38e82caaf25`（zh-CN 译文）及上述 Studio UI 提交 | `27b09aa7`（整份重译，行级全量冲突） |
+| `OpenUtau/ViewModels/DawIntegrationViewModel.cs`（4 处，add/add） | `53b2417f10935b397b6c2e7b303b59ac0177519a`、`7ab7714a`、`d44e7b69293954db771393fdd34bde8e8cde7cae`、`530d83141fe1bb770778a9ba08ca2ebcb65148f3` | `d4206745`（上游独立实现的同一 UI） |
+| `OpenUtau/Views/DawIntegrationDialog.axaml`（2 处，add/add） | `7ab7714a`（列宽 + Close 按钮）、`53b2417f` | `d4206745` |
+| `OpenUtau/Views/DawIntegrationDialog.axaml.cs`（1 处，add/add） | `53b2417f` | `d4206745` |
+| `OpenUtau/ViewModels/PreferencesViewModel.cs`（4 处） | `fcb6f2ab182eb86de4df05a1489e798e3b9483ab`、`39c12f77`、`a65e4bac`、`c29b2b10`（Studio UI 偏好 + HiFiUTAU 偏好） | `820928a5`（`PersistOn` 重构）、`31c7c5d4`（版本提升附带 1 行） |
+| `OpenUtau/Views/MainWindow.axaml` / `.axaml.cs`（自动合并后语义重复） | `53b2417f`（DAW 菜单项 + `OnMenuDawIntegration`） | `d4206745`（同一菜单项 + 同名处理函数）、`680959d9`（BPM 滚轮） |
+| `OpenUtau.Core/OpenUtau.Core.csproj`（自动合并后语义冲突） | 无（fork 未改此文件） | `535e6857`（移除 `Newtonsoft.Json` 包引用） |
+
+### 决策记录
+
+- **`PreferencesViewModel.cs`：取上游 `PersistOn` 重构，fork 的 6 个偏好改写成 `PersistOn` 形式追加**。冲突段 1（构造器初始化）保留 fork 的 HiFiUTAU/Custom Server 初始化，删除手写的 `ShowOnnxGpu = (...)`——上游已把它改成由 `OnnxRunner` 派生的 `ObservableAsPropertyHelper`。冲突段 2 删除 fork 的 `ThemeEditable = ...` 手写赋值。冲突段 4 保留 fork 的 `SetHifiUtauSplicerPath`/`SetHifiUtauHnsepPath`/`ResetHifiUtauPaths`/`RefreshHifiUtauStatus`（`PreferencesDialog.axaml(.cs)` 仍在调用），删除 `ToggleOnnxGpuDisplay`（`ShowOnnxGpu` 现在只读派生，唯一调用点在冲突段 3 中已随上游版本消失）。冲突段 3（最大段）采纳上游 40 行 `PersistOn(...)` 列表，并追加 fork 的 `HifiUtauEmbedded`/`HifiUtauPreload`/`HifiUtauSplicerPath`/`HifiUtauHnsepPath`/`HifiUtauIntraOpThreads`/`CustomServerUrl`——这样 fork 偏好同样获得上游的 `Skip(1)`（打开对话框不再回写 prefs）语义；`CustomServerUrl` 保留“空值不写”的判断，放在回调内。**另改一处上游公式**：`ThemeEditable` 的派生表达式改用 fork 的 `ThemeManager.IsBuiltIn(themeName)`（= Light/Dark/Studio/WarmSage），而不是上游的字面 `themeName != "Light" && themeName != "Dark"`——否则 fork 的 Studio/WarmSage 内置主题会被判成可编辑主题，露出自定义主题的编辑/删除按钮。校验脚本比对：fork 侧 122 个 `Preferences.Default.*` 赋值在合并结果中**一个不少**，上游 50 个也全部在内。
+- **DAW 集成 UI（3 个 add/add 文件）：以 fork 版为底，采纳上游的启用/断开判定**。两侧是同一功能的两次独立实现：fork 版有 `button.close` 关闭按钮、固定列宽、注释指向 fork 的 `API.md`；上游版有更稳的状态判定。故 `DawIntegrationDialog.axaml`/`.axaml.cs` 整取 fork 版（保留 Close 按钮与 `OnClose`）；`DawIntegrationViewModel.cs` 取 fork 版但换成上游的 `ConnectEnabled`（要求 `Disconnected`，避免重连中重复连接）、`DisconnectEnabled`（按 `DawManager.Inst.Connections` 实际状态判断，重连中也能断开、选中未连接项不再阻塞）与 `DisconnectAsync`（只断开确实有连接的端口，否则全断）。上游的 `using DynamicData.Binding;` 未采纳——fork 版该文件不使用 DynamicData，且 fork 此前已删（保留会留无用 using）。
+- **`MainWindow.axaml` / `.axaml.cs`：删除重复的 DAW 菜单项与同名处理函数**。git 未报冲突，但两侧各自加了一行菜单项和一份同名 `OnMenuDawIntegration`（两份函数体逐字相同）。保留上游位置（Full Screen 之后 / 上游函数所在处），删除 fork 那份，避免菜单出现两个 “DAW Integration...” 与编译期重复成员。
+- **`OpenUtau.Core.csproj`：把上游删掉的 `Newtonsoft.Json` 包引用加回**。上游 `535e6857` 把 Core 迁到 `System.Text.Json` 并移除了包引用，但 fork 的 `HiFiUtau/*`（`HifiUtauPhraseJson`、`SynthesisEngine`、`PhraseData`、`HifiUtauRenderer`）与 `CustomRender/*`（`CustomPhraseJson`、`CustomServerRenderer`）仍用 `JsonConvert`。加回时附注释说明原因；Core 其余部分照上游走 `Json.Serialize/Deserialize`。
+- **19 个语言文件：整取上游重译版，再回填 fork 专属键的既有译文**。做法：先 `git checkout --theirs` 取上游 `27b09aa7` 的重译，再把 fork 侧“上游没有、且 fork 已翻译（值≠英文）”的键追加回去（共 215 条：zh-CN 136、zh-TW 10、id-ID/nl-NL 各 8、fr-FR/ru-RU/pt-BR/vi-VN 各 7、it-IT 5、de-DE/es-MX/pl-PL/th-TH 各 4、ja-JP/ko-KR 各 2）。这样上游的 Crowdin 重译与 fork 的人工译文都不丢——若只跑 `sync_strings.py`，这 215 条会被英文占位符覆盖。
+- **`Strings.axaml`（英文源）：取两侧键的并集**，4 处冲突全部保留 fork 键块、补入上游独有的 `command.note.duplicate`（同键文本两侧本已逐字一致）。随后跑 `Misc/sync_strings.py` 归一化（排序、给每个语言补齐缺失键并以注释形式标出未翻译项），脚本已把 fork 的 130 个专属键分发到全部 22 个语言文件。
+- **自动合并的其余文件全部采纳**：Avalonia 12.1.2 / ReactiveUI 24.2.0 / SourceGenerators 3.2.0 版本提升与 `TopLevel.GetTopLevel` 换用、`Json.cs` 包装与各格式/工具类的 JSON 迁移、`TimeAxis` 非有限 BPM 防护及其新测试、Alt 拖拽复制音符（`NoteEditStates`/`NoteBatchEdits`）、DiffSinger 合并乐句间隙的 pitch spike 修复与 `RenderPitchResult.voiced`、WorldlineRenderer 缓存文件按路径串行、歌手选择器崩溃修复（`UTrack` 色值钳制、`TrackHeaderViewModel` 空 ID 过滤 + `GetParentVoiceColor` 越界保护）、EditTools 快捷键重排、BPM 滚轮、新增 `ChineseVCVPhonemizer` 与 `ar-SA`/`cs-CZ`/`uk-UA` 三个新语言文件、删除 auto-merge workflow。核对脚本确认：fork 改过的 `UTrack.cs`、`TrackHeaderViewModel.cs`、`TrackHeader.axaml.cs`、`PianoRoll.axaml.cs`、`Preferences.cs` 中 fork 侧的成员/字段声明**零丢失**。
+
+### 已验证
+
+- `dotnet build OpenUtau -c Debug`：**0 错误**（完整重建，1765 条存量警告，与历次一致）。
+- `dotnet test OpenUtau.Test`：**488 通过 / 6 失败 / 1 跳过**（总计 495）。6 个失败全部是 `OpenUtau.App.StudioOneControlsTest` 的 `NullReferenceException`（Studio 按钮皮肤的 headless 资源查找，`StudioUiTestHelpers.AssertResourceColor` 行 59）。为确认与本合并无关，用 `git worktree` 在合并前基线 `6636147e` 上跑同一过滤器：**同样 6 失败 / 2 通过**，堆栈逐字相同——属环境（headless 下 DynamicResource 不解析）导致的存量失败，非本次合并引入。跳过项仍为需真实 DAW 插件的 `DawRealPluginTest.RealPluginCompletesTheHandshakeAndPullsAudio`。上游新增测试（`TimeAxisTest`、`LoadRenderedPitchTest` 等）全部通过；fork 的 Studio UI / HiFiUTAU / Custom Server / DAW 集成测试未回归。
+- 字符串校验脚本：英文源 928 键；fork 键与上游键**并集完整**（无缺失、无多出）；22 个语言文件与英文键集一致（未翻译项以 `<!--<system:String ...>-->` 注释形式存在）；抽样确认 `prefs.appearance.noteefx.advanced`、`dialogs.tracksettings.endpoint` 等 fork 译文仍在，`dawintegration.*`、`button.close` 等键在英文源中存在。
+- `git diff --check`：无冲突标记残留；仅上游自带的 4 处行尾空格（`Strings.ko-KR`/`Strings.zh-CN` 译文、`MainWindow.axaml.cs` 上游代码）与本次处理无关。
+- `Misc/sync_strings.py`：已运行，输出即上述归一化结果。

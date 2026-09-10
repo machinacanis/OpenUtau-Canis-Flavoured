@@ -29,6 +29,7 @@
   <system:String x:Key="command.import.track">Parça(lar)ı içe aktar</system:String>
   <system:String x:Key="command.note.add">Nota ekle</system:String>
   <system:String x:Key="command.note.delete">Nota(lar)ı sil</system:String>
+  <!--<system:String x:Key="command.note.duplicate">Duplicate note(s)</system:String>-->
   <system:String x:Key="command.note.edit">Nota(lar)ı düzenle</system:String>
   <system:String x:Key="command.note.lyric">Söz(ler)i düzenle</system:String>
   <system:String x:Key="command.note.move">Nota(lar)ı taşı</system:String>

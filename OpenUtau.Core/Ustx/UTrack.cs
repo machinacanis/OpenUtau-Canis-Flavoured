@@ -195,6 +195,7 @@ namespace OpenUtau.Core.Ustx {
                     var colors = Singer.Subbanks.Select(subbank => subbank.Color).ToHashSet();
                     VoiceColorExp.options = colors.OrderBy(c => c).ToArray();
                     VoiceColorExp.max = VoiceColorExp.options.Length - 1;
+                    VoiceColorExp.CustomDefaultValue = Math.Clamp(VoiceColorExp.CustomDefaultValue, VoiceColorExp.min, VoiceColorExp.max);
                 }
             }
             if (project.expressions.TryGetValue(Format.Ustx.CLRY, out var descriptor2)) {
@@ -203,6 +204,7 @@ namespace OpenUtau.Core.Ustx {
                     var colors = Singer.Subbanks.Select(subbank => subbank.Color).ToHashSet();
                     VoiceColor2Exp.options = colors.OrderBy(c => c).ToArray();
                     VoiceColor2Exp.max = VoiceColor2Exp.options.Length - 1;
+                    VoiceColor2Exp.CustomDefaultValue = Math.Clamp(VoiceColor2Exp.CustomDefaultValue, VoiceColor2Exp.min, VoiceColor2Exp.max);
                 }
             }
         }
