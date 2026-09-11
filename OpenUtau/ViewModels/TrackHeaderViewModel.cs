@@ -202,7 +202,7 @@ namespace OpenUtau.App.ViewModels {
             MessageBus.Current.SendMessage(new TrackMuteVisualEvent(track.TrackNo));
         }
 
-        public void ToggleMute(bool mute) {
+        public void SetMute(bool mute) {
             if (mute) {
                 Mute = true;
             } else {
