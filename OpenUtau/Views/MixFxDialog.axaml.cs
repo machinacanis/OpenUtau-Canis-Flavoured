@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
@@ -18,6 +19,32 @@ namespace OpenUtau.App.Views {
             this.track = track;
             DataContext = viewModel = new MixFxViewModel(track);
             viewModel.AskForName = PromptForNameAsync;
+            AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
+            KeyDown += OnForwardKeyDown;
+        }
+
+        // Space always drives the transport here, even when a preset ComboBox
+        // has focus. Intercepting on the tunnel route stops the ComboBox (or a
+        // checkbox/button) from consuming Space and reopening its dropdown.
+        void OnPreviewKeyDown(object? sender, KeyEventArgs args) {
+            if (args.Key == Key.Space && args.KeyModifiers == KeyModifiers.None) {
+                if (Owner is MainWindow mainWindow) {
+                    mainWindow.HandleGlobalShortcut(args);
+                }
+            }
+        }
+
+        // The window is modeless, so keep the main window's global shortcuts
+        // (Ctrl+Z/S, ...) working while this window has focus. KeyDown only
+        // receives keys no focused control consumed.
+        void OnForwardKeyDown(object? sender, KeyEventArgs args) {
+            if (args.Key == Key.F4 && args.KeyModifiers == KeyModifiers.Alt) {
+                // Let the OS close this window instead of shutting down the app.
+                return;
+            }
+            if (Owner is MainWindow mainWindow) {
+                mainWindow.HandleGlobalShortcut(args);
+            }
         }
 
         Task<string?> PromptForNameAsync() {
@@ -34,11 +61,24 @@ namespace OpenUtau.App.Views {
             return tcs.Task;
         }
 
-        void OnOkClicked(object sender, RoutedEventArgs e) {
+        void Apply() {
             viewModel.Apply();
             if (track != null) {
                 MessageBus.Current.SendMessage(new MixFxChangedNotification(track.TrackNo));
             }
+            // Re-render from the current position so the change is audible
+            // immediately while the window stays open for further tweaking.
+            if (PlaybackManager.Inst.PlayingMaster) {
+                PlaybackManager.Inst.Play(DocManager.Inst.Project, DocManager.Inst.playPosTick);
+            }
+        }
+
+        void OnApplyClicked(object sender, RoutedEventArgs e) {
+            Apply();
+        }
+
+        void OnOkClicked(object sender, RoutedEventArgs e) {
+            Apply();
             Close();
         }
 

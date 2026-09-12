@@ -889,7 +889,9 @@ namespace OpenUtau.App.Views {
             }
         }
 
-        void OnKeyDown(object sender, KeyEventArgs args) {
+        void OnKeyDown(object sender, KeyEventArgs args) => HandleGlobalShortcut(args);
+
+        public void HandleGlobalShortcut(KeyEventArgs args) {
             if (PianoRollContainer.IsKeyboardFocusWithin) {
                 args.Handled = false;
                 return;
@@ -2013,6 +2015,7 @@ namespace OpenUtau.App.Views {
                     Log.Information("Cache cleared.");
                 }
                 PlaybackManager.Inst.StopPlayback();
+                MixFxWindowManager.CloseAll();
                 Preferences.Default.MainWindowSize.Set(Width, Height, Position.X, Position.Y, (int)WindowState);
                 Preferences.Default.RecoveryPath = string.Empty;
                 Preferences.Save();
@@ -2024,6 +2027,7 @@ namespace OpenUtau.App.Views {
                     return;
                 }
                 pianoRollWindow?.Close();
+                MixFxWindowManager.CloseAll();
                 forceClose = true;
                 Close();
             }, TaskScheduler.FromCurrentSynchronizationContext());
@@ -2047,6 +2051,11 @@ namespace OpenUtau.App.Views {
         }
 
         public void OnNext(UCommand cmd, bool isUndo) {
+            if (cmd is LoadProjectNotification) {
+                MixFxWindowManager.CloseAll();
+            } else if (cmd is RemoveTrackCommand removeTrack) {
+                MixFxWindowManager.CloseFor(removeTrack.track);
+            }
             if (cmd is ErrorMessageNotification notif) {
                 switch (notif.e) {
                     case Core.Render.NoResamplerException:
