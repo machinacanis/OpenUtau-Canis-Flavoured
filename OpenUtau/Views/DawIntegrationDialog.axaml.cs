@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -28,6 +28,7 @@ namespace OpenUtau.App.Views {
 
         void OnRefresh(object sender, RoutedEventArgs e) => Refresh();
 
+        // fork-only: pairs with the Close button in DawIntegrationDialog.axaml.
         void OnClose(object sender, RoutedEventArgs e) => Close();
 
         async void Refresh() {

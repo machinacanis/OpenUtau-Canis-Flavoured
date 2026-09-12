@@ -1,4 +1,4 @@
-<Window xmlns="https://github.com/avaloniaui"
+﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -20,11 +20,11 @@
         <DataGridTextColumn Header="{DynamicResource dawintegration.col.port}"
                             Binding="{Binding Port}" Width="70"/>
         <DataGridTextColumn Header="{DynamicResource dawintegration.col.apiversion}"
-                            Binding="{Binding ApiVersion}" Width="60"/>
+                            Binding="{Binding ApiVersion}" Width="Auto"/>
         <DataGridTextColumn Header="{DynamicResource dawintegration.col.compatibility}"
-                            Binding="{Binding Compatibility}" Width="130"/>
+                            Binding="{Binding Compatibility}" Width="Auto"/>
         <DataGridTextColumn Header="{DynamicResource dawintegration.col.state}"
-                            Binding="{Binding StateText}" Width="110"/>
+                            Binding="{Binding StateText}" Width="Auto"/>
       </DataGrid.Columns>
     </DataGrid>
 
@@ -38,6 +38,7 @@
               IsEnabled="{Binding ConnectEnabled}"/>
       <Button Content="{DynamicResource dawintegration.disconnect}" Click="OnDisconnect"
               IsEnabled="{Binding DisconnectEnabled}"/>
+      <!-- fork-only: upstream's dialog has no Close button. -->
       <Button Content="{DynamicResource button.close}" Click="OnClose" Width="90"/>
     </StackPanel>
   </Grid>

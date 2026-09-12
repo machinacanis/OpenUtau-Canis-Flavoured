@@ -316,4 +316,35 @@
 
 **唯一保留的 fork 差异**：`ToggleMuteWithBool` 内的一行 `MessageBus.Current.SendMessage(new TrackMuteVisualEvent(track.TrackNo));`——fork 独有的 Studio 静音视觉（`PartsCanvas.cs` 消费），不属同功能双实现。
 
-**历史记录不改写**：`## Merge 2026-09-06` / `2026-09-07` / `2026-09-08` / `2026-09-09` / `2026-09-10` 各轮里的同类决策（如 DAW 集成「以 fork 版为底」、`WaveformImage` 取 fork 侧）**保留原文未动**。那些是 fork 独有功能面（DAW UI/协议、Studio 波形绘制），按政策第 3 条本就不在替换范围内；若后续评审认为其中某处应改取上游，再单独开 topic 处理并另起记录。
+**历史记录不改写**：`## Merge 2026-09-06` / `2026-09-07` / `2026-09-08` / `2026-09-09` / `2026-09-10` 各轮里的同类决策**保留原文未动**，改为在下文「DAW 复核」中给出逐个结论；涉及 fork 独有功能面的（Studio 波形绘制等）按政策第 3 条不在替换范围内。若后续评审认为其中某处应改取上游，再单独开 topic 处理并另起记录。
+
+### DAW 复核（政策追溯第 2 批）
+
+起因：评审指出「DAW 的实现完全不是 fork 做的，是上游之前合入的」。核实结论——**该判断正确，此前记录里的表述有误**，已在下面更正。
+
+**事实核对**（`git diff upstream/master` 逐文件比对）：
+
+| 部分 | 本地 vs `upstream/master` | 归属 |
+| --- | --- | --- |
+| `OpenUtau.Core/DawIntegration/` 5 个核心文件（`DawManager` / `DawMessages` / `DawServerFinder` / `DawTransport` / `DawAudio`） | **逐字节一致** | 上游 `84344cbd` #2369 |
+| `OpenUtau.Test/Core/DawIntegration/` 8 个测试文件 | **逐字节一致** | 上游 `84344cbd` |
+| `OpenUtau.Core/DawIntegration/API.md` | 一致 | 上游 |
+| `OpenUtau/ViewModels/DawIntegrationViewModel.cs` | 差 1 删 2 增 | 上游 `d4206745` #2376 为底 + 2 处 fork 改动 |
+| `OpenUtau/Views/DawIntegrationDialog.axaml` / `.axaml.cs` | 差 3 增 1 删 | **fork 侧 `53b2417f` / `7ab7714a` 自有**（上游同路径另有一份 `d4206745` 实现） |
+
+更正两处此前记录的不准确表述：
+1. 2026-09-06 记录称「DAW 集成**核心 + 测试 + 契约文档**按用户指示以上游为基准……fork 侧 Kakaru 版实现被替换」——**准确**，本次复核再次确认 5+8 文件与上游逐字节一致。
+2. **但 DAW 的 UI 是 fork 自有的，且上游也有一份自己的 DAW UI**。2026-09-06 记录写过「fork DAW UI 保留并适配：`DawIntegrationViewModel.cs` / `DawIntegrationDialog.axaml(.cs)` / Tools 菜单项 / `dawintegration.*` 字符串为 fork 自有（上游无 UI）」——`d4206745` #2376 恰恰就是上游的 DAW UI，所以「上游无 UI」这句在上游 `d4206745` 合入后已不成立（该轮合并时间线上 `d4206745` 与 fork UI 同轮出现，故当时误记）。此处更正。
+
+**本次处置**（按 Merge conflict policy 逐处判定）：
+
+| 差异 | 判定 | 理由 |
+| --- | --- | --- |
+| `DawIntegrationDialog.axaml` 三列 `Width="60"/"130"/"110"` | **改回上游 `Width="Auto"`** | 同功能的两种写法，无功能差异；固定像素还比 `Auto` 更差（不随语言/字号自适应）。采纳上游以消除差异 |
+| `DawIntegrationDialog.axaml` 的 `button.close` 关闭按钮 + `.axaml.cs` 的 `OnClose` | **保留** | 政策第 3 条：上游 `d4206745` 的对话框**没有**关闭按钮，这是 fork 新增功能，不是同功能双实现。`button.close` 英文键也确认是 fork 独有（上游 `Strings.axaml` 无此键）。已各加 `// fork-only:` 注释标明归属 |
+| `DawIntegrationViewModel.cs` 删除 `using DynamicData.Binding;` | **保留删除** | 该文件不使用 DynamicData，属未使用 using，留着会吃警告 |
+| `DawIntegrationViewModel.cs` 注释 `PROTOCOL.md §4` → `API.md §4` | **保留** | 政策第 4 条例外（上游实现有明确缺陷）：上游 `OpenUtau.Core/DawIntegration/` 下**只有 `API.md`，没有 `PROTOCOL.md`**，而 5 个核心文件里有 **26 处** `PROTOCOL.md` 引用全部指向不存在的文件。此处让注释指向真实文件；不采纳上游的陈旧引用，已在 `MERGE_LOG.md`（本条）记录该缺陷与证据 |
+
+处置后 `DawIntegrationDialog.axaml` / `.axaml.cs` 的差异只剩「一个 fork 新增的关闭按钮 + 两行标注注释」，`DawIntegrationViewModel.cs` 只剩「未使用 using 的删除 + 一处指对文件的注释」。**DAW 核心与测试与上游逐字节一致，不会再有合并冲突。**
+
+注意（不改写、供后续判断）：其余 26 处 `PROTOCOL.md` 引用位于与上游逐字节一致的 5 个核心文件里，**本 fork 保持原样不动机**——那些是上游自身的陈旧引用，改动它们会让核心文件重新偏离上游，与政策「尽量减少差异」冲突。要不要向上游报这个文档引用问题，属上游事务，另行决定。
