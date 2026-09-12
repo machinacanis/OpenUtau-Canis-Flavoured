@@ -142,6 +142,44 @@ Native：`cd cpp && bazelisk build //worldline`。
    - 决策记录：逐条说明每个冲突做了什么决策、为什么（保留哪边 / 合并哪边 / 如何组合），以及验证方式与结果（构建、测试、`Misc/sync_strings.py` 同步结果）。
 3. **可读性**：每条记录是独立的 `## Merge YYYY-MM-DD <上游SHA前8位>` 块，块间用 `---` 分隔，按时间顺序追加在文件末尾，不改写历史记录。
 
+## Merge conflict policy（冲突取舍）
+
+当**上游与 fork 用不同方式修同一个功能 / 同一个 bug** 时，**总是采纳上游版本**，并尽量减小该文件与上游的代码差异 —— 目的：避免同一文件在每次同步时反复冲突。
+
+1. **同目标双实现 → 取上游**：删掉 fork 的替代实现，不要为了兼容 fork 独有调用点而保留自定义字段、改名或额外重载。
+2. **优先减小 diff**：能靠改调用点解决就不要改上游结构；命名、字段名、方法名一律跟上游，不要为了「fork 风格」重命名上游标识符。
+3. **fork 独有功能另起落点**：只有 fork 独有的功能（Studio UI、HiFiUTAU、CUSTOM_SERVER、DAW 对话框关闭按钮等）才保留 fork 实现，并和上游结构分开文件 / 分开类。
+4. **例外**：上游实现有明确的正确性缺陷时可以不采纳，但必须在 `MERGE_LOG.md` 里写明缺陷、证据和取舍，不能只写「fork 更好」。
+5. 本条与 `## Merge logging` 的记录义务同时生效：改了取舍也要记录。
+
+### 判定流程（必须执行）
+
+**在决定取舍之前，必须先取证确认「差异确实是在修同一个目标」。** 不许凭文件名、凭直觉、凭记忆判断。
+
+1. **量化两侧改动**：对每个候选文件分别取
+   `git diff --numstat <base> upstream/master -- <file>`（上游侧）与
+   `git diff --numstat <base> master -- <file>`（fork 侧）。
+2. **看当前残余差异由谁贡献**：`git diff upstream/master -- <file>`。若**上游侧改动量为 0**，说明上游已自行回退或从未实现该目标 —— **没有可替换的上游实现**，直接归入第 3 条保留。
+3. **归属到 commit 与作者**：`git log --oneline -- <file>`，并用
+   `git merge-base --is-ancestor <sha> upstream/master` 与 `git log -1 --format="%an"` 确认差异来自上游还是 fork。**一个文件的差异可能混合两侧来源，必须逐段归属，不能整文件定性。**
+4. **逐行核对目标**：只读上游侧那几行的**意图**。若上游只是在既有框架里追加一行（例如在 `PersistOn(...)` 列表里加一个偏好），而 fork 是在加**新功能**，则**不算同目标**，不触发替换。
+5. **集合类差异无「二选一」**：如 `Strings.axaml`、语言文件这类，改比**键集合**而非行。若 fork 侧是上游的**严格超集**（上游独有键数为 0），则不存在可替换项；fork 独有键需按其前缀归类确认是否对应 fork 功能。
+6. **记录结论**：无论替换与否，都在 `MERGE_LOG.md` 里给出「文件 / 上游侧改动量 / fork 侧改动量 / 归属 commit / 判定 / 理由」。
+
+### 已复核结果为「非同目标、保留 fork」的清单
+
+避免后续重复排查。这些已确认**不是**同目标双实现：
+
+| 文件 | 保留原因 |
+| --- | --- |
+| `OpenUtau/Controls/WaveformImage.cs` | 上游侧改动量为 0（其 `ea676948` 已被上游自己 `2b03ad56` revert）；425 行差异来自 fork 的 Studio 波形重绘 |
+| `OpenUtau/ViewModels/PreferencesViewModel.cs` | 上游只在既有 `PersistOn` 框架里加一个偏好；fork 是新增 Studio UI / HiFiUTAU / Custom Server 偏好页 |
+| `OpenUtau/Strings/Strings.axaml` | fork 侧是上游的严格超集（130 独有键全属 fork 功能） |
+| `OpenUtau/Views/DawIntegrationDialog.axaml(.cs)` | Close 按钮与 `button.close` 键为 fork 新增功能，上游对话框没有 |
+| `OpenUtau/Views/DawIntegrationViewModel.cs` | 仅「删除未使用 using」+「注释指向真实文件 `API.md`」（政策第 4 条例外） |
+
+**已确认属于「同目标双实现」并已改取上游**：`PhonemizerFactory.cs`（并发竞态）、`TrackHeaderViewModel.cs` / `TrackHeaderCanvas.cs`（`ToggleMute` 重载冲突崩溃）。DAW 核心 5 文件与 8 个测试文件早已与上游逐字节一致。
+
 ## Branches
 
 `master` 是 integration branch（不是 `main`），只接收已完成的 topic 合并。产品改动在 topic branch 上做：一个主题一条分支。流程是 GitHub Flow，不是 Git Flow：没有 `develop` / `release/*`。
