@@ -387,3 +387,55 @@
 | `Strings.axaml` | 保留 fork 超集 | 否（严格超集，130 键全属 fork 功能） |
 
 **没有发现别的「双方各修同一目标」的遗留项。** 至此政策追溯完成。
+
+### 合并结果完整性复查（2026-09-12，按政策判定流程）
+
+起因：政策追溯后反查「本次合并的冲突处置是否也造成了内容丢失」。结论：**没有丢失任何上游内容，也没有丢失有意的 fork 内容**。取证如下。
+
+**1. 上游内容零丢失（决定性）**：取上游侧 `4696de48..upstream/master` 全部**修改类**文件中新增的每一行（去重、忽略 ≤12 字符的短行），在合并结果里逐条字面匹配——
+
+| 指标 | 值 |
+| --- | --- |
+| 上游新增行总数 | **435** |
+| 未命中 | **0** |
+
+**2. fork 内容零丢失（除政策有意项）**：取合并前 fork 基线 `392d0510` 相对 `4696de48` 新增的每一行，在当前文件中逐条匹配——
+
+| 指标 | 值 |
+| --- | --- |
+| fork 新增行总数 | **5071** |
+| 未命中 | **30** |
+
+30 行**全部**对应本章节记录的、按政策有意让给上游的改动，无一行属意外丢失：
+- `PhonemizerFactory.cs` 23 行（fork 的 `registryGate` 锁实现及说明注释）
+- `OpenUtau.Test/Core/Api/PhonemizerFactoryTest.cs` 3 行（描述 fork 锁设计的注释）
+- `TrackHeaderViewModel.cs` / `TrackHeaderCanvas.cs` 各 1 行（`SetMute` 命名）
+- `DawIntegrationDialog.axaml` 3 行（三列固定像素宽度）
+
+**3. 相对上游的差异行逐条确认无内容丢失**（`git diff upstream/master --numstat` 后逐项归因）：
+
+| 文件 | 差异 | 归因 | 判定 |
+| --- | --- | --- | --- |
+| `MainWindow.axaml.cs` | +20 / −11 | −11 中 9 行是 `OnMenuDawIntegration` **位置移动**（逐字相同），另 2 行是 `OnKeyDown` 重构为 `OnKeyDown => HandleGlobalShortcut(args)`（fork 为 `MixFxWindowManager` 抽的显式入口） | 移动/重构，非删除 |
+| `TrackHeaderViewModel.cs` | +22 / −16 | Studio 功能面：`ApplyPaint()` + `StudioTrackPaintCache` 取代直接 `ThemeManager.GetTrackColor`；`MixFxWindowManager.Open` 取代内联 `MixFxDialog`；`ThemeEditable` 用 fork 的修正公式 | fork 功能 |
+| `PianoRoll.axaml` | +9 / −3 | fork 的波形布局（`VerticalAlignment="Stretch"`、去掉 `Margin="0,0,0,60" Height="60"`、面板拖拽分隔条） | fork 功能 |
+| `PianoRoll.axaml.cs` | +55 / −0 | fork 的 `OnPanelDragPressed/Moved/Released` | fork 功能 |
+| `Strings.axaml` | +147 / −15 | 逐键内容级核对：**上游 807 键全部存在，缺失 0，同名键内容不同 0**；−15 行是 BOM 与键排序造成的行级假象 | 无丢失 |
+| `Preferences.cs` / `OpenUtau.Core.csproj` | 各 −1 | 仅 **BOM** 差异（上游有 BOM，本地两棵树都没有）——删除 BOM 是 fork 既有状态，**非本次合并造成** | 既有状态 |
+| 22 个语言文件 | 各 +187~+202 / 0~−13 | 同上：上游键集合全部存在，差异来自 fork 的人工译文与排序 | 无丢失 |
+
+**4. 关键上游改动逐项确认已落地**（此前列为疑点的删除行，实为上游自身替换）：
+
+| 上游 commit | 合并结果状态 |
+| --- | --- |
+| `4be726c5` worldline 缓存同步写 | ✅ `Wave.WriteMono16Wav(wavPath, result.samples)` 已同步、`samplesCopy`/`Task.Run` 已移除 |
+| `0e74b8d2` 空声部色防护 | ✅ `UTrack.cs` 两处 `if (colors.Count > 0)` 均在 |
+| `0963623d` TimeAxis 钳制 | ✅ `TimeAxisTest` 18/18 通过 |
+| `d58f6e9c` SBP 修复 | ✅ 上游新增行 100% 落地；`EnablePhonemeTokenization` 在 3 个 Phonemizer 中均在 |
+| `2645b69a` 曲线工具 | ✅ `CurveTools` 8 值齐全（`CurveLineTool` 已启用）、4 个 `Curve*State` 类在 |
+| `7ef99328` `.m4a` 导入 | ✅ `FilePicker.cs` 与 `MainWindow.axaml.cs` 的扩展名列表均含 `.m4a`；`AACWaveReader.cs` 在 |
+| `9699944e` mute 空引用修复 | ✅ `ToggleMuteWithBool` 已启用，`ToggleMuteWithBool` 调用点唯一 |
+
+**5. `ToggleMuteWithBool` 内保留 `TrackMuteVisualEvent` 的复核**：确认 fork 基线 `392d0510` 的 `ToggleMute()` **与** `SetMute(bool)` **两者都发**该事件，故在 `ToggleMuteWithBool` 内保留这一行是**恢复 fork 既有行为**，不是本次合并新增的行为变化。
+
+**复查结论**：本次合并的冲突处置**未造成上游内容丢失，也未造成 fork 功能意外丢失**；合并相对上游的全部差异都能归因到「fork 独有功能」或「政策有意取上游」，且有上文逐条证据。
