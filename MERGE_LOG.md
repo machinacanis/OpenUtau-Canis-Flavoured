@@ -348,3 +348,42 @@
 处置后 `DawIntegrationDialog.axaml` / `.axaml.cs` 的差异只剩「一个 fork 新增的关闭按钮 + 两行标注注释」，`DawIntegrationViewModel.cs` 只剩「未使用 using 的删除 + 一处指对文件的注释」。**DAW 核心与测试与上游逐字节一致，不会再有合并冲突。**
 
 注意（不改写、供后续判断）：其余 26 处 `PROTOCOL.md` 引用位于与上游逐字节一致的 5 个核心文件里，**本 fork 保持原样不动机**——那些是上游自身的陈旧引用，改动它们会让核心文件重新偏离上游，与政策「尽量减少差异」冲突。要不要向上游报这个文档引用问题，属上游事务，另行决定。
+
+### 其余历史决策复核（政策追溯第 3 批）
+
+按「必须确认差异是否在修同一个目标」的要求，对 2026-09-07 / 09-10 剩余的 3 项逐条定性。判定用的取证方法：对每个文件分别取**上游侧 `base..upstream/master`** 与**fork 侧 `base..master`** 的改动，再看**当前文件相对 `upstream/master` 的残余差异**由哪一方贡献；差异行归属到 commit 与作者。
+
+**1. `OpenUtau/Controls/WaveformImage.cs`（2026-09-07 记录）→ 不是同目标修复，保留 fork 版**
+
+- 上游侧改动量：**0**。上游引入 phrase-bounds 绘制的 `ea676948` 已被上游自己的 `2b03ad56`（"Revert piano roll phrase bounds from WaveformImage"）撤销，所以该文件在上游侧净变化为零。
+- fork 侧改动量：425 增 / 21 删（相对 `base`）；当前相对上游的残余差异与此同量级（425/21），全部来自 fork 的 `f22f3a13`（Studio UI chrome + 钢琴卷帘外观，author = machinacanis）。
+- 该文件依赖的 3 个上游 render commit（`f773f377`、`6196917f`、`7c68a087`）**均为 Sugita Akira 且已合入本地**，不是 fork 分叉。
+- 结论：这是 **fork 独有的 Studio 波形重绘**，与上游「phrase bounds」不是同一目标（且上游已自行回退该目标）。政策第 3 条 → 保留。**无可替换的上游实现。**
+
+**2. `OpenUtau/ViewModels/PreferencesViewModel.cs`（2026-09-10 记录）→ 非同一目标，保留**
+
+- 上游侧改动量：**5 增 / 1 删**，内容仅为新增偏好 `DefaultSnapCurve` 的三处接入（`[Reactive]` 属性、构造器初始化、`PersistOn` 持久化）——它是**在既有 `PersistOn` 框架里追加一个偏好**，不是在修「偏好持久化」这个机制。
+- fork 侧改动量：997 增 / 3 删；当前相对上游残余 992/2。
+- 双方不是同一目标的两种实现：上游在既有框架里加一行偏好，fork 在加**新功能**（Studio UI / HiFiUTAU / Custom Server 偏好页）。上一轮已经把 fork 的偏好改写成上游的 `PersistOn` 形式追加，即**已经在复用上游的结构**，无第二套机制可替换。
+- 结论：政策第 3 条 → 保留。**无可替换的上游实现。**
+
+**3. `OpenUtau/Strings/Strings.axaml`（2026-09-10 记录）→ 不是二选一，无替换概念**
+
+- 当前本地 **937** 键、上游 **807** 键：**fork 独有 130，上游独有 0**，本地是上游的**严格超集**——不存在「同一目标的两种实现」，没有可替换项。
+- 130 个 fork 独有键按前缀归类，**120 个是 `prefs.*`**（Studio UI / HiFiUTAU / Custom Server 设置），其余为 `noteproperty.*` 5（fork 自有 NoteProperties 控件）、`dialogs.*` 2（`tracksettings.serverurl`/`endpoint`，Custom Server）、`errors.*` 2（HiFiUTAU）、`button.close` 1（DAW 对话框）。
+- 结论：全部对应 fork 独有功能面，政策第 3 条 → 保留。**此项无需处置。**
+
+**最终状态汇总（政策追溯后的全套差异）**
+
+| 有差异的对象 | 处置 | 是否同目标双实现 |
+| --- | --- | --- |
+| `PhonemizerFactory.cs` | 取上游，现逐字节一致 | **是**（同一竞态） |
+| `TrackHeaderViewModel.cs` / `.axaml.cs` | 取上游 `ToggleMuteWithBool`，保留 1 行 fork 专有事件 | **是**（同一崩溃） |
+| `OpenUtau.Test/Core/Api/PhonemizerFactoryTest.cs` | 保留，注释中立化 | 否（fork 独有测试） |
+| `DawIntegrationDialog.axaml(.cs)` | 列宽取上游；保留 fork 的 Close 按钮 | 否（fork 新增功能） |
+| `DawIntegrationViewModel.cs` | 保留 2 处（未使用 using 删除 + `API.md` 引对） | 否（后者属政策第 4 条例外） |
+| `WaveformImage.cs` | 保留 fork | 否（fork 独有 Studio 功能） |
+| `PreferencesViewModel.cs` | 保留 fork | 否（fork 新增偏好页） |
+| `Strings.axaml` | 保留 fork 超集 | 否（严格超集，130 键全属 fork 功能） |
+
+**没有发现别的「双方各修同一目标」的遗留项。** 至此政策追溯完成。
