@@ -202,14 +202,11 @@ namespace OpenUtau.App.ViewModels {
             MessageBus.Current.SendMessage(new TrackMuteVisualEvent(track.TrackNo));
         }
 
-        // Renamed from the ToggleMute(bool) overload: the parameterless ToggleMute and this
-        // overload collide when ReactiveUI resolves the command binding, crashing "mute all".
-        // Upstream made the same rename independently (9699944e, ToggleMuteWithBool); the fork
-        // keeps its SetMute name and takes upstream's simplified body.
-        public void SetMute(bool mute) {
+        public void ToggleMuteWithBool(bool mute) {
             Mute = mute;
             this.RaisePropertyChanged(nameof(Mute));
             JudgeMuted();
+            // fork-only: drives the Studio mute dimming in PartsCanvas.
             MessageBus.Current.SendMessage(new TrackMuteVisualEvent(track.TrackNo));
         }
 

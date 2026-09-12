@@ -10,9 +10,10 @@ namespace OpenUtau.Core.Api {
     /// <summary>
     /// The factory is reached from UTrack's constructor, so registration happens on whatever
     /// thread builds tracks while BuildList() publication and Get(string) lookup run concurrently.
-    /// One gate must cover all three: a snapshot taken mid-registration would leave
-    /// orderedFactories without the new factory (UPart then falls back to pIndex 0) and could
-    /// return null from Get(string).
+    /// The invariant a reader can rely on mid-flight: once a factory is visible in GetAll(), it is
+    /// registered, so Get(string) by that name must find it. A snapshot racing the write would
+    /// leave orderedFactories without the new factory (UPart then falls back to pIndex 0) and
+    /// could return null from Get(string).
     /// </summary>
     public class PhonemizerFactoryTest {
         [Phonemizer("Factory test A", "ZZ TFA", language: "EN")]
