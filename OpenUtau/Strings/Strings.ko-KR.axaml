@@ -575,6 +575,28 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="pianoroll.toggle.tone">노트음 활성 (Y)</system:String>
   <system:String x:Key="pianoroll.toggle.vibrato">비브라토 보기(U)</system:String>
   <system:String x:Key="pianoroll.toggle.waveform">파형 보기 (W)</system:String>
+  <!--<system:String x:Key="pianoroll.tool.curve.cursor">Cursor Tool
+    Left click to select</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.eraser">Eraser Tool
+    Click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.horizontalshift">Horizontal Shift Tool
+    Left click to move the curve horizontally
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.horizontalstretch">Horizontal Stretch Tool
+    Left click to stretch the curve horizontally
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.line">Line Tool
+    Left click to draw (draw straight line)
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.pen">Pen Tool
+    Left click to draw
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.verticalshift">Vertical Shift Tool
+    Left click to move the curve vertically
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.verticalstretch">Vertical Stretch Tool
+    Left click to stretch the curve vertically
+    Right click to reset</system:String>-->
   <system:String x:Key="pianoroll.tool.drawpitch">피치 그리기 펜 (Shift + 1)
     피치 그리기: 왼쪽 클릭
     피치 초기화: 오른쪽 클릭
@@ -618,6 +640,7 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
 
   <system:String x:Key="prefs.advanced">고급</system:String>
   <system:String x:Key="prefs.advanced.beta">베타 버전 사용</system:String>
+  <!--<system:String x:Key="prefs.advanced.defaultsnapcurve">Snap curves by default</system:String>-->
   <system:String x:Key="prefs.advanced.lyricshelper">가사 입력 도우미</system:String>
   <system:String x:Key="prefs.advanced.lyricshelper.brackets">가사 입력 도우미의 대괄호 자동 추가</system:String>
   <system:String x:Key="prefs.advanced.rememberfiletypes">'최근 파일'에 표시할 파일 유형</system:String>

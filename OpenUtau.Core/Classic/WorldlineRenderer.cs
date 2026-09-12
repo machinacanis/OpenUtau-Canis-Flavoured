@@ -185,16 +185,14 @@ namespace OpenUtau.Classic {
                     }
                     AddDirects(phrase, resamplerItems, result);
                     if (result.samples != null) {
-                        var samplesCopy = (float[])result.samples.Clone();
-                        Task.Run(() => {
-                            try {
-                                lock (cacheLock) {
-                                    Wave.WriteMono16Wav(wavPath, samplesCopy);
-                                }
-                            } catch (Exception e) {
-                                Serilog.Log.Error(e, $"Failed to write cache file: {wavPath}");
+                        // Synchronous: a detached write races a subsequent cold re-render's read.
+                        try {
+                            lock (cacheLock) {
+                                Wave.WriteMono16Wav(wavPath, result.samples);
                             }
-                        });
+                        } catch (Exception e) {
+                            Serilog.Log.Error(e, $"Failed to write cache file: {wavPath}");
+                        }
                     }
                 }
                 progress.Complete(phrase.phones.Length, progressInfo);

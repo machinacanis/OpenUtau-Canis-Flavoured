@@ -28,7 +28,9 @@ namespace OpenUtau.Api {
         // covers registration, name lookup and list publication: a ConcurrentDictionary alone
         // keeps the map intact but still lets BuildList() snapshot before an in-flight Get(Type)
         // write lands (orderedFactories then misses the factory and UPart falls back to
-        // pIndex 0), and lets Get(string) observe the map mid-registration.
+        // pIndex 0), and lets Get(string) observe the map mid-registration. Upstream fixed the
+        // same race with a ConcurrentDictionary (7684d706); this gate is the stronger fork fix
+        // and is pinned by OpenUtau.Test/Core/Api/PhonemizerFactoryTest.cs.
         private static readonly object registryGate = new object();
         private static readonly Dictionary<Type, PhonemizerFactory> factories = new Dictionary<Type, PhonemizerFactory>();
         private static PhonemizerFactory[] orderedFactories = [];

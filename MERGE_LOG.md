@@ -238,3 +238,66 @@
 - 字符串校验脚本：英文源 928 键；fork 键与上游键**并集完整**（无缺失、无多出）；22 个语言文件与英文键集一致（未翻译项以 `<!--<system:String ...>-->` 注释形式存在）；抽样确认 `prefs.appearance.noteefx.advanced`、`dialogs.tracksettings.endpoint` 等 fork 译文仍在，`dawintegration.*`、`button.close` 等键在英文源中存在。
 - `git diff --check`：无冲突标记残留；仅上游自带的 4 处行尾空格（`Strings.ko-KR`/`Strings.zh-CN` 译文、`MainWindow.axaml.cs` 上游代码）与本次处理无关。
 - `Misc/sync_strings.py`：已运行，输出即上述归一化结果。
+
+---
+
+## Merge 2026-09-12 9699944e
+
+- **时间**（UTC）：`2026-09-12T16:41:16Z`（验证完成时间）
+- **合并方式**：`git merge --no-ff --no-commit upstream/master`（merge-base `4696de48e7cbf6ab2a4a3c2bdd21552c69f24073`，即上次合并记录的上游基线；合并范围 `4696de48..9699944e`）
+- **上游基线**：`9699944ead5a3b27b59bdf5a35f73fada8c11b7b` — Fix null reference when clicking mute (#2390)
+- **fork 侧基线**：`392d0510c0db991a8047755588168aab678fdf8d`（Merge pull request #13 from KurotaniTakeo/feature/modeless-track-fx）
+- **前置操作**：本 fork 此前未配置 `upstream` 远程，本次新加 `https://github.com/openutau/OpenUtau.git` 后 fetch。
+
+### 引入的上游 commit（9 个）
+
+| # | SHA | 主题 |
+| --- | --- | --- |
+| 1 | `0e74b8d28ca0534297bfd514579b5a09b83e3a19` | ustx: fix crash validating a singer with no subbank colors |
+| 2 | `0963623d0d5743ce288a9651aec89b3ce39e4a71` | render: clamp tempo lookup before the first tempo segment |
+| 3 | `7684d7068581cebc241ed76fcbd224b8be7666b0` | phonemizer: make the phonemizer factory cache thread-safe |
+| 4 | `4be726c52465590a5d73326dcfb34912cbc9635a` | render: write worldline cache synchronously |
+| 5 | `2645b69a01178b2481fbf5d3e510137b3eacacd3` | Extension of curve editing tools, addition of editing logic, and UI improvements (#2393) |
+| 6 | `d58f6e9c0571da766201931251f777d62fea338e` | Fix SBP handle cluster index bounds, glide positioning, and optional phoneme tokenization (#2382) |
+| 7 | `7ef9932876ded2551a627520e5a49f20785cd28c` | feat: `.m4a` audio file import (#2141) |
+| 8 | `4b1c4605be395e6d48ddcac2949b967ffbbb4141` | Use action to install NSIS in build workflow |
+| 9 | `9699944ead5a3b27b59bdf5a35f73fada8c11b7b` | Fix null reference when clicking mute (#2390) |
+
+修改面（上游侧 25 个文件）：新增 `OpenUtau.Core/Format/AACWaveReader.cs`（+`SharpJaad`/`SharpJaad.AAC` 包引用，`.m4a` 导入）与 `OpenUtau.Test/Core/USTx/UCurveTest.cs`；曲线编辑工具全套（`UCurve.cs`、`CurveViewModel.cs`、`NoteEditStates.cs` +298、`PianoRoll.axaml(.cs)`、`PianoRollStyles.axaml`、`Strings.axaml` 9 个新键）；`TimeAxis` tempo 钳制；`UTrack` 空声部色防护；`PhonemizerFactory` 线程安全；`WorldlineRenderer` 同步写缓存；`SBP`/`SyllableBasedPhonemizer` 系列修复；`MainWindow.axaml.cs` 加 `.m4a`。
+
+### 冲突（3 个文件）
+
+11 个文件两侧均有改动，其中仅 3 个出现冲突标记，其余 8 个由 ort 自动合并（双侧改动互不重叠，已逐条核对）：
+
+| 文件 | fork 侧来源 | 上游侧来源 |
+| --- | --- | --- |
+| `OpenUtau.Core/Api/PhonemizerFactory.cs` | `41077171`（Make PhonemizerFactory's cache concurrent）+ `891b9cbe`（Address the CodeRabbit review on PR #10） | `7684d706`（phonemizer: make the phonemizer factory cache thread-safe） |
+| `OpenUtau/ViewModels/TrackHeaderViewModel.cs` | `32ffb5ec`（fix: rename ToggleMute(bool) overload to SetMute） | `9699944e`（Fix null reference when clicking mute (#2390)） |
+| `OpenUtau/Controls/TrackHeaderCanvas.cs` | `32ffb5ec`（同上，调用点） | `9699944e`（同上，调用点） |
+
+### 决策记录
+
+- **`PhonemizerFactory.cs`：保留 fork 的单一 `registryGate` 锁，删除上游的 `ConcurrentDictionary` 版本**。两侧修的是同一个竞态（`Get(Type)` 注册、`Get(string)` 按名查找、`BuildList()` 发布 `orderedFactories` 三者并发），但 fork 的方案更强：`ConcurrentDictionary` 只能保证字典本身完整，`BuildList()` 仍可能抢在 `Get(Type)` 写入落盘前取快照，于是 `orderedFactories` 漏掉该 factory（`UPart` 回落到 `pIndex 0`），`Get(string)` 也可能观察到注册中途的 map。fork 的 `891b9cbe` 提交信息明确记录了这一点，并由 `OpenUtau.Test/Core/Api/PhonemizerFactoryTest.cs` 的 `ConcurrentRegistrationNeverProducesAnIncompleteSnapshot` 压测钉住该不变量（4 线程注册 × 500 次发布快照，断言“快照里出现的 factory 必能按名查到”）。故取 fork 实现，把 `using System.Collections.Concurrent;` 换回 `System.Collections.Generic`，并在原注释后追加一段说明上游同名修复与取舍理由。
+- **`TrackHeaderViewModel.cs` / `TrackHeaderCanvas.cs`：保留 fork 的 `SetMute(bool)` 命名，采纳上游简化的方法体**。两侧独立发现了同一个 bug：`ToggleMute()` 与 `ToggleMute(bool)` 重载在 ReactiveUI 解析命令绑定时冲突，点 “mute all” 时崩溃。fork `32ffb5ec` 把重载改名 `SetMute`，上游 `9699944e` 改名 `ToggleMuteWithBool` 并把 `if (mute) Mute = true; else Mute = false;` 简化为 `Mute = mute;`。决策：**命名保留 fork 的 `SetMute`**（fork 已有 `fix:` 提交与既定 API，改名会与最新 fork 历史冲突且无收益），**方法体采纳上游的简化写法**，两者语义等价；`TrackHeaderCanvas.cs` 的 `-1` 分支相应保留 `SetMute(e.allmute)`。方法尾部的 `RaisePropertyChanged(nameof(Mute))`、`JudgeMuted()`、`TrackMuteVisualEvent` 为 fork 的 Studio 静音视觉所必需，两侧本就一致，全部保留。冲突处置后 `TrackHeaderCanvas.cs` 与 fork 的 `master` **逐字节相同**（该文件冲突纯粹是调用点改名）。
+- **`TrackHeaderCanvas.cs` 无需额外改动**：与 fork 的 `master` 完全一致，说明冲突仅来自双方对同一调用点的不同改名。
+- **自动合并的 8 个重叠文件全部采纳**（`OpenUtau.Core.csproj`、`UTrack.cs`、`Preferences.cs`、`PianoRoll.axaml`、`PianoRoll.axaml.cs`、`Strings.axaml`、`PreferencesViewModel.cs`、`MainWindow.axaml.cs`），并逐文件核对两侧改动均未丢失（方法见“已验证”第 3 条）：
+  - `OpenUtau.Core.csproj`：上游新增 `SharpJaad` / `SharpJaad.AAC` 两个包引用，fork 的 `Newtonsoft.Json` 引用与说明注释（HiFiUTAU / Custom Server 仍用 `JsonConvert`）并存，互不重叠。
+  - `UTrack.cs`：上游的 `colors.Count > 0` 空声部色防护（`VoiceColorExp` / `VoiceColor2Exp` 两处）与 fork 的 `URenderSettings` 新增字段（`serverUrl`、`endpoint`、`HIFIUTAU_LOCAL/ONLINE` 迁移、`CUSTOM_SERVER` 默认值注入）分处不同区段，两侧均完整。
+  - `Preferences.cs`：上游新增 `DefaultSnapCurve = true`（1 行）落在 fork 的 Studio/HiFiUTAU 字段块之外；fork 的 91 行新增字段全在。
+  - `PianoRoll.axaml` / `.axaml.cs`：上游曲线工具条扩到 8 项（`pitchLineTool`/`verticalStretchTool`/… + 对应 `PianoRollStyles.axaml` 图标与 `ToolTip.Tip`）与 fork 的 `WaveformImage` `TrackHeight`/`TrackOffset` 绑定、Studio 面板拖拽分隔条（`OnPanelDragPressed/Moved/Released`）分处不同区段，两侧均完整；`CurveTools` 枚举 8 值与 4 个 `Curve*State` 类均已落地。
+  - `PreferencesViewModel.cs`：上游的 `DefaultSnapCurve` 属性 + `PersistOn` 持久化（5 行）与 fork 的 697 行 Studio/HiFiUTAU 改动并存；fork 的 `ThemeEditable` 修正（改用 `ThemeManager.IsBuiltIn(themeName)`，避免 Studio/WarmSage 内置主题露出可编辑按钮）仍在。
+  - `MainWindow.axaml.cs`：上游的 `AudioExts` 加 `.m4a` 与 fork 的 `OnMenuDawIntegration` 位置、`MixFxWindowManager` 调用并存，无上一轮那样的菜单项/处理函数重复。
+  - `Strings.axaml`：取两侧键的并集（fork 137 行 + 上游 9 个曲线键），合并后英文源 937 键、无重复键。
+- **`Misc/sync_strings.py` 必须手动恢复 BOM**：脚本以 `encoding='utf8'`（无 BOM）回写全部文件，会剥掉英文源 `Strings.axaml` 的 BOM，与 `.editorconfig` 的 `charset = utf-8-bom` 以及上游该文件的 BOM 冲突。本次运行后已手动把 BOM 补回；22 个语言文件本就无 BOM（脚本产物的既定形态），保持不变。已用隔离 harness 验证：脚本产物对 22 个语言文件**幂等**（重复运行内容不变），仅英文源因 BOM 每次都“变化”。
+
+### 已验证
+
+1. `dotnet build OpenUtau -c Debug`：**0 错误**（1766 条存量警告，与历次同量级）。
+2. `dotnet test OpenUtau.Test`（合并结果）：**本机无法跑完全量**。测试宿主在第 ~226 个用例处被 **ONNX Runtime 原生崩溃**终止：`Fatal error. 0xC0000005` at `Microsoft.ML.OnnxRuntime.CompileApi.NativeMethods..ctor(DOrtGetCompileApi)` ← `NativeMethods..cctor()` ← `SessionOptions..ctor` ← `InferenceSession..ctor(Byte[])` ← `OpenUtau.Api.G2pPack.LoadPack` ← `GermanG2p..ctor` ← `GermanVCCVPhonemizer.GetBaseG2ps`，即 `Microsoft.ML.OnnxRuntime`（非 DirectML）的 native DLL 加载失败。**已确认属环境问题、非本合并引入**：在合并前基线 `392d0510`（`git worktree` 独立目录）上以同一命令复现，栈逐字相同，两次崩溃时刻均为 `00:01:01.0x`。机因是 NuGet 缓存只有 `microsoft.ml.onnxruntime.directml` 与 `microsoft.ml.onnxruntime.managed`，**缺 `microsoft.ml.onnxruntime` 本体**（`OpenUtau.Core.csproj` 的 `net10.0` 非 Windows 分支引用它）。上游新增的 `UCurveTest` 在合并结果上单独跑 **10/10 通过**。
+3. **两侧改动零丢失核对**（对 11 个重叠文件逐一执行）：分别取“上游侧新增行”与“fork 侧新增行”（base→各自 HEAD 的 `+` 行，去重、忽略 ≤12 字符的短行），在本合并结果文件中逐条做字面匹配。结果：上游侧除 3 个冲突文件里**被有意舍弃的替代实现**（`ConcurrentDictionary` 方案、`ToggleMuteWithBool` 命名）外全部命中；fork 侧 **100% 命中**（`PreferencesViewModel.cs` 697 行、`Strings.axaml` 137 行、`Preferences.cs` 91 行等全在）。另核对：上游仅有的 2 个新增文件（`AACWaveReader.cs`、`UCurveTest.cs`）均存在；上游无删除文件；3 个 `x:Key` 重复扫描（22 个语言文件）为空；`MainWindow.axaml` 的 DAW 菜单项与处理函数各只有一份。
+4. **`Strings.axaml` 与 22 个语言文件的键完整性**：英文源 937 键（唯一、无重复）；合并前 22 个语言文件各缺上游的 9 个曲线键，跑 `sync_strings.py` 后**全部 937/937 一致**（未翻译项以 `<!--<system:String ...>-->` 注释形式存在，属脚本既定形态）。同步为**纯增量**：每个语言文件恰好 +23 行（9 个新键及其区段空行），`Compare-Object` 显示**零行删除**，即既有译文一条未丢；英文源的 `dawintegration.*`、`button.close`、`dialogs.tracksettings.endpoint`、`prefs.hifiutau.*`、`prefs.studioui.*` 等 fork 键全部保留。同步前已把 `OpenUtau/Strings/*.axaml` 备份到临时目录，逐文件比对确认。
+5. **UTF-8 BOM 回归自查（本 fork 特有）**：`.editorconfig` 要求 `charset = utf-8-bom`。本次 3 个冲突文件是用文本编辑方式手工解的，编辑过程**剥掉了 `PhonemizerFactory.cs`、`TrackHeaderCanvas.cs`、`TrackHeaderViewModel.cs` 三者的 BOM**（已用逐字节比对合并前 `master` blob 发现并补回，现三者 BOM 与 `master` 一致）。另核实 `Strings.axaml` 与 `PreferencesViewModel.cs` 在合并后**新增 BOM**——这两个是上游侧自己加的（`.editorconfig` 方向一致），予以保留；`Preferences.cs` 两侧均无 BOM，维持原状。
+6. **针对性测试**（绕开会崩的 ONNX 路径，全部通过）：`UCurve` 10/10、`Curve` 19/19、`TimeAxis` 18/18、`PhonemizerFactory` 3/3（含钉住锁不变量压测）、`Studio` 50/50、`TrackHeader` 5/5、`Wave`（m4a/AAC 读取）5/5、`Utau.Core.Render`（HiFiUTAU/Custom Server）8/8、`PhraseSource` 4/4、`Daw` 83 通过 / 1 跳过（跳过项仍是需真实 DAW 插件的 `DawRealPluginTest.RealPluginCompletesTheHandshakeAndPullsAudio`）。注：`StudioOneControlsTest` 本次**全部通过**（上一轮的 6 个 headless 失败未复现）。
+7. **未决项（已知、待跟进，非阻塞）**：`OpenUtau.Test/App/AppTest.cs` 的 `StringsTest`（`[AvaloniaFact]`，校验 `App.GetLanguages()` 能加载多语言）在**合并结果**上跑整个 `~OpenUtau.App` 组（55 个用例）时，出现 `[Test Case Cleanup Failure] System.InvalidOperationException : The calling thread cannot access this object because a different thread owns it`（`Avalonia.Headless.XUnit.AvaloniaTestRunner.Run` 的清理阶段）。**断言语义本身通过**——该用例单独跑 3/3 通过、与任一单个 App 测试类配对跑均通过、跑 `AppTest` 整类 2/2 通过；失败只在用例数累积到一定规模后出现（去掉 `StudioTrackPaletteTest` 整类即 37/37 通过，但把该类 19 个用例逐个单独加回时，加到第 17、18 个才复现，说明是**累积/顺序敏感**而非某个具体用例）。**已排除的成因**：与 `Strings.axaml`/语言文件无关（把合并前的 928 键版本整体换回合并树仍复现；反之把合并后的 937 键版本放进合并前基线仍 55/55 通过）；与 BOM 无关（剥掉 BOM 仍复现、且已重建）；与 xUnit 并行化无关（临时关掉 `parallelizeTestCollections` 仍复现）；`App.axaml.cs`、`AppTest.cs`、`ThemeManager.cs` 两棵树逐字节相同；测试产物 `prefs.json` 两棵树内容一致。合并前基线在**同一命令、同一新构建**下 15 次运行 **55/55 全绿**，合并结果 12 次运行 **稳定 1 失败**，故差异确实由本合并的改动触发，但触发点落在 **Avalonia headless 测试宿主的线程亲和性清理**上，而非产品逻辑——`StringsTest` 是唯一失败的用例，且失败发生在断言之后的 teardown。结论：**不阻塞本次合并**，但上游 `2645b69a` 引入的曲线工具改动与 fork 既有的 Studio UI 全局状态（`Application.Current.Styles` / `Preferences.Default`）在 headless 会话下的交互值得单独开 topic 排查；已在此明确记录，避免下一轮误判为“新引入的失败”。
+8. `git diff --check`：无冲突标记残留（`^(<<<<<<<|=======|>>>>>>>)` 全库扫描为空）；上游自带的 5 处行尾空格（`EnglishCpVPhonemizer.cs` ×4、`SpanishVCCVPhonemizer.cs` ×1）与本次处理无关。
+9. 清理：验证用的 `git worktree`（`ou-baseline`）已在提交前移除；临时 `xunit.runner.json` 已删除；`OpenUtau/Strings/*.axaml` 已从备份恢复为合并结果。

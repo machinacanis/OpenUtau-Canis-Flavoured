@@ -573,6 +573,28 @@ OpenUtau 致力於為 UTAU 社群建立開源編輯環境，提供現代化使�
   <system:String x:Key="pianoroll.toggle.tone">啟用音調提示 (Y)</system:String>
   <system:String x:Key="pianoroll.toggle.vibrato">顯示顫音 (U)</system:String>
   <system:String x:Key="pianoroll.toggle.waveform">顯示波形 (W)</system:String>
+  <!--<system:String x:Key="pianoroll.tool.curve.cursor">Cursor Tool
+    Left click to select</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.eraser">Eraser Tool
+    Click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.horizontalshift">Horizontal Shift Tool
+    Left click to move the curve horizontally
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.horizontalstretch">Horizontal Stretch Tool
+    Left click to stretch the curve horizontally
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.line">Line Tool
+    Left click to draw (draw straight line)
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.pen">Pen Tool
+    Left click to draw
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.verticalshift">Vertical Shift Tool
+    Left click to move the curve vertically
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.verticalstretch">Vertical Stretch Tool
+    Left click to stretch the curve vertically
+    Right click to reset</system:String>-->
   <system:String x:Key="pianoroll.tool.drawpitch">音高繪製工具 (4)</system:String>
   <system:String x:Key="pianoroll.tool.eraser">橡皮擦工具 (3)</system:String>
   <system:String x:Key="pianoroll.tool.knife">分割工具 (4)</system:String>
@@ -613,6 +635,7 @@ OpenUtau 致力於為 UTAU 社群建立開源編輯環境，提供現代化使�
 
   <system:String x:Key="prefs.advanced">進階</system:String>
   <system:String x:Key="prefs.advanced.beta">Beta測試版</system:String>
+  <!--<system:String x:Key="prefs.advanced.defaultsnapcurve">Snap curves by default</system:String>-->
   <system:String x:Key="prefs.advanced.lyricshelper">歌詞助手</system:String>
   <system:String x:Key="prefs.advanced.lyricshelper.brackets">歌詞助手（添加方括號）</system:String>
   <system:String x:Key="prefs.advanced.rememberfiletypes">在「最近開啟」中記住這些文件類型</system:String>

@@ -576,6 +576,28 @@ Syntax: prefix,suffix</system:String>-->
   <system:String x:Key="pianoroll.toggle.tone">สลับเสียงโน้ต (Y)</system:String>
   <system:String x:Key="pianoroll.toggle.vibrato">แสดงผลไวบราโต (U)</system:String>
   <system:String x:Key="pianoroll.toggle.waveform">แสดงผล Waveform (W)</system:String>
+  <!--<system:String x:Key="pianoroll.tool.curve.cursor">Cursor Tool
+    Left click to select</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.eraser">Eraser Tool
+    Click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.horizontalshift">Horizontal Shift Tool
+    Left click to move the curve horizontally
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.horizontalstretch">Horizontal Stretch Tool
+    Left click to stretch the curve horizontally
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.line">Line Tool
+    Left click to draw (draw straight line)
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.pen">Pen Tool
+    Left click to draw
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.verticalshift">Vertical Shift Tool
+    Left click to move the curve vertically
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.verticalstretch">Vertical Stretch Tool
+    Left click to stretch the curve vertically
+    Right click to reset</system:String>-->
   <system:String x:Key="pianoroll.tool.drawpitch">เครื่องมือวาด Pitch (4)</system:String>
   <system:String x:Key="pianoroll.tool.eraser">ยางลบ (3)</system:String>
   <system:String x:Key="pianoroll.tool.knife">มีด (5)</system:String>
@@ -616,6 +638,7 @@ Syntax: prefix,suffix</system:String>-->
 
   <system:String x:Key="prefs.advanced">ขั้นสูง</system:String>
   <system:String x:Key="prefs.advanced.beta">เบต้า</system:String>
+  <!--<system:String x:Key="prefs.advanced.defaultsnapcurve">Snap curves by default</system:String>-->
   <!--<system:String x:Key="prefs.advanced.lyricshelper">Lyrics Helper</system:String>-->
   <!--<system:String x:Key="prefs.advanced.lyricshelper.brackets">Lyrics Helper Adds Brackets</system:String>-->
   <!--<system:String x:Key="prefs.advanced.rememberfiletypes">Remember these file types in "Open Recent"</system:String>-->

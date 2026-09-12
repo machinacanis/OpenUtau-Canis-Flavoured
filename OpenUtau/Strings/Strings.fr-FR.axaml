@@ -576,6 +576,28 @@ Attention : cela va effacer les préréglages.</system:String>
   <system:String x:Key="pianoroll.toggle.tone">Tonalité de la Note On/Off (Y)</system:String>
   <system:String x:Key="pianoroll.toggle.vibrato">Voir les Vibratos (U)</system:String>
   <system:String x:Key="pianoroll.toggle.waveform">Voir la forme d'onde (W)</system:String>
+  <!--<system:String x:Key="pianoroll.tool.curve.cursor">Cursor Tool
+    Left click to select</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.eraser">Eraser Tool
+    Click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.horizontalshift">Horizontal Shift Tool
+    Left click to move the curve horizontally
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.horizontalstretch">Horizontal Stretch Tool
+    Left click to stretch the curve horizontally
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.line">Line Tool
+    Left click to draw (draw straight line)
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.pen">Pen Tool
+    Left click to draw
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.verticalshift">Vertical Shift Tool
+    Left click to move the curve vertically
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.verticalstretch">Vertical Stretch Tool
+    Left click to stretch the curve vertically
+    Right click to reset</system:String>-->
   <system:String x:Key="pianoroll.tool.drawpitch">Outil traçage du pitch (4)</system:String>
   <system:String x:Key="pianoroll.tool.eraser">Gomme (3)</system:String>
   <system:String x:Key="pianoroll.tool.knife">Couteau (5)</system:String>
@@ -616,6 +638,7 @@ Attention : cela va effacer les préréglages.</system:String>
 
   <system:String x:Key="prefs.advanced">Paramètres avancés</system:String>
   <!--<system:String x:Key="prefs.advanced.beta">Beta</system:String>-->
+  <!--<system:String x:Key="prefs.advanced.defaultsnapcurve">Snap curves by default</system:String>-->
   <system:String x:Key="prefs.advanced.lyricshelper">Assistant aux paroles</system:String>
   <system:String x:Key="prefs.advanced.lyricshelper.brackets">L'assistant aux paroles ajoute des crochets</system:String>
   <system:String x:Key="prefs.advanced.rememberfiletypes">Se souvenir de ces types de fichier dans "Fichiers récents"</system:String>

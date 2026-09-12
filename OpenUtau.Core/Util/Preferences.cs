@@ -348,6 +348,7 @@ namespace OpenUtau.Core.Util {
             public string WinePath = string.Empty;
             public bool UseWayland  = Environment.GetEnvironmentVariable("WAYLAND_DISPLAY") != null
                                          || Environment.GetEnvironmentVariable("XDG_SESSION_TYPE") == "wayland"; //Check for Wayland
+            public bool DefaultSnapCurve = true;
             public string PhoneticAssistant = string.Empty;
             public string RecentOpenSingerDirectory = string.Empty;
             public string RecentOpenProjectDirectory = string.Empty;
