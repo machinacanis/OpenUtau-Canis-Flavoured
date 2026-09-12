@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -16,6 +16,23 @@ namespace OpenUtau.Core.Util {
 
         static Preferences() {
             Load();
+        }
+
+        /// <summary>
+        /// ONNX runner options, or just CPU when the native ONNX Runtime is unavailable.
+        /// </summary>
+        /// <remarks>
+        /// Loading preferences must never depend on ONNX. The static Onnx initializer touches the native
+        /// runtime, and a native load failure used to fault the whole process during startup, before any
+        /// window existed. Keep this call total so a broken ONNX installation only disables ONNX.
+        /// </remarks>
+        private static List<string> GetOnnxRunnerOptionsSafely() {
+            try {
+                return Onnx.getRunnerOptions();
+            } catch (Exception e) {
+                Log.Warning(e, "Failed to enumerate ONNX runner options. Falling back to CPU.");
+                return new List<string> { "CPU" };
+            }
         }
 
         public static void Save() {
@@ -118,7 +135,7 @@ namespace OpenUtau.Core.Util {
                     }
                     if (!new[] { "stable", "beta", "alpha" }.Contains(Default.Channel)) Default.Channel = "stable";
                     if (!Renderers.getRendererOptions().Contains(Default.DefaultRenderer)) Default.DefaultRenderer = string.Empty;
-                    if (!Onnx.getRunnerOptions().Contains(Default.OnnxRunner)) Default.OnnxRunner = string.Empty;
+                    if (!GetOnnxRunnerOptionsSafely().Contains(Default.OnnxRunner)) Default.OnnxRunner = string.Empty;
                     if (Default.Theme != null) {
                         Default.ThemeName = Default.Theme switch {
                             1 => "Dark",
