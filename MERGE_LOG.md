@@ -1,4 +1,4 @@
-
+﻿
 ---
 
 ## Merge 2026-09-06 56eafb70
@@ -439,3 +439,42 @@
 **5. `ToggleMuteWithBool` 内保留 `TrackMuteVisualEvent` 的复核**：确认 fork 基线 `392d0510` 的 `ToggleMute()` **与** `SetMute(bool)` **两者都发**该事件，故在 `ToggleMuteWithBool` 内保留这一行是**恢复 fork 既有行为**，不是本次合并新增的行为变化。
 
 **复查结论**：本次合并的冲突处置**未造成上游内容丢失，也未造成 fork 功能意外丢失**；合并相对上游的全部差异都能归因到「fork 独有功能」或「政策有意取上游」，且有上文逐条证据。
+---
+
+## Fork 改动落点 2026-09-13 fix/onnx-native-availability-guard
+
+本条**不是上游合并记录**，而是按 `## Merge conflict policy` 第 3 条登记一处 **fork 独有实现**，目的是让下一次上游同步能一眼识别这两个上游文件的本地改动，避免误判为可替换的双实现。
+
+### 背景
+
+用户报告：点「工具 → 使用偏好」后进程立即崩溃。取证结论（完整证据见 `plans/onnx-native-guard.md`）：
+
+1. 应用自带的 `runtimes/win-x64/native/onnxruntime.dll`（1.24）因缺少 Microsoft Visual C++ 2015-2022 运行库而加载失败（`LoadLibraryExW` → `err=126`）；
+2. Windows 加载器**不报错**，改为绑定 `C:\WINDOWS\SYSTEM32\onnxruntime.dll`（1.17，系统自带 AI 组件）；
+3. 托管 ORT 为 1.24.4，去取 1.17 不存在的 `OrtGetCompileApi`；
+4. `0xC0000005`，任何托管异常处理与 Serilog 都来不及介入。
+
+实测已复现第 2 步：把应用自带原生库换成不可加载文件后，进程仍报告"加载成功"，实际绑定的是 `SYSTEM32\onnxruntime.DLL 1.17`。
+
+### 引入的 fork 落点
+
+| 文件 | 归属 | 说明 |
+| --- | --- | --- |
+| `OpenUtau.Core/Util/OnnxNativeAvailability.cs` | **fork 新增**（新文件） | 用绝对路径预加载自带原生库并校验版本；失败时给出可读原因与提示。绝对路径不参与搜索顺序，因此不存在静默回退。 |
+| `OpenUtau.Core/Util/Onnx.cs` | 上游文件，**仅插入守卫** | `initializeDevices()` 与 `getGpuInfo()` 各加一处 `if (!OnnxNativeAvailability.IsAvailable)` 提前返回；无其他改动。 |
+| `OpenUtau.Core/Util/Preferences.cs` | 上游文件，**仅插入守卫** | 启动时的 `Onnx.getRunnerOptions()` 改走 `GetOnnxRunnerOptionsSafely()`，失败回落 `["CPU"]`；新增一个私有方法，无其他改动。 |
+
+**判定：非同目标双实现。** 上游侧改动量为 0（上游没有原生库可用性探测，也没有让 prefs 加载与 ONNX 解耦）。上游若将来引入等价实现，按政策第 1 条改取上游、删除本 fork 落点。
+
+### 已验证
+
+- 构建：`dotnet build OpenUtau -c Debug` 成功（3 个既有的 AVLN3001 警告，0 错误）。
+- 测试：`OpenUtau.Test` 全量 **512 通过 / 0 失败 / 1 跳过**；新增 `OnnxNativeAvailabilityTest` 6 通过。
+- 四态实测（Core 侧，调用链与 `PreferencesViewModel` 构造一致）：
+  | 状态 | 探测结果 | `getGpuInfo()` | 是否崩溃 |
+  | --- | --- | --- | --- |
+  | 健康 | 可用，加载自带 1.24 | 1 个设备（AMD Radeon 780M） | 否 |
+  | 自带库不可加载（缺 VC++ 等价） | 不可用，`SYSTEM32` **未被装载** | 0 | 否 |
+  | 自带库缺失 | 不可用 | 0 | 否 |
+  | 自带库为旧版 1.17 | 不可用，理由指出 1.17 < 1.24.4 | 0 | 否 |
+- 未覆盖：经由真实 UI 点击「使用偏好」的端到端复跑本次未能完成（自动化无法在被锁定的交互桌面上取得前台焦点）。上一轮修复验证时该路径已确认窗口可正常打开。

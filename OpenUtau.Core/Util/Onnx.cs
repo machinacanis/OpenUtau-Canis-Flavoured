@@ -29,7 +29,20 @@ namespace OpenUtau.Core {
 
         private static readonly Dictionary<int, OrtEpDevice> devices = initializeDevices();
 
+        /// <summary>
+        /// ORT devices, empty when the native runtime could not be loaded.
+        /// </summary>
+        /// <remarks>
+        /// The probe in OnnxNativeAvailability runs before the first native call on purpose. When the
+        /// app-local native onnxruntime cannot be loaded, the OS loader silently binds an older copy from
+        /// System32 instead, and that version mismatch kills the process with an access violation which no
+        /// managed handler can catch. Degrading to "no devices" keeps the app usable; ONNX-dependent
+        /// features can report OnnxNativeAvailability.UnavailableReason.
+        /// </remarks>
         private static Dictionary<int, OrtEpDevice> initializeDevices() {
+            if (!OnnxNativeAvailability.IsAvailable) {
+                return new Dictionary<int, OrtEpDevice>();
+            }
             var env = OrtEnv.Instance();
             var ortDevices = env.GetEpDevices();
 
@@ -75,6 +88,10 @@ namespace OpenUtau.Core {
                 return new List<GpuInfo>{new GpuInfo {
                     deviceId = 0, // eliminate exception of taking OnnxGpuOptions[0]
                 }};
+            }
+
+            if (!OnnxNativeAvailability.IsAvailable) {
+                return new List<GpuInfo>();
             }
 
             List<GpuInfo> gpuList = new List<GpuInfo>();
