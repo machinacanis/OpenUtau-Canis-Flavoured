@@ -1,1 +1,1 @@
-PLACEHOLDER_LOAD_FROM_FILE
+@/workspace/OpenUtau-Canis-Flavoured/MERGE_LOG.md
