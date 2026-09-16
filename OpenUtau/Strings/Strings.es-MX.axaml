@@ -809,7 +809,6 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="prefs.rendering">Renderización</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Renderizador predeterminado (para voces UTAU)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">Profundidad de renderización</system:String>
-  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
   <system:String x:Key="prefs.rendering.diffsingersteps">Pasos de Renderización de DiffSinger para Acústico</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">Pasos de Renderización de DiffSinger para Tono</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">Pasos de Renderización de DiffSinger para Varianza</system:String>

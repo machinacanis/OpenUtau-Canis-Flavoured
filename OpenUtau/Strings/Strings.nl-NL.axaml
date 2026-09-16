@@ -804,7 +804,6 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="prefs.rendering">Renderen</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Standaardrenderer (voor klassieke voicebanks)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">DiffSinger Renderdiepte</system:String>
-  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
   <system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger Renderstappen voor Acoustic</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">DiffSinger Renderstappen voor Toonhoogte</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">DiffSinger Renderstappen voor Variance</system:String>

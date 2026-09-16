@@ -808,7 +808,6 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="prefs.rendering">Рендер</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Стандартний рендерер (для UTAU-войсбанків)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">Глибина рендеру DiffSinger</system:String>
-  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
   <system:String x:Key="prefs.rendering.diffsingersteps">Кількість Кроків Рендеру DiffSinger для Acoustic</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">Кількість Кроків Рендеру DiffSinger для Пітчу</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">Кількість Кроків Рендеру DiffSinger для Variance</system:String>

@@ -807,7 +807,6 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="prefs.rendering">Render</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Varsayılan renderer (klasik ses bankaları için)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">DiffSinger Render Derinliği</system:String>
-  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
   <system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger Akustik için Render Adımları</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">DiffSinger Pitch için Render Adımları</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">DiffSinger Varyans için Render Adımları</system:String>

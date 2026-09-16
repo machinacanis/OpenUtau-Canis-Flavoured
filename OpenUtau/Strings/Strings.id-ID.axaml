@@ -809,7 +809,6 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="prefs.rendering">Merender</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Perender bawaan (untuk voicebank klasik)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">Kedalaman Render DiffSinger</system:String>
-  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
   <system:String x:Key="prefs.rendering.diffsingersteps">Render Langkah DiffSinger untuk Akustik</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">Render Langkah DiffSinger untuk Nada</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">Render Langkah DiffSinger untuk Variasi</system:String>

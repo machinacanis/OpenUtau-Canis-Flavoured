@@ -14,7 +14,7 @@
     <PackageReference Include="Avalonia.Headless.XUnit" Version="12.1.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="Tmds.DBus.Protocol" Version="0.94.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.2.2">
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -22,6 +22,14 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <!-- Avalonia.Headless.XUnit 12.1.2 (latest on NuGet) is built against xunit.v3 3.x and
+         calls TestIntrospectionHelper.GetTestCaseDetails, whose signature changed in xunit.v3
+         4.0.0. On 4.0.0 every [AvaloniaFact] fails during discovery with MissingMethodException
+         (AvaloniaUI/Avalonia#22072: xunit v3 4.0 is unsupported). Upstream ships no
+         [AvaloniaFact] tests, so its own suite does not hit this. Pin xunit.v3 / .common /
+         .extensibility.core to 3.2.2 (the last 3.x stable) until Avalonia releases a headless
+         adapter for xunit.v3 4.x. xunit.runner.visualstudio stays at the upstream 4.0.0: it is
+         VSTest-only, is not used by the Microsoft.Testing.Platform path, and has no 3.x release. -->
     <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.v3.common" Version="3.2.2" />
     <PackageReference Include="xunit.v3.extensibility.core" Version="3.2.2" />

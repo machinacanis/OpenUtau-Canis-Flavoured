@@ -478,3 +478,113 @@
   | 自带库缺失 | 不可用 | 0 | 否 |
   | 自带库为旧版 1.17 | 不可用，理由指出 1.17 < 1.24.4 | 0 | 否 |
 - 未覆盖：经由真实 UI 点击「使用偏好」的端到端复跑本次未能完成（自动化无法在被锁定的交互桌面上取得前台焦点）。上一轮修复验证时该路径已确认窗口可正常打开。
+
+---
+
+## Merge 2026-09-16 81637a33
+
+- **时间**（UTC）：`2026-09-16T11:29:03Z`（验证完成时间）
+- **合并方式**：`git merge --no-ff --no-commit upstream/master`（merge-base `9699944ead5a3b27b59bdf5a35f73fada8c11b7b`，即上次合并记录的上游基线；合并范围 `9699944e..81637a33`）
+- **上游基线**：`81637a33ceeaedd8c407a268ad048e182592508e` — Highlight the part within the piano roll display range (#2416)
+- **fork 侧基线**：`9fdee2f068ec89e1005204876f690ab2c76e9207`（Merge pull request #14 from machinacanis/fix/onnx-native-availability-guard）
+
+### 引入的上游 commit（12 个）
+
+| # | SHA | 主题 |
+| --- | --- | --- |
+| 1 | `ec221fa601e3fc6d25296782902cb061a7129e85` | do xUnit tests properly (#2398) |
+| 2 | `df0555d808c58b8b6e5f2421e815fc549893d4b4` | Fix Lang ID assignment on Diffsinger singers without IDs (#2412) |
+| 3 | `8122872025054a3ff7fc46cb2b8b4b74dd34bd63` | Fix JSON deserialization error in NotePresets (#2411) |
+| 4 | `6348ca0d9b8817e81986fb38e6d9a8375dd251d4` | remove undefined curves (#2414) |
+| 5 | `7a083786dea033fddfae8e791dc507ba47a359ee` | Fix ClassicSinger FreeMemory() falsely retaining the loaded state (#2408) |
+| 6 | `9df74a3f56fdd3ebc41b1d319738e05f178eb92c` | Optimize package size (#2402) |
+| 7 | `e3db1f9da65b54960f82727ad7399210cca45d0f` | diffsinger: always retake pitch locally; drop the LocalRetaking option (#2406) |
+| 8 | `ceedbe5d1d019ab8f170240edd3532a71960e68c` | Added Guard Clauses, Null/Range Checks, and Fixed Indentation (#2415) |
+| 9 | `6df3e30a504d09d92b640521dce2c0ccde3d7803` | Add appimage update support (#2403) |
+| 10 | `73cd895712e6eeb944d39c1edf5770ca1b779037` | Collapse built-in phonemizer smoke tests from 18 cases to 6 (#2399) |
+| 11 | `fe0894d398312504ca115dc9c68162218dc7544c` | Surface hidden failures: out-of-order phonemes and unhandled exceptions (#2404) |
+| 12 | `81637a33ceeaedd8c407a268ad048e182592508e` | Highlight the part within the piano roll display range (#2416) |
+
+修改面（上游侧 27 个文件）：崩溃可见化（`App.axaml.cs` 新增 `TaskScheduler.UnobservedTaskException` + `Dispatcher.UIThread.UnhandledException` 两个钩子、`UPart.cs` 乱序音素检测、新增 `UVoicePartAfterLoadTest.cs`）；钢琴卷帘视口高亮（`PartControl.cs` / `PartsCanvas.cs` / `NotesViewModel.cs` / `TracksViewModel.cs` / `MainWindow.axaml` 五文件联动）；DiffSinger 本地 pitch retake 改为永远启用并**删除 `DiffSingerLocalRetaking` 偏好**（`Preferences.cs`、`PreferencesViewModel.cs`、`PreferencesDialog.axaml`、`DiffSingerRenderer.cs`、`DiffSingerG2pPhonemizer.cs`）；`NotePresets` JSON 反序列化修复；DiffSinger Lang ID 分配修复；`ClassicSinger.FreeMemory()` 状态修复；包体积优化（`OpenUtau.Core.csproj` / `OpenUtau.csproj` / `PathManager.cs`）；appimage 更新支持（新增 `OpenUtau/Assets/AppRun`、`UpdaterViewModel.cs` +34）；phonemizer 冒烟测试 18→6 收敛；`NotePropertiesViewModel.cs` 守卫子句/空值检查与缩进修正。
+
+### 冲突（3 个文件）
+
+13 个文件两侧均有改动，其中仅 3 个出现冲突标记，其余 10 个由 ort 自动合并（双侧改动互不重叠，已逐条核对）。冲突文件及来源：
+
+| 文件 | 上游侧改动量 | fork 侧改动量 | fork 侧来源 | 上游侧来源 |
+| --- | --- | --- | --- | --- |
+| `OpenUtau/App.axaml.cs` | +37 / −0 | +52 / −2 | `f22f3a13`、`fcb6f2ab`、`c837526a`、`a711ff8b`（Studio UI chrome / 主题 / headless 测试） | `fe0894d3` #2404（隐藏失败可见化） |
+| `OpenUtau/Controls/PartControl.cs` | +58 / −14 | +32 / −18 | `c837526a`、`2dcd10ac`、`1b767a77`（Studio 调色板绘制、静音变暗、波形重绘） | `81637a33` #2416（钢琴卷帘视口高亮） |
+| `OpenUtau/ViewModels/TracksViewModel.cs` | +36 / −1 | +32 / −1 | `c837526a`、`2dcd10ac`、`1b767a77`、`77d616b4`（Studio 轨道高度、调色板失效、静音视觉） | `81637a33` #2416（钢琴卷帘视口高亮） |
+
+**判定流程取证**（按 `AGENTS.md` 的 Merge conflict policy 判定流程执行，三个文件均已完成）：
+
+1. **量化两侧改动**：见上表（`git diff --numstat <base> upstream/master` 与 `git diff --numstat <base> master`）。
+2. **残余差异归属**：`git diff upstream/master -- <file>` 分别为 `53/3`、`34/20`、`33/2`，**上游侧改动量均非 0**，即上游确有实现，不能按「上游已自行回退」直接归入保留。
+3. **归属到 commit 与作者**：`git log --oneline -- <file>` 显示三文件的差异**同一文件内混合两侧来源**——上游贡献集中在 `fe0894d3`（异常钩子）与 `81637a33`（视口高亮），fork 贡献集中在 `f22f3a13`/`fcb6f2ab`/`c837526a`/`2dcd10ac`/`1b767a77`/`77d616b4`（Studio UI）。两方作者无重叠。
+4. **逐行核对目标**：上游 `81637a33` 是在既有 `Render()` 里**追加**视口高亮矩形；fork 是在 `Render()` 里把硬编码刷子换成 `StudioTrackPaintCache` 调色板（外加 `ClearWaveformBitmap()`）。**两者目标不同**（上游=新增视口指示；fork=主题化绘制），不构成同目标双实现，故**不触发政策第 1 条的替换**，改为合成。`fe0894d3` 与 fork 改的是 `App.axaml.cs` 完全不同的两个区段（异常钩子 vs Studio 主题/样式），同理不替换。
+
+### 决策记录
+
+- **`App.axaml.cs`：并集**。冲突标记只覆盖 `using` 块（上游加 `Avalonia.Threading` / `OpenUtau.Core`，fork 加 `Avalonia.Markup.Xaml.Styling` / `OpenUtau.App.Studio`），两侧其余改动（`RegisterUnhandledExceptionHandlers()`、`developerToolsAttached` 守卫、`SetTheme()` 的 WarmSage/Studio 分支、`ApplyStudioStyles`）落在不同区段且已由 ort 合并。取两侧 `using` 的并集即完整合并，无取舍。
+- **`PartControl.cs`：合成上游视口高亮到 fork 调色板绘制之上**（政策第 3 条，两侧功能面不同）。具体：
+  - 字段区块：**采纳上游新增的 `private readonly PartsCanvas partsCanvas`**（高亮需要它，且上游已在构造函数里加好 `partsCanvas = canvas;`，该行 ort 已自动合并）；**不保留上游重新加回的 `notePen` 字段**——fork `c837526a` 已把音符缩略图笔画换成调色板派生的 `paint.NoteThumbnailPen`，恢复 `notePen` 会变成未使用字段（`TreatWarningsAsErrors` 下 CS0414 会直接失败）。
+  - 音符绘制：采纳上游把 `voicePart.notes.Count > 0` 改为内层 `if` 的结构（使空声部也能走高亮分支），但笔画用 fork 的 `paint.NoteThumbnailPen`，不恢复上游的 `notePen`——保持与该文件其余 fork 绘制一致，且与上游的差异仅为笔画来源一行。
+  - 高亮块：**原样采纳上游 `81637a33` 的 `if (voicePart == partsCanvas.PianoRollOpenPart && pianoRollViewViewportTicks > 0)` 整段**（含 inset/vpLeft/vpRight/RoundedRect 数值），放在 fork 音符绘制之后、`else if (part is UWavePart)` 之前，与上游位置一致。
+  - fork 专有面全部保留：`StudioTrackPaintCache.ForPart` 取色、静音变暗、`paint.SelectedStrokePen` 描边、`ClearWaveformBitmap()`、`DrawWaveform(..., paint.WaveformPackedRgba)`、`DrawPeak(..., uint packedRgba)`。上游视口高亮用固定的白色半透明填充（`Color.FromArgb(28,255,255,255)`），在 Studio 深色/浅色主题下均为中性指示色，不做主题化改造——理由是**尽量减小与上游差异**（政策第 2 条）。
+- **`TracksViewModel.cs`：并集**。仅构造函数内一段订阅区块冲突：fork 的 `StudioUIChangedEvent` 监听（跟随 Studio 开关切换默认轨道高度，且仅当用户未自定义过）与上游的 `PianoRollOpenPartChangedEvent` / `PianoRollViewportChangedEvent` 两个监听**互不依赖**，两块均保留、按 fork 在前上游在后的顺序排列。上游在 `LoadProjectNotification` 分支新增的 `PianoRollOpenPart = null;` 与 fork 的 `StudioTrackPaintCache.Invalidate(StudioTrackPaletteChangeReason.TracksMutated)` 落在同一分支内但不同语句，ort 已自动合并，两侧均完整。
+- **采纳上游删除 `using DynamicData;`（政策第 2 条）**：上游 `81637a33` 顺手删掉该未使用 using。fork 侧此前保留着它。核对合并后文件：全文件**不使用任何 bare `DynamicData` 命名空间符号**（无 `SourceList` / `SourceCache` / `ObservableListEx` / `.Connect(` 等），实际使用的是 `DynamicData.Binding`（其 `using` 独立保留）。故采纳上游删除，使该文件与上游差异更小；`DynamicData.Binding` 仍保留（`WhenAnyValue` 等需要）。已用全量构建验证无 CS0246。
+- **`Strings.axaml`：取两侧键的并集**，合并后英文源 **936 键、唯一、无重复**。按政策判定流程第 5 条改比**键集合**而非行：上游侧本轮**独有键数为 0**（未新增键，只删除了 `prefs.rendering.diffsingerpitchlocalretaking`），fork 侧为上游的**严格超集**（独有键 130 个，全部对应 fork 功能面：`prefs.studioui.*`、`prefs.hifiutau.*`、`prefs.customrender.*`、`dawintegration.*`、`button.close` 等），故不存在可替换项。
+- **删除孤儿字符串键 `prefs.rendering.diffsingerpitchlocalretaking`（随 `sync_strings.py` 自动清除）**：上游 `e3db1f9d` 删除 `DiffSingerLocalRetaking` 偏好后，该键在英文源已不存在，但 22 个语言文件里仍残留（zh-CN 是**活动键**「DiffSinger 音高局部重录」，其余 21 个是注释占位）。运行 `python Misc/sync_strings.py` 后 22 个文件各删除 1 行，英文源键集合未变。属上游删除偏好的**必然下游清理**，非独立决策。
+- **`OpenUtau.Test/OpenUtau.Test.csproj`：不采纳上游 `ec221fa6` 的 xunit 版本提升，钉回 3.2.2（政策第 4 条例外）**。上游把 `xunit.v3` / `xunit.v3.common` / `xunit.v3.extensibility.core` / `xunit.runner.visualstudio` 从 `3.2.2` 提到 `4.0.0`。实测后果：**全部 20 个 `[AvaloniaFact]` 用例在发现阶段失败**，`System.MissingMethodException: Method not found: Xunit.v3.TestIntrospectionHelper.GetTestCaseDetails(...)`（`Avalonia.Headless.XUnit.AvaloniaFactDiscoverer.CreateTestCase`）。**缺陷、证据与取舍**：
+  - **证据 1（上游自身兼容性边界）**：`Avalonia.Headless.XUnit` 在 NuGet 上最高版本为 **12.1.2**（已查 `api.nuget.org/v3-flatcontainer/avalonia.headless.xunit/index.json`），无支持 xunit.v3 4.x 的版本。
+  - **证据 2（上游已知问题）**：AvaloniaUI/Avalonia 议题 **#22072「Headless testing does not work with xUnit.v3 4.0.0」**，维护者答复「That's a new major version of xUnit; it's unsupported for now … it contains breaking changes」。即这是**上游 xunit 提升与 Avalonia headless 适配器之间的已知不兼容**，不是本 fork 的用法错误。
+  - **证据 3（上游不会遇到）**：上游 `upstream/master` 的 `OpenUtau.Test/` 目录下**没有任何 `[AvaloniaFact]`**（`git grep -n 'AvaloniaFact' upstream/master -- OpenUtau.Test` 为空；上游 `AppTest.cs` 的 `StringsTest` 是普通 `[Fact]` 并自行 `SetupWithoutStarting()`）。20 个 `[AvaloniaFact]` 全部是 fork 独有（`AppTest.cs` 1 个 + `StudioOneControlsTest.cs` 8 个 + `StudioTrackLayoutTest.cs` 6 个 + `TrackHeaderChromeTest.cs` 5 个），因此上游 CI 结构上无法暴露此问题。
+  - **取舍**：把 xunit 线钉回 `3.2.2`（`xunit.v3`、`xunit.v3.common`、`xunit.v3.extensibility.core`、`xunit.runner.visualstudio` 四者同步钉回），并在 csproj 内写明原因与解除条件（待 Avalonia 发布 xunit.v3 4.x 适配器后即可放开）。**保留上游 `ec221fa6` 的另一半改动**：`pr-test.yml` 的命令由 `dotnet test OpenUtau.Test` 改为 `dotnet run --project OpenUtau.Test/OpenUtau.Test.csproj`（Microsoft.Testing.Platform）——实测该命令在 3.2.2 下正常工作，而 `dotnet test` 在 .NET 10 SDK 上直接报错「Testing with VSTest target is no longer supported」，故这部分必须采纳。
+  - 该偏离使 `OpenUtau.Test.csproj` 与上游产生 **10/4** 的差异；上游若后续发布兼容版（或自行适配），按政策第 1 条改回上游版本、删除此处注释与钉版。
+- **自动合并的 10 个重叠文件全部采纳，两侧改动均未丢失**（`OpenUtau.Core.csproj`、`OpenUtau.Core/Util/PathManager.cs`、`OpenUtau.Core/Util/Preferences.cs`、`OpenUtau/Controls/PartsCanvas.cs`、`OpenUtau/Strings/Strings.axaml`、`OpenUtau/ViewModels/NotePropertiesViewModel.cs`、`OpenUtau/ViewModels/NotesViewModel.cs`、`OpenUtau/ViewModels/PreferencesViewModel.cs`、`OpenUtau/Views/MainWindow.axaml`、`OpenUtau/Views/PreferencesDialog.axaml`）：
+  - `PartsCanvas.cs`：上游新增 `PianoRollOpenPart` / `PianoRollViewTickOffset` / `PianoRollViewViewportTicks` 三个 `DirectProperty` 与 `InvalidatePartViewport()`，fork 新增 `StudioTrackPaletteChangedEvent` / `TrackMuteVisualEvent` 两个监听及 `ClearWaveformBitmap()` 调用，分处不同区段，两侧均完整。注意该文件 ort **删除了 `using System.Reactive.Linq;`**（上游侧删除，因其改动后不再使用），但 fork 新增的监听链继续使用 `.Subscribe(...)`——已由全量构建确认无需该 using（`IObservable<T>` 的 `Subscribe` 扩展来自 `System.Reactive` 而非 `.Linq` 子命名空间），编译零错误。
+  - `NotesViewModel.cs`：上游新增 `PianoRollOpenPartChangedEvent` / `PianoRollViewportChangedEvent` 发布与 `PublishPianoRollViewport()`，fork 新增 `StudioTrackPaletteChangedEvent` 监听与 `LoadTrackColor` 的 `StudioTrackPaintCache` 分支；两者改的是不同方法，自动合并后共存。
+  - `Preferences.cs` / `PreferencesViewModel.cs` / `PreferencesDialog.axaml`：上游删除 `DiffSingerLocalRetaking`（3 文件各 1–4 行）；fork 在 `Preferences.cs` 新增 119 行、`PreferencesViewModel.cs` 新增 992 行、`PreferencesDialog.axaml` 新增 350 行 Studio/HiFiUTAU/Custom Server 偏好。删除与新增分处不同区段，fork 偏好面完整保留。
+  - `PathManager.cs`：上游 +6 行（包体积优化的路径处理），fork +1 行，互不重叠。
+
+### 已验证
+
+1. **构建**：`dotnet build OpenUtau -c Debug` → **0 错误**（1769 条存量警告，与历次同量级；含 3 个既有 AVLN3001）。特别确认 `using DynamicData;` 的删除、`notePen` 的移除、`partsCanvas` 的新增均未引入 CS0246/CS0414。
+2. **测试**：`dotnet run --project OpenUtau.Test/OpenUtau.Test.csproj -c Debug` → **Total: 505，Failed: 0，Errors: 0，Skipped: 1**（跳过项仍为需真实 DAW 插件的 `DawRealPluginTest.RealPluginCompletesTheHandshakeAndPullsAudio`）。**此数字是在本合并提交 `57b8caa8` 上测得的**；随后合并 `origin/master`（PR #15 `feature/studio-exp-bar`）得到的 `db62c16a` **不是**这个结果，参见下文「并入 PR #15 之后的复测」。
+   - **注意测试命令已随上游变更**：`dotnet test OpenUtau.Test` 在 .NET 10 SDK 上会直接失败（`Microsoft.Testing.Platform` 不再支持 VSTest 目标），必须用上游 `pr-test.yml` 的 `dotnet run --project OpenUtau.Test/OpenUtau.Test.csproj`。上一轮记录（`## Merge 2026-09-12`）中的 `dotnet test` 写法已失效。
+   - **用例数 512 → 505 的差额已解释，非覆盖丢失**：上游 `73cd8957` 把 `PhonemizerTest<T>` 抽象基类上的 3 个 `[Fact]`（`CreationTest`/`SetSingerTest`/`DummySingerPhonemizeTest`）× 6 个具体派生类 = **18 个用例**，合并为 1 个 `[Theory]` × 6 个 `[InlineData]` = **6 个用例**，净 **−12**。故合并前应为 517，合并后为 505，且跳过项不变。逐项核对：6 个 phonemizer（`DefaultPhonemizer`/`ArpasingPhonemizer`/`JapaneseCVVCPhonemizer`/`JapaneseVCVPhonemizer`/`KoreanCVCPhonemizer`/`KoreanCVVCPhonemizer`）在 `[InlineData]` 中**一个不少**，且每个用例的断言体（可构造、容忍缺失/null singer、以 dummy note+singer 跑 phonemize）三项合一，覆盖等价。已实测确认：在本合并结果上单跑 `-class "OpenUtau.Plugins.PhonemizerTest"` = **6 个用例全通过**。
+   - **本合并提交上未复现 `StringsTest` 的 teardown 问题**（上一轮的已知失败项）：505 用例一次跑完 0 失败。但**该问题在并入 PR #15 之后随即复现**，见下节。
+
+### 并入 PR #15（`origin/master` 2fe1feea）之后的复测
+
+本合并提交 `57b8caa8` 完成后，`origin/master` 已被 PR #15（`feature/studio-exp-bar`）推进到 `2fe1feea`，与本地 `master` **从同一 merge-base `9fdee2f0` 分叉**（不是快进）。经 `git merge-tree` 预演为**干净合并**（唯一重叠文件 `OpenUtau/Views/MainWindow.axaml` 两侧改动位于不同区段：PR #15 改 piano-roll 行高与进度条文案，本合并加上 `PianoRollOpenPart` / `PianoRollViewTickOffset` / `PianoRollViewViewportTicks` 三个绑定），实际合并成功，无冲突标记，结果提交 `db62c16a`。合并面 8 个文件（新增 `OpenUtau/Studio/StudioExpLayout.cs`、`OpenUtau.Test/App/StudioExpLayoutTest.cs`；改 `ExpSelector.axaml`、`PianoRoll.axaml(.cs)`、`StudioStyles.axaml`、`PianoRollViewModel.cs`、`MainWindow.axaml`）。
+
+- **构建**：`dotnet build OpenUtau -c Debug` → **0 错误**。
+- **测试（`db62c16a`，共 3 次全量）**：**Total 513–514 / Skipped 1 / Failed 0**，但 **Errors 在 0 与 1 之间摆动**：
+  | 运行 | Total | Errors | 失败项 |
+  | --- | --- | --- | --- |
+  | 1 | 513 | **1** | `AppTest.StringsTest` 的 Test Case Cleanup Failure |
+  | 2 | 514 | 0 | — |
+  | 3 | 513 | **1** | 同上 |
+- **失败性质**：`[Test Case Cleanup Failure (OpenUtau.App.AppTest.StringsTest)] System.InvalidOperationException : The calling thread cannot access this object because a different thread owns it`，栈为 `Avalonia.Rendering.DefaultRenderLoop.Add` ← `ServerCompositor..ctor` ← `Avalonia.Headless.XUnit.AvaloniaTestRunner.Run`，即 **headless 宿主 teardown 阶段的线程亲和性问题**，与断言无关。证据：该用例单独跑（`-method "*StringsTest*"`）**Total 1 / Errors 0**，断言本身确定通过。这与上一轮记录（`## Merge 2026-09-12`）的已知问题**同一现象、同一栈**，本轮在并入 PR #15 后**重新出现**。
+- **同基线对照（决定性问题）**：在 `origin/master`（`2fe1feea`）的独立 `git worktree` 上以同一命令跑全量 **两次，均为 Total 521 / Errors 0 / Failed 0 / Skipped 1**，稳定。故该 teardown 摆动**不在 PR #15 自身**，而是由「上游合并 + PR #15」组合后触发（PR #15 新增的 Studio 测试与上游新增的 `NotesViewModel.WhenAnyValue(x => x.Part)` → `PianoRollOpenPartChangedEvent` → `TracksViewModel` 监听这条消息链，与 fork 的 headless 测试会话在同一进程内共存）。对照用的 worktree 已在提交前移除。
+- **对本次合并的结论**：`db62c16a` 的**构建与断言全部通过**（0 Failed，`StringsTest` 断言在隔离下通过），但**测试套件在合并树上不再稳定**（Errors 0↔1，Total 513↔514）。按上一轮口径该现象「不阻塞合并」，但**不能声称合并后全量 0 错误**——此处如实记录，并把定位工作列为待办的独立 topic（见「未决项」）。
+
+3. **两侧改动零丢失核对**（对 13 个重叠文件逐条核对，方法沿用上一轮）：分别取「上游侧新增行」与「fork 侧新增行」（base→各自 HEAD 的 `+` 行，去重、忽略 ≤12 字符的短行），在合并结果文件中逐条做字面匹配。结果：上游侧**全部命中**（3 个冲突文件在按上文合成后无遗漏，其中 `PartControl.cs` 的 `notePen` 字段行**有意未取**——见决策记录，属设计取舍而非遗漏；上游高亮块的 22 行全部落地）；fork 侧**全部命中**，包括 `App.axaml.cs` 的 `ApplyStudioStyles`/`developerToolsAttached`、`PartControl.cs` 的 `StudioTrackPaintCache`/`ClearWaveformBitmap`/`paint.NoteThumbnailPen`、`TracksViewModel.cs` 的 `StudioUIChangedEvent` 监听与 `StudioTrackPaintCache.Invalidate`、`PartsCanvas.cs` 的两个新监听。另核对：上游 2 个新增文件（`OpenUtau.Test/Core/USTx/UVoicePartAfterLoadTest.cs`、`OpenUtau/Assets/AppRun`）均存在且 A 状态入库；上游本轮**无删除文件**。PR #15 的 2 个新增文件（`StudioExpLayout.cs`、`StudioExpLayoutTest.cs`）同样在 `db62c16a` 中入库。
+
+4. **`Strings.axaml` 与 22 个语言文件的键完整性**：英文源 **936 键（唯一、无重复）**；`Compare-Object` 核对**上游键缺失数 = 0**、fork 独有键 **130 个全部保留**；上游本轮新增键 **0 个**。22 个语言文件按「非注释键」统计，相对英文源的 `Extra` 仅 zh-CN 的 1 个（即上文孤儿键，已由 `sync_strings.py` 删除），**其余全部为 `Extra=0`**；`Missing` 数只反映未翻译项（以 `<!--<system:String ...>-->` 注释占位，属脚本既定形态，各语言存量不同）。因上游本轮无新增键，本次同步为**净删除 23 行**（22 个语言文件各 1 行 + 英文源 BOM 归一），`Compare-Object` 显示无任何翻译内容丢失。
+
+5. **UTF-8 BOM 回归自查（本 fork 特有，上一轮已记录该风险）**：`.editorconfig` 要求 `charset = utf-8-bom`。逐字节比对合并前 `HEAD` blob 与合并结果，确认：
+   - 3 个手工解的冲突文件（`App.axaml.cs`、`PartControl.cs`、`TracksViewModel.cs`）在文本编辑过程中**被剥掉了 BOM**（`HEAD` 有、合并结果无），**已发现并全部补回**，现三者 BOM 与 `HEAD` 一致。
+   - `Misc/sync_strings.py` 以无 BOM 编码回写，**会剥掉英文源 `Strings.axaml` 的 BOM**（与上一轮记录一致）。本次运行后**已手动补回**；22 个语言文件本就无 BOM（脚本产物的既定形态，与 `HEAD` 一致），保持不变。
+   - 其余自动合并文件（`PartsCanvas.cs` 等）BOM 状态与 `HEAD` 一致，未受影响。
+6. **`git diff --check`**：无冲突标记残留（`^(<<<<<<<|=======|>>>>>>>)` 全库扫描为空），`db62c16a` 亦然。
+7. **清理**：验证过程产生的临时文件（`merge_probe.txt`、`test_run.txt`、`test_run2.txt`、各次 `*_test*.txt`/`merged_run*.txt`）已删除；对照用的 `git worktree`（`ou-origin-check`）已移除（`git worktree list` 只剩主工作树）。
+
+### 未决项（已知、非阻塞）
+
+- **`AppTest.StringsTest` 的 headless teardown 摆动（需独立 topic 定位）**：现象为 `[Test Case Cleanup Failure]` + `InvalidOperationException: The calling thread cannot access this object because a different thread owns it`，栈落在 `Avalonia.Headless.XUnit.AvaloniaTestRunner.Run` 的清理阶段。已确认的边界：**断言本身确定通过**（隔离运行 1/1）；**`origin/master` 自身稳定 521/0**（跑 2 次）；**仅在「上游合并 + PR #15」的合并树上摆动**（3 次：0、1、1 Errors，Total 513/514）。上一轮（`## Merge 2026-09-12`，基线无 PR #15）已把它记为「累积/顺序敏感」，并已排除：与 `Strings.axaml`/语言文件无关、与 BOM 无关、与 xUnit 并行化无关、与 `App.axaml.cs`/`AppTest.cs`/`ThemeManager.cs` 的差异无关。**本轮新增线索**：上游 `fe0894d3` 在 `NotesViewModel` 加入 `this.WhenAnyValue(x => x.Part).Subscribe(...)` → `MessageBus.SendMessage(new PianoRollOpenPartChangedEvent(...))`，而 `MessageBus` 是进程级静态单例、`TracksViewModel` 又监听同一条消息 → 该订阅链跨越 headless 会话存续且无显式释放，与 PR #15 新增的 Studio 测试并发时命中 teardown 的线程亲和性检查。**建议**：单独开 topic（`fix/headless-test-teardown` 或 `chore/`）定位并修复测试宿主层，不要为迁就测试去改产品代码。
+- **xunit 钉版需上游跟进**：本 fork 因 20 个 `[AvaloniaFact]` 用例被迫留在 xunit.v3 3.2.2，与上游 `4.0.0` 存在差异。上游若发布适配（或 Avalonia 发布 xunit.v3 4.x 版 `Avalonia.Headless.XUnit`），应按政策第 1 条改回上游并删除 csproj 内的说明注释。跟踪依据：AvaloniaUI/Avalonia#22072。
+- **`xunit.runner.visualstudio` 保留 4.0.0**：该包**没有 3.x 版本**（NuGet 上只有 `4.0.0-pre.*` 与 `4.0.0`），上游与 fork 合并前都写的 `3.2.2` 会触发 `NU1603` 并静默解析到 `4.0.0`。本次已把该行改为诚实的 `4.0.0`，`NU1603` 消失；xunit.v3 核心三包仍钉 `3.2.2`（原因见 csproj 注释）。
+- **孤儿键清理已顺手完成**：`prefs.rendering.diffsingerpitchlocalretaking` 的 22 处残留已由 `sync_strings.py` 清除，无需后续处理。

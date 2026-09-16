@@ -808,7 +808,6 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="prefs.rendering">Renderizado</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Renderizador por defecto (para voicebanks clásicos)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">Profundidad de Renderización de DiffSinger</system:String>
-  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
   <system:String x:Key="prefs.rendering.diffsingersteps">Pasos de Renderizado Acústico de DiffSinger</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">Pasos de Renderizado de Tono de DiffSinger</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">Pasos de Renderizado de Variación de DiffSinger</system:String>

@@ -803,7 +803,6 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="prefs.rendering">算繪</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">傳統音源的預設算繪器</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">DiffSinger 算繪深度</system:String>
-  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
   <system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger Acoustic算繪步驟</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">DiffSinger Pitch算繪步驟</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">DiffSinger Variance算繪步驟</system:String>

@@ -807,7 +807,6 @@ OpenUtau 是一个开源项目, 旨在为 UTAU 用户社区提供现代的用户
   <system:String x:Key="prefs.rendering">渲染</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">传统音源的默认渲染器</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">DiffSinger 渲染深度</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger 音高局部重录</system:String>
   <system:String x:Key="prefs.rendering.diffsingersteps">针对于 Acoustic 的 DiffSinger 渲染步骤</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">针对于 Pitch 的 DiffSinger 渲染步骤</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">针对于 Variance 的 DiffSinger 渲染步骤</system:String>

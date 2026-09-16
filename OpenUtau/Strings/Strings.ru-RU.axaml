@@ -804,7 +804,6 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="prefs.rendering">Рендеринг</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Рендерер по-умолчанию (для классических войсбанков)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">Глубина рендеринга DiffSinger</system:String>
-  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
   <system:String x:Key="prefs.rendering.diffsingersteps">Количество шагов рендера DiffSinger для Acoustic</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">Количество шагов рендера DiffSinger для питча</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">Количество шагов рендера DiffSinger для Variance</system:String>

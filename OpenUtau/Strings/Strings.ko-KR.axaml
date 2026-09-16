@@ -808,7 +808,6 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="prefs.rendering">렌더링</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">기본 렌더러 (Classic 음원용)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">DiffSinger 렌더링 깊이(Depth)</system:String>
-  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
   <system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger 렌더링 스텝 (Acoustic 모델용)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">DiffSinger 렌더링 스텝 (Pitch 모델용)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">DiffSinger 렌더링 스텝 (Variance 모델용)</system:String>

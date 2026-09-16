@@ -807,7 +807,6 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="prefs.rendering">Randare</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Randatorul implicit (pentru cântăreți clasici)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">Adâncimea Randării DiffSinger</system:String>
-  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
   <system:String x:Key="prefs.rendering.diffsingersteps">Pașii de Randare DiffSinger pentru Modelul Acustic</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">Pașii de Randare DiffSinger pentru Modelul Tonal</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">Pașii de Randare DiffSinger pentru Modelul de Varianță</system:String>
