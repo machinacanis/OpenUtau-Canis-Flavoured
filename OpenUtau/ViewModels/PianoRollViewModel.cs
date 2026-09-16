@@ -99,6 +99,7 @@ namespace OpenUtau.App.ViewModels {
             = new Dictionary<Key, MenuItemViewModel>();
 
         [Reactive] public partial double Progress { get; set; }
+        [Reactive] public partial string ProgressText { get; set; } = string.Empty;
         [Reactive] public partial bool CanUndo { get; set; } = false;
         [Reactive] public partial bool CanRedo { get; set; } = false;
         [Reactive] public partial string UndoText { get; set; } = ThemeManager.GetString("menu.edit.undo");
@@ -309,11 +310,12 @@ namespace OpenUtau.App.ViewModels {
 
         public void OnNext(UCommand cmd, bool isUndo) {
             if (cmd is ProgressBarNotification progressBarNotification) {
-                if (PianoRollDetached) {
-                    Dispatcher.UIThread.InvokeAsync(() => {
+                Dispatcher.UIThread.InvokeAsync(() => {
+                    ProgressText = progressBarNotification.Info;
+                    if (PianoRollDetached) {
                         Progress = progressBarNotification.Progress;
-                    }, DispatcherPriority.Background);
-                }
+                    }
+                }, DispatcherPriority.Background);
             }
             SetUndoState();
         }
