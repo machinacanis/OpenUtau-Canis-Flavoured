@@ -58,6 +58,10 @@ namespace OpenUtau.App.Controls {
             SetPenToolIcon();
             penTool.AddHandler(PointerPressedEvent, OnToolButtonPointerPressed, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, true);
             this.LayoutUpdated += PianoRollLayoutUpdated;
+            ExpSelectorScroller.SizeChanged += OnExpSelectorScrollerSizeChanged;
+            MessageBus.Current.Listen<StudioUIChangedEvent>()
+                .Subscribe(_ => ApplyStudioExpLayout());
+            ApplyStudioExpLayout();
         }
 
         private void PianoRollLayoutUpdated(object? sender, EventArgs e) {
@@ -2138,9 +2142,37 @@ namespace OpenUtau.App.Controls {
             if (expSelector1 == null) {
                 return;
             }
-            var exps = new ExpSelector[] { expSelector1, expSelector2, expSelector3, expSelector4, expSelector5, expSelector6, expSelector7, expSelector8, expSelector9, expSelector10 };
+            var exps = GetExpSelectors();
             exps[DocManager.Inst.Project.expSecondary].SelectExp();
             exps[DocManager.Inst.Project.expPrimary].SelectExp();
+        }
+
+        ExpSelector[] GetExpSelectors() => [
+            expSelector1, expSelector2, expSelector3, expSelector4, expSelector5,
+            expSelector6, expSelector7, expSelector8, expSelector9, expSelector10
+        ];
+
+        void ApplyStudioExpLayout() {
+            StudioExpLayout.Apply(
+                ExpSelectorPanel,
+                ExpSelectorStack,
+                expSettingsButton,
+                ExpBarProgressText,
+                GetExpSelectors(),
+                StudioUI.IsEnabled);
+            StudioExpLayout.ApplyCurveToolbar(ExpCurveToolbar, StudioUI.IsEnabled);
+        }
+
+        void OnExpSelectorScrollerSizeChanged(object? sender, SizeChangedEventArgs e) {
+            if (!StudioUI.IsEnabled) {
+                return;
+            }
+            var project = DocManager.Inst.Project;
+            StudioExpLayout.ApplyOverflow(
+                e.NewSize.Width,
+                GetExpSelectors(),
+                project.expPrimary,
+                project.expSecondary);
         }
 
         public void OnNext(UCommand cmd, bool isUndo) {
@@ -2150,6 +2182,13 @@ namespace OpenUtau.App.Controls {
                 } else {
                     LoadingWindow.EndLoading();
                 }
+            } else if (cmd is SelectExpressionNotification && StudioUI.IsEnabled) {
+                var project = DocManager.Inst.Project;
+                StudioExpLayout.ApplyOverflow(
+                    ExpSelectorScroller.Bounds.Width,
+                    GetExpSelectors(),
+                    project.expPrimary,
+                    project.expSecondary);
             }
         }
     }

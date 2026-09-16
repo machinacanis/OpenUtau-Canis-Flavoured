@@ -1,5 +1,6 @@
 <Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="clr-namespace:OpenUtau.App.Controls">
   <!-- Studio-only chrome. Loaded only when Preferences.UseStudioUI is on. -->
   <StyleInclude Source="avares://OpenUtau/Styles/StudioOneControls.axaml"/>
   <Style Selector="GridSplitter.panel">
@@ -7,4 +8,19 @@
     <Setter Property="MinHeight" Value="2"/>
     <Setter Property="Height" Value="2"/>
   </Style>
+  <Style Selector="Border#ExpSelectorPanel">
+    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource TickLineBrush}"/>
+    <Setter Property="BorderThickness" Value="0,1,0,0"/>
+  </Style>
+  <Style Selector="c|ExpSelector > Border">
+    <Setter Property="BorderBrush" Value="{DynamicResource NeutralAccentBrushSemi}"/>
+    <Setter Property="BorderThickness" Value="0,0,1,0"/>
+  </Style>
+  <Style Selector="TextBlock#MainProgressText">
+    <Setter Property="IsVisible" Value="False"/>
+    <Setter Property="Height" Value="0"/>
+    <Setter Property="Margin" Value="0"/>
+  </Style>
+
 </Styles>

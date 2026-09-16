@@ -217,7 +217,7 @@
             <RowDefinition Height="3*"
                            MinHeight="{Binding PianoRollMinHeight}"
                            MaxHeight="{Binding PianoRollMaxHeight}"/>
-            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="4"/>
           </Grid.RowDefinitions>
           <Panel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" Height="24">
@@ -424,7 +424,7 @@
                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                         Focusable="False" Cursor="SizeNorthSouth" IsVisible="{Binding ShowPianoRoll}"/>
           <ContentControl Grid.Row="4" Grid.ColumnSpan="3" Name="PianoRollContainer"/>
-          <TextBlock Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" Height="20" Margin="4,4,4,0" Text="{Binding ProgressText}"/>
+          <TextBlock x:Name="MainProgressText" Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" Height="20" Margin="4,0,4,0" Text="{Binding ProgressText}"/>
           <ProgressBar Grid.Row="6" Grid.ColumnSpan="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Value="{Binding Progress}"/>
         </Grid>
       </Carousel>
