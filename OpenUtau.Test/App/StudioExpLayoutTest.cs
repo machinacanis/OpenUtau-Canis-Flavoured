@@ -135,5 +135,132 @@ namespace OpenUtau.App {
             var stack = Assert.IsType<StackPanel>(toolbar.ItemsPanel.Build());
             Assert.Equal(Orientation.Horizontal, stack.Orientation);
         }
+
+        [AvaloniaFact]
+        public void ApplyOverlay_StudioClosed_CollapsesExpRowAndHidesCanvases() {
+            var parts = OverlayParts();
+            ApplyOverlay(parts, studio: true, open: false);
+
+            Assert.Equal(0, parts.Row.Height.Value);
+            Assert.Equal(0, parts.Row.MinHeight);
+            Assert.Equal(0, parts.Row.MaxHeight);
+            Assert.Equal(0, parts.SplitterRow.Height.Value);
+            Assert.Equal(0, parts.Splitter.Height);
+            Assert.False(parts.Splitter.IsVisible);
+            Assert.False(parts.Dim.IsVisible);
+            Assert.False(parts.Primary.IsVisible);
+            Assert.False(parts.Secondary.IsVisible);
+            Assert.False(parts.Toolbar.IsVisible);
+        }
+
+        [AvaloniaFact]
+        public void ApplyOverlay_StudioOpen_PlacesPrimaryOnNotesRowHidesSecondary() {
+            var parts = OverlayParts();
+            ApplyOverlay(parts, studio: true, open: true);
+
+            Assert.Equal(0, parts.Row.Height.Value);
+            Assert.Equal(0, parts.SplitterRow.Height.Value);
+            Assert.Equal(StudioExpLayout.NotesRow, Grid.GetRow(parts.Primary));
+            Assert.Equal(StudioExpLayout.NotesRow, Grid.GetRow(parts.Toolbar));
+            Assert.Equal(StudioExpLayout.StudioToolbarColumn, Grid.GetColumn(parts.Toolbar));
+            Assert.True(parts.Dim.IsVisible);
+            Assert.True(parts.Primary.IsVisible);
+            Assert.False(parts.Secondary.IsVisible);
+            Assert.Equal(StudioExpLayout.OverlayZIndex + 1, parts.Primary.ZIndex);
+        }
+
+        [AvaloniaFact]
+        public void ApplyOverlay_Classic_RestoresExpRow() {
+            var parts = OverlayParts();
+            ApplyOverlay(parts, studio: true, open: true);
+            ApplyOverlay(parts, studio: false, open: false);
+
+            Assert.Equal(StudioExpLayout.ClassicExpRowHeight, parts.Row.Height.Value);
+            Assert.Equal(StudioExpLayout.ClassicExpRowMinHeight, parts.Row.MinHeight);
+            Assert.True(parts.SplitterRow.Height.IsAuto);
+            Assert.Equal(StudioExpLayout.ClassicRow, Grid.GetRow(parts.Primary));
+            Assert.Equal(StudioExpLayout.ClassicRow, Grid.GetRow(parts.Secondary));
+            Assert.Equal(StudioExpLayout.ClassicRow, Grid.GetRow(parts.Toolbar));
+            Assert.False(parts.Dim.IsVisible);
+        }
+
+        [AvaloniaFact]
+        public void ApplyOverlay_StudioOptions_RestoresBottomStrip() {
+            var parts = OverlayParts();
+            ApplyOverlay(parts, studio: true, open: true, usesNotesOverlay: false);
+
+            Assert.Equal(StudioExpLayout.ClassicExpRowHeight, parts.Row.Height.Value);
+            Assert.Equal(StudioExpLayout.ClassicExpRowMinHeight, parts.Row.MinHeight);
+            Assert.True(parts.SplitterRow.Height.IsAuto);
+            Assert.Equal(10, parts.Splitter.Height);
+            Assert.Equal(StudioExpLayout.ClassicRow, Grid.GetRow(parts.Primary));
+            Assert.Equal(StudioExpLayout.ClassicRow, Grid.GetRow(parts.Secondary));
+            Assert.False(parts.Dim.IsVisible);
+        }
+
+        [AvaloniaFact]
+        public void HandleSelectorClick_Options_DoesNotOpenOverlay() {
+            using var scope = new StudioUiScope(true);
+            StudioExpLayout.SetOverlayOpen(true);
+            StudioExpLayout.HandleSelectorClick(wasPrimaryVisible: false, usesNotesOverlay: false);
+            Assert.False(StudioExpLayout.OverlayOpen);
+        }
+
+        [AvaloniaFact]
+        public void HandleSelectorClick_TogglesWhenAlreadyVisible() {
+            using var scope = new StudioUiScope(true);
+            StudioExpLayout.SetOverlayOpen(false);
+            StudioExpLayout.HandleSelectorClick(wasPrimaryVisible: true);
+            Assert.True(StudioExpLayout.OverlayOpen);
+            StudioExpLayout.HandleSelectorClick(wasPrimaryVisible: true);
+            Assert.False(StudioExpLayout.OverlayOpen);
+        }
+
+        [AvaloniaFact]
+        public void HandleSelectorClick_OpensWhenSelectingOther() {
+            using var scope = new StudioUiScope(true);
+            StudioExpLayout.SetOverlayOpen(false);
+            StudioExpLayout.HandleSelectorClick(wasPrimaryVisible: false);
+            Assert.True(StudioExpLayout.OverlayOpen);
+            StudioExpLayout.SetOverlayOpen(false);
+        }
+
+        [AvaloniaFact]
+        public void HandleSelectorClick_Classic_DoesNotOpen() {
+            using var scope = new StudioUiScope(false);
+            StudioExpLayout.SetOverlayOpen(false);
+            StudioExpLayout.HandleSelectorClick(wasPrimaryVisible: false);
+            Assert.False(StudioExpLayout.OverlayOpen);
+        }
+
+        static OverlayFixture OverlayParts() {
+            var row = new RowDefinition {
+                Height = new GridLength(StudioExpLayout.ClassicExpRowHeight),
+                MinHeight = StudioExpLayout.ClassicExpRowMinHeight,
+                MaxHeight = StudioExpLayout.ClassicExpRowMaxHeight,
+            };
+            var splitterRow = new RowDefinition { Height = GridLength.Auto };
+            var primary = new Border { IsVisible = true };
+            var secondary = new Border { IsVisible = true };
+            Grid.SetRow(primary, StudioExpLayout.ClassicRow);
+            Grid.SetRow(secondary, StudioExpLayout.ClassicRow);
+            return new OverlayFixture(row, splitterRow, new GridSplitter { IsVisible = true, Height = 10 }, new Border(), primary, secondary, new ListBox { IsVisible = true });
+        }
+
+        static void ApplyOverlay(OverlayFixture parts, bool studio, bool open, bool usesNotesOverlay = true) {
+            StudioExpLayout.ApplyOverlay(
+                studio, open, showExpressions: true,
+                parts.Row, parts.SplitterRow, parts.Splitter, parts.Dim, parts.Primary, parts.Secondary, parts.Toolbar,
+                usesNotesOverlay);
+        }
+
+        readonly record struct OverlayFixture(
+            RowDefinition Row,
+            RowDefinition SplitterRow,
+            GridSplitter Splitter,
+            Border Dim,
+            Border Primary,
+            Border Secondary,
+            ListBox Toolbar);
     }
 }

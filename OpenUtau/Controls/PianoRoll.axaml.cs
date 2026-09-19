@@ -66,7 +66,28 @@ namespace OpenUtau.App.Controls {
             this.LayoutUpdated += PianoRollLayoutUpdated;
             ExpSelectorScroller.SizeChanged += OnExpSelectorScrollerSizeChanged;
             MessageBus.Current.Listen<StudioUIChangedEvent>()
+                .Subscribe(_ => {
+                    if (!StudioUI.IsEnabled) {
+                        StudioExpLayout.SetOverlayOpen(false);
+                    }
+                    ApplyStudioExpLayout();
+                });
+            MessageBus.Current.Listen<StudioExpOverlayChangedEvent>()
                 .Subscribe(_ => ApplyStudioExpLayout());
+            ViewModel.NotesViewModel.WhenAnyValue(x => x.ShowExpressions)
+                .Subscribe(show => {
+                    if (!show) {
+                        StudioExpLayout.SetOverlayOpen(false);
+                    }
+                    ApplyStudioExpLayout();
+                });
+            ViewModel.NotesViewModel.WhenAnyValue(x => x.PrimaryKey)
+                .Subscribe(_ => {
+                    if (!PrimaryUsesNotesOverlay()) {
+                        StudioExpLayout.SetOverlayOpen(false);
+                    }
+                    ApplyStudioExpLayout();
+                });
             ApplyStudioExpLayout();
         }
 
@@ -2159,14 +2180,46 @@ namespace OpenUtau.App.Controls {
         ];
 
         void ApplyStudioExpLayout() {
+            bool studio = StudioUI.IsEnabled;
             StudioExpLayout.Apply(
                 ExpSelectorPanel,
                 ExpSelectorStack,
                 expSettingsButton,
                 ExpBarProgressText,
                 GetExpSelectors(),
-                StudioUI.IsEnabled);
-            StudioExpLayout.ApplyCurveToolbar(ExpCurveToolbar, StudioUI.IsEnabled);
+                studio);
+            StudioExpLayout.ApplyCurveToolbar(ExpCurveToolbar, studio);
+            StudioExpLayout.ApplyOverlay(
+                studio,
+                StudioExpLayout.OverlayOpen,
+                ViewModel.NotesViewModel.ShowExpressions,
+                PianoRollGrid.RowDefinitions[StudioExpLayout.ClassicRow],
+                PianoRollGrid.RowDefinitions[StudioExpLayout.SplitterRow],
+                ExpSplitter,
+                ExpOverlayDim,
+                ExpCanvasPrimary,
+                ExpCanvasSecondary,
+                ExpCurveToolbar,
+                PrimaryUsesNotesOverlay());
+        }
+
+        bool PrimaryUsesNotesOverlay() {
+            var notes = ViewModel.NotesViewModel;
+            var key = notes.PrimaryKey;
+            if (string.IsNullOrEmpty(key)) {
+                return true;
+            }
+            var project = notes.Project;
+            if (notes.Part != null) {
+                var track = project.tracks[notes.Part.trackNo];
+                if (track.TryGetExpDescriptor(project, key, out var trackDesc)) {
+                    return trackDesc.type != UExpressionType.Options;
+                }
+            }
+            if (project.expressions.TryGetValue(key, out var projDesc)) {
+                return projDesc.type != UExpressionType.Options;
+            }
+            return true;
         }
 
         void OnExpSelectorScrollerSizeChanged(object? sender, SizeChangedEventArgs e) {

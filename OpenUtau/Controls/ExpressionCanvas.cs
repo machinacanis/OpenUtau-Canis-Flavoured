@@ -150,10 +150,10 @@ namespace OpenUtau.App.Controls {
                 var curve = Part.curves.FirstOrDefault(c => c.descriptor == descriptor);
                 double defaultHeight = Math.Round(Bounds.Height - Bounds.Height * (descriptor.defaultValue - descriptor.min) / (descriptor.max - descriptor.min));
                 
-                var lPen = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentPen : ThemeManager.AccentPen1;
-                var lPen2 = DisplayMode == ExpDisMode.Shadow ? new Pen(ThemeManager.NeutralAccentBrush, 3) : ThemeManager.AccentPen1Thickness3;
-                var lPenSelected = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentPen : ThemeManager.AccentPen2;
-                var lPen2Selected = DisplayMode == ExpDisMode.Shadow ? new Pen(ThemeManager.NeutralAccentBrush, 3) : ThemeManager.AccentPen2Thickness3;
+                var lPen = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentPenSemiThickness3 : ThemeManager.AccentPen1SemiThickness3;
+                var lPen2 = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentPenThickness3 : ThemeManager.AccentPen1Thickness3;
+                var lPenSelected = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentPenSemiThickness3 : ThemeManager.AccentPen2SemiThickness3;
+                var lPen2Selected = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentPenThickness3 : ThemeManager.AccentPen2Thickness3;
                 var lPen3 = new Pen(ThemeManager.NeutralAccentBrush, 1, new DashStyle(new double[] { 4, 4 }, 0));
                 var brush = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentBrush : ThemeManager.AccentBrush1;
                 
