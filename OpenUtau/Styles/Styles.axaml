@@ -1,7 +1,9 @@
-<Styles xmlns="https://github.com/avaloniaui"
+﻿<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:app="using:OpenUtau.App">
-  <Style>
+        xmlns:app="using:OpenUtau.App"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
+        xmlns:notif="using:Avalonia.Controls.Notifications">
+    <Style>
     <Style.Resources>
       <CornerRadius x:Key="ControlCornerRadius">0</CornerRadius>
       <CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
@@ -47,7 +49,7 @@
     <Setter Property="Height" Value="1" />
   </Style>
 
-  <Style Selector="MenuItem.MenuItemWithSubMenu MenuItem">
+  <Style Selector="MenuItem.MenuItemWithSubMenu MenuItem" x:DataType="vm:MenuItemViewModel">
     <Setter Property="Header" Value="{Binding Header}"/>
     <Setter Property="Command" Value="{Binding Command}"/>
     <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
@@ -61,7 +63,7 @@
     <Setter Property="Padding" Value="4,2,4,2"/>
   </Style>
 
-  <Style Selector="ContextMenu.WithCommand MenuItem">
+  <Style Selector="ContextMenu.WithCommand MenuItem" x:DataType="vm:MenuItemViewModel">
     <Setter Property="Header" Value="{Binding Header}"/>
     <Setter Property="Command" Value="{Binding Command}"/>
     <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
@@ -523,7 +525,7 @@
                                   Margin="14,10"
                                   VerticalAlignment="Center">
                   <ContentPresenter.ContentTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="notif:Notification">
                       <TextBlock Text="{Binding Message}"
                                  TextWrapping="Wrap"
                                  VerticalAlignment="Center"/>

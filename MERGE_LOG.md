@@ -588,3 +588,74 @@
 - **xunit 钉版需上游跟进**：本 fork 因 20 个 `[AvaloniaFact]` 用例被迫留在 xunit.v3 3.2.2，与上游 `4.0.0` 存在差异。上游若发布适配（或 Avalonia 发布 xunit.v3 4.x 版 `Avalonia.Headless.XUnit`），应按政策第 1 条改回上游并删除 csproj 内的说明注释。跟踪依据：AvaloniaUI/Avalonia#22072。
 - **`xunit.runner.visualstudio` 保留 4.0.0**：该包**没有 3.x 版本**（NuGet 上只有 `4.0.0-pre.*` 与 `4.0.0`），上游与 fork 合并前都写的 `3.2.2` 会触发 `NU1603` 并静默解析到 `4.0.0`。本次已把该行改为诚实的 `4.0.0`，`NU1603` 消失；xunit.v3 核心三包仍钉 `3.2.2`（原因见 csproj 注释）。
 - **孤儿键清理已顺手完成**：`prefs.rendering.diffsingerpitchlocalretaking` 的 22 处残留已由 `sync_strings.py` 清除，无需后续处理。
+
+---
+
+## Merge 2026-09-19 37ed7d72
+
+- **时间**（UTC）：`2026-09-19T09:29:19Z`（验证完成时间）
+- **合并方式**：`git merge --no-ff upstream/master`（merge-base `81637a33ceeaedd8c407a268ad048e182592508e`，即上次合并记录的上游基线；合并范围 `81637a33..37ed7d72`）
+- **上游基线**：`37ed7d721c29c3078c8211fa8e6d3825787446c5` — yaml/presamp watcher (#2423)
+- **fork 侧基线**：`16ddf7b8d18825d1801a86e9d9efcfa46e8c0684`（Merge upstream/master (81637a33) into master）
+
+### 引入的上游 commit（11 个）
+
+| # | SHA | 主题 |
+| --- | --- | --- |
+| 1 | `37ed7d721c29c3078c8211fa8e6d3825787446c5` | yaml/presamp watcher (#2423) |
+| 2 | `db9065b1dbf2df3c6aadeaaccf7fcd72fe3a2214` | Avalonia Optimization (#2410) |
+| 3 | `83e02c7e4a4d9ea5fca72806b2aa27c5382be015` | Publish ClassicSinger oto data as an atomic snapshot |
+| 4 | `a8ddc510151fc16993e28774f0d8c4014c104d66` | Obsolete OnAsyncInitStarted/Finished; runner reports init progress |
+| 5 | `49daf1ed867d8e1a5ee64485cfe23685618685f5` | Simplify parent expression getters in Phonemizer |
+| 6 | `2c283d2b228b64873d0479bee307098627a4f276` | Fix ReadDictionaryAndInit, Parent Alt, Voice color, and ToneShift (#2407) |
+| 7 | `bbfb26dd0299390acb0a7f95d8c18b8fd1733eb5` | Update build.yml (#2420) |
+| 8 | `6c322550be5c3a7f656c33d7c6ca2dfd02345a55` | Fix/diff singer g2p (#2421) |
+| 9 | `6430a2bfbae5190c42f86ee0931c4607bc032424` | Added a process to convert the lyric "ん" to the Roman letter "N" (#2422) |
+| 10 | `4941bf21e439710c5b5e7bf43265a42dca440057` | Fix Ctrl+LMB Note Selection & Only Show LyricBox if KeyModifiers is None (#2419) |
+| 11 | `2615a257018c1698316154cfb92dd81c525573cf` | Fix line ending |
+
+### 修改面
+
+- 上游侧 62 个文件、fork 侧 132 个文件；**双侧都改过的 14 个文件**（3 个冲突 + 11 个由 ort 自动合并），其余均为单侧改动。合并结果本身引入 61 个文件变更。
+- 上游主线：**Avalonia compiled bindings 迁移**（`db9065b1` 把 `OpenUtau/OpenUtau.csproj` 的 `AvaloniaUseCompiledBindingsByDefault` 由 `false` 改为 `true`，并给 40 个 `.axaml` 补 `x:DataType` / `xmlns:vm` / `$parent[Type]` 写法，`PianoRoll.axaml.cs` 同步改代码侧）；**ClassicSinger oto 快照化与目录监视**（`83e02c7e` 整块发布采样数据，`37ed7d72` 新增 `OpenUtau.Core/Classic/PresampWatcher.cs` / `YamlWatcher.cs`，`SyllableBasedPhonemizer.cs` / `PhonemizerTestBase.cs` 跟进）；**Phonemizer API 调整**（`a8ddc510` 废除 `OnAsyncInitStarted/Finished` 改由 runner 报进度、`49daf1ed`、`2c283d2b`）；DiffSinger G2P 与「ん→N」（`6c322550`、`6430a2bf`）；钢琴卷帘 Ctrl+LMB 选择与 LyricBox 可见性（`4941bf21`）；`build.yml`（`bbfb26dd`）；行尾统一（`2615a257`）。
+
+### 冲突（3 个文件）
+
+| 文件 | 上游侧改动量 | fork 侧改动量 | fork 侧来源 | 上游侧来源 |
+| --- | --- | --- | --- | --- |
+| `OpenUtau/Controls/NotePropertyExpression.axaml` | +2 / −1 | +5 / −7 | `8336fc31da81cad5e273e90300bb01432a144c43`（音符属性面板改用 `c:UnboundedSlider`） | `db9065b1`（compiled bindings：加 `x:DataType`） |
+| `OpenUtau/Styles/Styles.axaml` | +7 / −5 | +8 / −2 | `f74120d7d558548f3049fd9db53baaef924084af`（`xmlns:app` + Win32 深色标题栏）、`59f48d5341d86c7edec422cf2abfa656bb535c21`、`f22f3a13ff9611b4575edb7440492268510972ff` | `db9065b1`（加 `xmlns:vm` / `xmlns:notif` 与三处 `x:DataType`） |
+| `OpenUtau/Views/TrackSettingsDialog.axaml` | +3 / −1 | +15 / −1 | `fa88ca2c7684bd7bafd774fc8ca7916f07e788eb`（HiFiUTAU / Custom Server 的 Server URL 与 Endpoint 输入行，窗口高度 184→214） | `db9065b1`（加 `x:DataType`；`$parent.WindowDecorationMargin` → `$parent[Window].WindowDecorationMargin`） |
+
+**判定流程取证**（三个文件均按 `AGENTS.md` 的 Merge conflict policy 判定流程执行）：
+
+1. **量化两侧改动**：见上表（`git diff --numstat 81637a33 upstream/master -- <file>` 与 `git diff --numstat 81637a33 master -- <file>`）。
+2. **残余差异归属**：合并结果相对上游的残余为 `6/9`、`11/7`、`16/4`，**上游侧与 fork 侧改动量均非 0**，即两侧各有实现，不能按「上游已自行回退」直接归入保留。
+3. **归属到 commit 与作者**：三文件的上游侧改动**同源于 `db9065b1`**（compiled bindings 迁移），fork 侧分别来自 `8336fc31` / `f74120d7` 等 / `fa88ca2c`；`git merge-base --is-ancestor` 确认这些 fork commit 不在 `upstream/master` 上，两侧作者无重叠。
+4. **逐行核对目标**：上游是在既有结构上**追加绑定类型标注**（`x:DataType`、`$parent[Window]`），fork 是**替换控件实现 / 新增命名空间与面板行**。语义目标不同 → **不构成同目标双实现，不触发政策第 1 条的替换**，改为合成。
+
+### 决策记录
+
+- **`NotePropertyExpression.axaml`：合成**。保留 fork 的 `xmlns:c="using:OpenUtau.App.Controls"` 与 `ColumnDefinitions="143,7,*"`（fork 的 `c:UnboundedSlider` 占第 2 列、ComboBox 跨 2 列，列定义与控件实现绑定，不能换成上游的 `143,7,50,20,*`），同时**采纳上游新增的 `x:DataType="vm:NotePropertyExpViewModel"`**（该 VM 两侧都存在，定义在 `NotePropertiesViewModel.cs`）。上游未改该文件的 code-behind（`git diff 81637a33 upstream/master -- OpenUtau/Controls/NotePropertyExpression.axaml.cs` 为空），fork 的 `slider.InnerSlider` / `InnerEditor` 触点逻辑完整保留。
+- **`Styles.axaml`：整块取上游，再补回 fork 独有声明**。冲突块只覆盖文件头的根元素声明与 `<Style>` 缩进：上游加 `xmlns:vm` / `xmlns:notif`（其正文新增的 `x:DataType="vm:MenuItemViewModel"` 与 `x:DataType="notif:Notification"` 必须能解析）并把 `<Style>` 缩进对齐为 4 空格，fork 侧是 `xmlns:app="using:OpenUtau.App"`。按政策第 2 条（尽量减小与上游差异）**取上游整块（含上游保留的 UTF-8 BOM），再补回 fork 必需的 `xmlns:app` 一行**；fork 的 `app:Win32TitleBar.Enabled` setter 与 `GridSplitter.panel` 样式（`f74120d7` / `f22f3a13`）落在正文其它区段，由 ort 自动合并，已核对仍在。
+- **`TrackSettingsDialog.axaml`：合成**。**保留 fork 的 `Height="214"`**——fork 在面板中插入了 Server URL / Endpoint 两个输入行与「设为默认」按钮（`fa88ca2c`），窗口必须更高；**采纳上游的 `$parent[Window].WindowDecorationMargin`**——切到 compiled bindings 后 `$parent.X`（无类型限定）在 `x:DataType` 下不可用，这是 `db9065b1` 的适配修正，按政策第 2 条优先采纳上游写法。
+- **BOM**：`Styles.axaml` 因取上游侧而从「无 BOM」变为「有 BOM」，与 `.editorconfig` 的 `charset = utf-8-bom` 一致，属回归修正而非偏离；另两个手工解决的文件 BOM 状态与合并前 `HEAD` 一致（逐字节核对）。`DawIntegrationDialog.axaml` 的 fork 侧 BOM 保留。
+- **上游本轮未新增字符串键**（`git diff 81637a33 upstream/master -- OpenUtau/Strings/` 为空），因此**未运行 `Misc/sync_strings.py`**，fork 的 130 个独有键与 22 个语言文件均未被触碰。
+- **fork 独有功能零删改**：`OnnxNativeAvailability.cs` 及其在 `Util/Onnx.cs`（`initializeDevices()` / `getGpuInfo()` 两处守卫）与 `Util/Preferences.cs`（`GetOnnxRunnerOptionsSafely()`）的插入点在本轮合并中均未受影响（上游本轮未改这两个上游文件）；HiFiUtau / CustomRender / Studio 面亦无冲突。
+
+### 已验证
+
+1. **构建**：`dotnet build OpenUtau -c Debug` → **0 错误**（1782 条警告，与历次同量级；含 3 个既有 `AVLN3001`）。compiled bindings 打开后，40 个上游 `.axaml` 与 fork 的 Studio 控件/对话框一起通过 XAML 编译。
+2. **测试**：`dotnet test OpenUtau.Test -c Debug` 全量跑 **两次**，均为 **Total 515 / 通过 514 / 失败 0 / 跳过 1**（跳过项仍为需真实 DAW 插件的 `DawRealPluginTest.RealPluginCompletesTheHandshakeAndPullsAudio`）。本轮**未复现**上一轮记录的 `AppTest.StringsTest` headless teardown 摆动（2/2 干净）。
+   - **用例数账目闭合**：505（上一轮合并提交，见 `## Merge 2026-09-16 81637a33`）→ 513–514（并入 PR #15 后，同记录）→ **515（本轮）**；上游本轮新增用例**恰为 1 个**（`83e02c7e` 新增 `OpenUtau.Test/Classic/ClassicSingerTest.cs`，内含 1 个 `[Fact]`），`git diff 81637a33 upstream/master -- OpenUtau.Test/` 对该目录只有该新增文件与两处删除（`EnVCCVTest.cs` / `PhonemizerTestBase.cs` 各删一行 `phonemizer.Testing = true;`，非用例），**无用例删除**。
+3. **UI 冒烟**：直接启动合并结果 `OpenUtau.exe`（Debug）→ **20 秒内窗口正常存活、stdout/stderr 无输出**（启动期 XAML：`App.axaml` / `Styles.axaml` / `MainWindow` / `PianoRoll` 全部加载成功），随后主动结束进程。
+4. **两个手工解决文件的运行时实加载验证**（临时 `[AvaloniaFact]`，验证后已删除）：在 headless Avalonia 会话中构造 `TrackSettingsDialog`（传入自建 `UProject` 的 `UTrack`）与 `NotePropertyExpression`（`DataContext` 为数值型 `NotePropertyExpViewModel`），两者均能 `Show()`，并能按名字取到 `slider`（运行时类型为 fork 的 `UnboundedSlider`）与 `comboBox` → **2 通过 / 0 失败**。这两处正是本轮做「合成」取舍的位置。
+5. **双侧零丢失核对**（14 个双侧重叠文件，方法沿用上一轮：取 base→各自 HEAD 的 `+` 行、忽略 ≤12 字符短行，在合并结果中逐条字面匹配）：**上游侧 49 行、fork 侧 1160 行全部命中，0 丢失**。比对中出现的 2 处「未命中」经复核为读取时 `utf-8-sig` 吞 BOM 与行尾造成的**假阳性**（`xmlns:app` 行现处声明块中段故结尾不同；`DawIntegrationDialog.axaml` 首行 BOM 实际存在，已用字节比对确认 `ef bb bf`）。
+6. **`git diff --check`**：无冲突标记残留、无空白错误；三个手工解决文件的 BOM 状态已逐字节核对。
+7. **清理**：临时 `OpenUtau.Test/App/MergeXamlSmokeTest.cs` 已删除；临时 diff 快照（`%TEMP%/oumerge`）与冒烟脚本（`%TEMP%/ou-smoke.*`）已移除；工作树除本次合并外无残留。
+
+### 未决项（已知、非阻塞）
+
+- **`AppTest.StringsTest` 的 headless teardown 摆动**：上一轮记录的偶发 `[Test Case Cleanup Failure]`（`AvaloniaTestRunner` 清理阶段线程亲和性）在本轮两次全量中**均未复现**。仍按「顺序敏感、需独立 topic 定位」跟踪；若再次出现，按 `## Merge 2026-09-16 81637a33` 的未决项继续处理。
+- **xunit 钉版**：本轮上游未改 `OpenUtau.Test.csproj`（`bbfb26dd` 只改 `.github/workflows/build.yml`），fork 的 `xunit.v3` 3.2.2 钉版与 csproj 内说明注释维持原判。
+- **`$parent.` 无类型写法**：`TrackSettingsDialog.axaml` 已随上游改用类型限定；`PianoRoll.axaml` / `MainWindow.axaml` 的 `$parent.Bounds.Height` 是**上游自身仍在用**的写法且构建通过，本轮不动（减小与上游差异）。
