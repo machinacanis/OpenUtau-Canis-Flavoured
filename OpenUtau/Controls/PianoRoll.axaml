@@ -1,4 +1,4 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -13,16 +13,14 @@
     <StyleInclude Source="/Styles/PianoRollStyles.axaml"/>
   </UserControl.Styles>
   <Border>
-    <Grid Margin="{Binding $parent[Window].OffScreenMargin}" PointerMoved="BackgroundPointerMoved">
+    <Grid x:Name="PianoRollGrid" Margin="{Binding $parent[Window].OffScreenMargin}" PointerMoved="BackgroundPointerMoved">
       <Grid.RowDefinitions>
         <RowDefinition Height="24"/>
         <RowDefinition Height="24"/>
         <RowDefinition Height="24"/>
         <RowDefinition Height="*" MinHeight="60"/>
         <RowDefinition Height="Auto"/>
-        <RowDefinition Height="150" 
-                       MinHeight="{Binding NotesViewModel.ExpHeightMin}"
-                       MaxHeight="{Binding NotesViewModel.ExpHeightMax}"/>
+        <RowDefinition Height="150"/>
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="4"/>
       </Grid.RowDefinitions>
@@ -635,7 +633,7 @@
                        PointerPressed="PhonemeCanvasPointerPressed"
                        PointerMoved="PhonemeCanvasPointerMoved"
                        PointerReleased="PhonemeCanvasPointerReleased"/>
-      <GridSplitter Grid.Row="4" Grid.ColumnSpan="3" Height="10" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+      <GridSplitter x:Name="ExpSplitter" Grid.Row="4" Grid.ColumnSpan="3" Height="10" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                     Background="{DynamicResource SystemControlBackgroundAltHighBrush}" IsVisible="{Binding NotesViewModel.ShowExpressions}"
                     Focusable="False" Cursor="SizeNorthSouth"/>
       <c:TrackBackground Grid.Row="5" Grid.Column="1" IsHitTestVisible="False"
@@ -651,14 +649,17 @@
                         TickOrigin="{Binding NotesViewModel.TickOrigin}"
                         TickOffset="{Binding NotesViewModel.TickOffset}"
                         SnapDiv="{Binding NotesViewModel.SnapDiv, Mode=OneWay}"/>
-      <c:ExpressionCanvas Grid.Row="5" Grid.Column="1" Opacity="0.2"
+      <Border x:Name="ExpOverlayDim" Grid.Row="3" Grid.Column="1"
+              Background="{DynamicResource BackgroundBrushSemi}"
+              IsHitTestVisible="False" IsVisible="False"/>
+      <c:ExpressionCanvas x:Name="ExpCanvasSecondary" Grid.Row="5" Grid.Column="1" Opacity="0.2"
                           IsVisible="{Binding NotesViewModel.ShowExpressions}"
                           TickWidth="{Binding NotesViewModel.TickWidth}"
                           TickOffset="{Binding NotesViewModel.TickOffset}"
                           Part="{Binding NotesViewModel.Part}"
                           Key="{Binding NotesViewModel.SecondaryKey}"
                           ShowRealCurve="False"/>
-      <c:ExpressionCanvas Grid.Row="5" Grid.Column="1"
+      <c:ExpressionCanvas x:Name="ExpCanvasPrimary" Grid.Row="5" Grid.Column="1"
                           DisplayMode="Visible"
                           IsVisible="{Binding NotesViewModel.ShowExpressions}"
                           Bounds="{Binding NotesViewModel.ExpBounds, Mode=OneWayToSource}"
@@ -669,7 +670,8 @@
                           ShowRealCurve="True"
                           PointerPressed="ExpCanvasPointerPressed"
                           PointerMoved="ExpCanvasPointerMoved"
-                          PointerReleased="ExpCanvasPointerReleased"/>
+                          PointerReleased="ExpCanvasPointerReleased"
+                          PointerWheelChanged="NotesCanvasPointerWheelChanged"/>
       <ListBox x:Name="ExpCurveToolbar" Grid.Row="5" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Classes="toolbar" Padding="2"
                SelectedIndex="{Binding CurveViewModel.CurveToolIndex}" IsVisible="{Binding NotesViewModel.ShowCurveToolbar, Mode=OneWay}">
         <ListBox.ItemsPanel>

@@ -1,7 +1,9 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using OpenUtau.App.Studio;
 using OpenUtau.App.ViewModels;
+using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.App.Controls {
     public partial class ExpSelector : UserControl {
@@ -33,7 +35,11 @@ namespace OpenUtau.App.Controls {
         }
 
         private void TextBlockPointerPressed(object sender, PointerPressedEventArgs e) {
-            ((ExpSelectorViewModel)DataContext!).OnSelected(true);
+            var vm = (ExpSelectorViewModel)DataContext!;
+            bool wasVisible = vm.DisplayMode == ExpDisMode.Visible;
+            vm.OnSelected(true);
+            bool usesNotesOverlay = vm.Descriptor?.type != UExpressionType.Options;
+            StudioExpLayout.HandleSelectorClick(wasVisible, usesNotesOverlay);
         }
 
         public void SelectExp() {
