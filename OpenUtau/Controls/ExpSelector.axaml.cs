@@ -37,13 +37,20 @@ namespace OpenUtau.App.Controls {
         private void TextBlockPointerPressed(object sender, PointerPressedEventArgs e) {
             var vm = (ExpSelectorViewModel)DataContext!;
             bool wasVisible = vm.DisplayMode == ExpDisMode.Visible;
-            vm.OnSelected(true);
+            vm.OnSelected(true, updateShadow: !StudioUI.IsEnabled);
             bool usesNotesOverlay = vm.Descriptor?.type != UExpressionType.Options;
             StudioExpLayout.HandleSelectorClick(wasVisible, usesNotesOverlay);
         }
 
         public void SelectExp() {
-            ((ExpSelectorViewModel)DataContext!).OnSelected(false);
+            ((ExpSelectorViewModel)DataContext!).OnSelected(false, updateShadow: !StudioUI.IsEnabled);
+        }
+
+        public void ClearShadow() {
+            var vm = (ExpSelectorViewModel)DataContext!;
+            if (vm.DisplayMode == ExpDisMode.Shadow) {
+                vm.DisplayMode = ExpDisMode.Hidden;
+            }
         }
     }
 }

@@ -26,22 +26,22 @@ namespace OpenUtau.App {
         }
 
         [AvaloniaFact]
-        public void Overflow_KeepsPrimaryAndSecondaryVisible() {
+        public void Overflow_KeepsPrimaryVisible() {
             using var scope = new StudioUiScope(true);
             var selectors = Slots();
-            StudioExpLayout.ApplyOverflow(180, selectors, primary: 9, secondary: 8);
+            StudioExpLayout.ApplyOverflow(180, selectors, primary: 9);
             Assert.True(selectors[0].IsVisible);
-            Assert.True(selectors[8].IsVisible);
+            Assert.True(selectors[1].IsVisible);
             Assert.True(selectors[9].IsVisible);
-            Assert.False(selectors[1].IsVisible);
-            Assert.False(selectors[7].IsVisible);
+            Assert.False(selectors[8].IsVisible);
+            Assert.False(selectors[2].IsVisible);
         }
 
         [AvaloniaFact]
         public void Overflow_KeepsAtLeastPrimary() {
             using var scope = new StudioUiScope(true);
             var selectors = Slots();
-            StudioExpLayout.ApplyOverflow(10, selectors, primary: 7, secondary: 2);
+            StudioExpLayout.ApplyOverflow(10, selectors, primary: 7);
             Assert.True(selectors[7].IsVisible);
             Assert.False(selectors[0].IsVisible);
             Assert.False(selectors[2].IsVisible);
@@ -51,7 +51,7 @@ namespace OpenUtau.App {
         public void Overflow_ShowsAllWhenWidthAllows() {
             using var scope = new StudioUiScope(true);
             var selectors = Slots();
-            StudioExpLayout.ApplyOverflow(600, selectors, primary: 9, secondary: 8);
+            StudioExpLayout.ApplyOverflow(600, selectors, primary: 9);
             Assert.All(selectors, selector => Assert.True(selector.IsVisible));
         }
 
@@ -195,6 +195,7 @@ namespace OpenUtau.App {
             Assert.Equal(10, parts.Splitter.Height);
             Assert.Equal(StudioExpLayout.ClassicRow, Grid.GetRow(parts.Primary));
             Assert.Equal(StudioExpLayout.ClassicRow, Grid.GetRow(parts.Secondary));
+            Assert.False(parts.Secondary.IsVisible);
             Assert.False(parts.Dim.IsVisible);
         }
 

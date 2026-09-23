@@ -193,7 +193,11 @@ namespace OpenUtau.App.Studio {
             dim.ClearValue(Visual.ZIndexProperty);
             dim.IsVisible = false;
             primary.ClearValue(Visual.IsVisibleProperty);
-            secondary.ClearValue(Visual.IsVisibleProperty);
+            if (studio) {
+                secondary.IsVisible = false;
+            } else {
+                secondary.ClearValue(Visual.IsVisibleProperty);
+            }
             toolbar.ClearValue(Visual.IsVisibleProperty);
         }
 
@@ -206,8 +210,7 @@ namespace OpenUtau.App.Studio {
         public static void ApplyOverflow(
             double availableWidth,
             IReadOnlyList<Control> selectors,
-            int primary = 0,
-            int secondary = 1) {
+            int primary = 0) {
             if (!StudioUI.IsEnabled || availableWidth <= 0 || selectors.Count == 0) {
                 return;
             }
@@ -218,13 +221,8 @@ namespace OpenUtau.App.Studio {
                 Array.Fill(visible, true);
             } else {
                 primary = Math.Clamp(primary, 0, n - 1);
-                secondary = Math.Clamp(secondary, 0, n - 1);
                 visible[primary] = true;
                 int used = 1;
-                if (used < fit && secondary != primary) {
-                    visible[secondary] = true;
-                    used++;
-                }
                 for (int i = 0; i < n && used < fit; i++) {
                     if (!visible[i]) {
                         visible[i] = true;

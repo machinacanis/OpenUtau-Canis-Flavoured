@@ -69,6 +69,10 @@ namespace OpenUtau.App.Controls {
                 .Subscribe(_ => {
                     if (!StudioUI.IsEnabled) {
                         StudioExpLayout.SetOverlayOpen(false);
+                    } else {
+                        foreach (var selector in GetExpSelectors()) {
+                            selector.ClearShadow();
+                        }
                     }
                     ApplyStudioExpLayout();
                 });
@@ -2170,7 +2174,9 @@ namespace OpenUtau.App.Controls {
                 return;
             }
             var exps = GetExpSelectors();
-            exps[DocManager.Inst.Project.expSecondary].SelectExp();
+            if (!StudioUI.IsEnabled) {
+                exps[DocManager.Inst.Project.expSecondary].SelectExp();
+            }
             exps[DocManager.Inst.Project.expPrimary].SelectExp();
         }
 
@@ -2230,8 +2236,7 @@ namespace OpenUtau.App.Controls {
             StudioExpLayout.ApplyOverflow(
                 e.NewSize.Width,
                 GetExpSelectors(),
-                project.expPrimary,
-                project.expSecondary);
+                project.expPrimary);
         }
 
         public void OnNext(UCommand cmd, bool isUndo) {
@@ -2246,8 +2251,7 @@ namespace OpenUtau.App.Controls {
                 StudioExpLayout.ApplyOverflow(
                     ExpSelectorScroller.Bounds.Width,
                     GetExpSelectors(),
-                    project.expPrimary,
-                    project.expSecondary);
+                    project.expPrimary);
             }
         }
     }

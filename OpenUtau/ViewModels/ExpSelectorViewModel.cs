@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive.Linq;
 using Avalonia.Media;
+using OpenUtau.App.Studio;
 using OpenUtau.App.Controls;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
@@ -28,6 +29,7 @@ namespace OpenUtau.App.ViewModels {
         public string Header => header.Value;
         [Reactive] public partial IBrush TagBrush { get; set; }
         [Reactive] public partial IBrush Background { get; set; }
+        [Reactive] public partial IBrush ColorBrush { get; set; }
 
         ObservableCollection<UExpressionDescriptor> descriptors = new ObservableCollection<UExpressionDescriptor>();
         ObservableAsPropertyHelper<string> header;
@@ -47,9 +49,15 @@ namespace OpenUtau.App.ViewModels {
                     SetExp(DocManager.Inst.Project.expSelectors[tuple.Item1]);
                 });
             MessageBus.Current.Listen<ThemeChangedEvent>()
-                .Subscribe(_ => RefreshBrushes());
+                .Subscribe(_ => {
+                    RefreshBrushes();
+                    RefreshColor();
+                });
+            MessageBus.Current.Listen<StudioTrackPaletteChangedEvent>()
+                .Subscribe(_ => RefreshColor());
             TagBrush = ThemeManager.ExpNameBrush;
             Background = ThemeManager.ExpBrush;
+            ColorBrush = StudioExpColors.Square(null);
             OnListChange();
         }
 
@@ -65,20 +73,24 @@ namespace OpenUtau.App.ViewModels {
             }
         }
 
-        public void OnSelected(bool store) {
+        public void OnSelected(bool store, bool updateShadow = true) {
             if (DisplayMode != ExpDisMode.Visible && Descriptor != null) {
-                DocManager.Inst.ExecuteCmd(new SelectExpressionNotification(Descriptor.abbr, Index, true));
+                DocManager.Inst.ExecuteCmd(new SelectExpressionNotification(Descriptor.abbr, Index, updateShadow));
             }
-            if(store) {
+            if (store) {
                 var project = DocManager.Inst.Project;
-                project.expSecondary = project.expPrimary;
+                if (updateShadow) {
+                    project.expSecondary = project.expPrimary;
+                }
                 project.expPrimary = Index;
             }
         }
 
         void SelectionChanged(UExpressionDescriptor? descriptor) {
+            RefreshColor();
             if (descriptor != null) {
-                DocManager.Inst.ExecuteCmd(new SelectExpressionNotification(descriptor.abbr, Index, DisplayMode != ExpDisMode.Visible));
+                bool updateShadow = DisplayMode != ExpDisMode.Visible && !StudioUI.IsEnabled;
+                DocManager.Inst.ExecuteCmd(new SelectExpressionNotification(descriptor.abbr, Index, updateShadow));
             }
             if (!string.IsNullOrEmpty(Abbr)) {
                 DocManager.Inst.Project.expSelectors[Index] = Abbr;
@@ -103,6 +115,7 @@ namespace OpenUtau.App.ViewModels {
                 selectedIndex = Index;
             }
             SelectedIndex = selectedIndex;
+            RefreshColor();
         }
 
         private void OnSelectExp(SelectExpressionNotification cmd) {
@@ -114,6 +127,10 @@ namespace OpenUtau.App.ViewModels {
                     SelectedIndex = Descriptors.IndexOf(Descriptors.First(d => d.abbr == cmd.ExpKey));
                 }
                 DisplayMode = ExpDisMode.Visible;
+            } else if (StudioUI.IsEnabled) {
+                if (DisplayMode != ExpDisMode.Hidden) {
+                    DisplayMode = ExpDisMode.Hidden;
+                }
             } else if (cmd.UpdateShadow) {
                 DisplayMode = DisplayMode == ExpDisMode.Visible ? ExpDisMode.Shadow : ExpDisMode.Hidden;
             }
@@ -130,6 +147,10 @@ namespace OpenUtau.App.ViewModels {
                     : DisplayMode == ExpDisMode.Shadow
                     ? ThemeManager.ExpShadowBrush
                     : ThemeManager.ExpBrush;
+        }
+
+        void RefreshColor() {
+            ColorBrush = StudioExpColors.Square(Descriptor?.abbr);
         }
     }
 }

@@ -1923,7 +1923,10 @@ namespace OpenUtau.App.Views {
             if (modes.Length == 0) return;
 
             var oldModes = new[] { "" }.Concat(modes).ToArray();
-            var colors = track.Singer.Subbanks.Select(s => s.Color).ToArray();
+            var colors = track.Singer.Subbanks?.Select(s => s.Color).ToArray() ?? Array.Empty<string>();
+            if (colors.Length == 0) {
+                return;
+            }
             var dialog = new VoiceColorMappingDialog { DataContext = new VoiceColorMappingViewModel(oldModes, colors, track.TrackName) };
             await dialog.ShowDialog(this);
             if (!dialog.Apply) return;

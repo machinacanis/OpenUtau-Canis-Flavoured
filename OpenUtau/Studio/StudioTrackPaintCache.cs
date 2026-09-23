@@ -37,6 +37,14 @@ namespace OpenUtau.App.Studio {
             MessageBus.Current.SendMessage(new StudioTrackPaletteChangedEvent());
         }
 
+        /// <summary>
+        /// Same context and config the track headers use, for a caller-built
+        /// sequence (expression colors indexed like tracks).
+        /// </summary>
+        public static StudioTrackSwatch[] ResolveSequence(IReadOnlyList<UTrack> tracks) {
+            return StudioTrackPalette.ResolveAll(tracks, ContextFromTheme(), LoadConfig());
+        }
+
         public static StudioTrackPaint ForTrack(UTrack track) {
             Ensure();
             int i = track.TrackNo;
