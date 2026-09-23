@@ -12,6 +12,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using OpenUtau.Core;
 using OpenUtau.Core.Util;
@@ -71,11 +72,14 @@ namespace OpenUtau.Test.Core.Util {
 
         [Fact]
         public void LoadableCandidateIsAccepted() {
-            // Control case: when the file really is loadable, the probe says yes. Uses the managed
-            // assembly itself as the loadable native stand-in so the test does not depend on which
-            // runtime pack is present.
-            string candidate = typeof(OnnxNativeAvailability).Assembly.Location;
-            Assert.True(File.Exists(candidate));
+            // Control case: when the file really is loadable, TryLoad accepts it by absolute path.
+            // Use the shipped native ONNX Runtime; a managed assembly is not a valid stand-in
+            // because dlopen on Linux/macOS rejects a PE managed image while LoadLibrary on
+            // Windows loads it, making the control case platform-dependent.
+            var candidate = OnnxNativeAvailability.CandidatePaths.FirstOrDefault(File.Exists);
+            if (candidate == null) {
+                Assert.Skip("No native ONNX Runtime is present in this test host layout.");
+            }
             Assert.True(NativeLibrary.TryLoad(candidate, out var handle));
             NativeLibrary.Free(handle);
         }
