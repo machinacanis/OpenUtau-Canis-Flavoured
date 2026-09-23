@@ -24,7 +24,7 @@ namespace OpenUtau.App.Studio {
         /// Current built-in preset format version. Bump this when built-in
         /// preset contents change so existing seeded files are regenerated.
         /// </summary>
-        public const int BuiltInVersion = 3;
+        public const int BuiltInVersion = 4;
 
         static readonly string[] BuiltInNames = [
             StudioThemeGenerator.StudioDark,
@@ -124,7 +124,7 @@ namespace OpenUtau.App.Studio {
         }
 
         public static StudioPresetUi DefaultUi() => new() {
-            TrackColorMode = 0,
+            TrackColorMode = 1,
             TrackColorConfig = StudioTrackColorConfig.FromCurrent(),
             WaveformStyle = 1,
             WaveformLayout = 0,
@@ -155,7 +155,7 @@ namespace OpenUtau.App.Studio {
             NoteRoundedCorners = true,
             NoteCornerRadiusPx = 5,
             NoteSolidFill = false,
-            NoteLyricVAlign = 2,
+            NoteLyricVAlign = 0,
             NoteLyricHAlign = 0,
             NoteLyricFontFamily = "Noto Sans, Segoe UI",
             NoteLyricScalePercent = 130,

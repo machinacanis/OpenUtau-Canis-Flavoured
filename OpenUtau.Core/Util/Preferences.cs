@@ -265,7 +265,7 @@ namespace OpenUtau.Core.Util {
             /// Studio UI only. 0 = Fixed, 1 = Rainbow, 2 = Theme gradient.
             /// Ignored when UseStudioUI is false.
             /// </summary>
-            public int StudioTrackColorMode = 0;
+            public int StudioTrackColorMode = 1;
             /// <summary>
             /// Studio track palette tunables (legacy defaults; the Studio UI
             /// preset page edits these and Save preset captures them).
@@ -331,7 +331,7 @@ namespace OpenUtau.Core.Util {
             public bool NoteRoundedCorners = true;
             public int NoteCornerRadiusPx = 5;
             public bool NoteSolidFill = false;
-            public int NoteLyricVAlign = 2; // 0 = above, 1 = inside, 2 = below
+            public int NoteLyricVAlign = 0; // 0 = above, 1 = inside, 2 = below
             public int NoteLyricHAlign = 0; // 0 = left, 1 = center, 2 = right
             public string NoteLyricFontFamily = "Noto Sans, Segoe UI";
             public int NoteLyricScalePercent = 130;

@@ -7,6 +7,7 @@ using Avalonia.Media;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
+using OpenUtau.App.Studio;
 using OpenUtau.ViewModels;
 using ReactiveUI;
 using ReactiveUI.Primitives;
@@ -89,6 +90,8 @@ namespace OpenUtau.App.Controls {
             circleGeometry = new EllipseGeometry(new Rect(-4.5, -4.5, 9, 9));
             MessageBus.Current.Listen<NotesRefreshEvent>()
                 .Subscribe(_ => InvalidateVisual());
+            MessageBus.Current.Listen<StudioTrackPaletteChangedEvent>()
+                .Subscribe(_ => InvalidateVisual());
             MessageBus.Current.Listen<RealCurveRefreshEvent>()
                 .Subscribe(_ => {
                     if (ShowRealCurve) {
@@ -146,16 +149,17 @@ namespace OpenUtau.App.Controls {
             double optionHeight = descriptor.type == UExpressionType.Options
                 ? Bounds.Height / descriptor.options.Length
                 : 0;
+            var stroke = CurveStroke();
             if (descriptor.type == UExpressionType.Curve) {
                 var curve = Part.curves.FirstOrDefault(c => c.descriptor == descriptor);
                 double defaultHeight = Math.Round(Bounds.Height - Bounds.Height * (descriptor.defaultValue - descriptor.min) / (descriptor.max - descriptor.min));
                 
-                var lPen = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentPenSemiThickness3 : ThemeManager.AccentPen1SemiThickness3;
-                var lPen2 = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentPenThickness3 : ThemeManager.AccentPen1Thickness3;
-                var lPenSelected = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentPenSemiThickness3 : ThemeManager.AccentPen2SemiThickness3;
-                var lPen2Selected = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentPenThickness3 : ThemeManager.AccentPen2Thickness3;
+                var lPen = stroke.DefaultPen;
+                var lPen2 = stroke.EditedPen;
+                var lPenSelected = stroke.SelectedDefaultPen;
+                var lPen2Selected = stroke.SelectedEditedPen;
                 var lPen3 = new Pen(ThemeManager.NeutralAccentBrush, 1, new DashStyle(new double[] { 4, 4 }, 0));
-                var brush = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentBrush : ThemeManager.AccentBrush1;
+                var brush = stroke.Fill;
                 
                 double x3 = Math.Round(viewModel.TickToneToPoint(leftTick, 0).X);
                 double x4 = Math.Round(viewModel.TickToneToPoint(rightTick, 0).X);
@@ -302,6 +306,7 @@ namespace OpenUtau.App.Controls {
             var shadowHPen = new Pen(ThemeManager.NeutralAccentBrush, 3);
             var shadowVPen = new Pen(ThemeManager.NeutralAccentBrush, 3);
 
+
             foreach (var phoneme in Part.phonemes) {
                 if (phoneme.Error || phoneme.Parent == null) {
                     continue;
@@ -312,10 +317,24 @@ namespace OpenUtau.App.Controls {
                     continue;
                 }
                 var note = phoneme.Parent;
-                
-                var hPen = DisplayMode == ExpDisMode.Shadow ? shadowHPen : (selectedNotes.Contains(note) ? ThemeManager.AccentPen2Thickness3 : ThemeManager.AccentPen1Thickness3);
-                var vPen = DisplayMode == ExpDisMode.Shadow ? shadowVPen : (selectedNotes.Contains(note) ? ThemeManager.AccentPen2Thickness3 : ThemeManager.AccentPen1Thickness3);
-                var brush = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentBrush : (selectedNotes.Contains(note) ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1);
+                bool selected = selectedNotes.Contains(note);
+
+                IPen hPen;
+                IPen vPen;
+                IBrush brush;
+                if (DisplayMode == ExpDisMode.Shadow) {
+                    hPen = shadowHPen;
+                    vPen = shadowVPen;
+                    brush = ThemeManager.NeutralAccentBrush;
+                } else if (selected) {
+                    hPen = stroke.SelectedEditedPen;
+                    vPen = stroke.SelectedEditedPen;
+                    brush = stroke.SelectedFill;
+                } else {
+                    hPen = stroke.EditedPen;
+                    vPen = stroke.EditedPen;
+                    brush = stroke.Fill;
+                }
                 
                 var (value, overriden) = phoneme.GetExpression(project, track, Key);
                 double x1 = Math.Round(viewModel.TickToneToPoint(phoneme.position, 0).X);
@@ -331,6 +350,10 @@ namespace OpenUtau.App.Controls {
                     double rectWidth = Math.Max(0, Math.Max(x1, x2) - rectX);
                     var fillRect = new Rect(rectX, rectY, rectWidth, rectHeight);
                     
+                    if (!overriden && DisplayMode != ExpDisMode.Shadow) {
+                        hPen = selected ? stroke.SelectedDefaultPen : stroke.DefaultPen;
+                        vPen = hPen;
+                    }
                     // Use 20% opacity if edited, 10% opacity if default
                     double fillOpacity = overriden ? 0.20 : 0.10;
 
@@ -350,10 +373,13 @@ namespace OpenUtau.App.Controls {
                         double y = optionHeight * (descriptor.options.Length - 1 - i + 0.5);
                         using (var state = context.PushTransform(Matrix.CreateTranslation(x1 + 4.5, y))) {
                             if ((int)value == i) {
+                                var optionPen = overriden || DisplayMode == ExpDisMode.Shadow
+                                    ? hPen
+                                    : (selected ? stroke.SelectedDefaultPen : stroke.DefaultPen);
                                 if (overriden) {
                                     context.DrawGeometry(brush, null, pointGeometry);
                                 }
-                                context.DrawGeometry(null, hPen, circleGeometry);
+                                context.DrawGeometry(null, optionPen, circleGeometry);
                             } else {
                                 context.DrawGeometry(null, ThemeManager.NeutralAccentPenSemi, circleGeometry);
                             }
@@ -385,6 +411,25 @@ namespace OpenUtau.App.Controls {
 
         private void DrawBackgroundForHitTest(DrawingContext context) {
             context.DrawRectangle(Brushes.Transparent, null, Bounds.WithX(0).WithY(0));
+        }
+
+        StudioExpColors.Paint CurveStroke() {
+            if (DisplayMode == ExpDisMode.Shadow || !StudioUI.IsEnabled) {
+                return ClassicStroke();
+            }
+            return StudioExpColors.For(key);
+        }
+
+        static StudioExpColors.Paint ClassicStroke() {
+            return new StudioExpColors.Paint {
+                Square = ThemeManager.AccentBrush1,
+                Fill = ThemeManager.AccentBrush1,
+                SelectedFill = ThemeManager.AccentBrush2,
+                DefaultPen = ThemeManager.AccentPen1SemiThickness3,
+                EditedPen = ThemeManager.AccentPen1Thickness3,
+                SelectedDefaultPen = ThemeManager.AccentPen2SemiThickness3,
+                SelectedEditedPen = ThemeManager.AccentPen2Thickness3,
+            };
         }
     }
 }

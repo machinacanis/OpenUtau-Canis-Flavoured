@@ -7,7 +7,7 @@ namespace OpenUtau.App {
         [Fact]
         public void DefaultConfig_RoundTripsThroughYaml() {
             var preset = StudioPresetManager.GetBuiltIn(StudioThemeGenerator.StudioDark);
-            Assert.Equal(0, preset.Ui.TrackColorMode);
+            Assert.Equal(1, preset.Ui.TrackColorMode);
             Assert.NotNull(preset.Ui.TrackColorConfig);
             Assert.Equal(StudioTrackColorParams.RainbowStartHue,
                 preset.Ui.TrackColorConfig!.RainbowStartHueOrDefault);
@@ -16,6 +16,8 @@ namespace OpenUtau.App {
                 preset.Ui.TrackColorConfig.RainbowLumaAmpDarkOrDefault);
             Assert.Equal(1.5, preset.Ui.WaveformAmpScaleRows);
             Assert.Equal(69, preset.Ui.WaveformAlphaPercent);
+            Assert.Equal(0, preset.Ui.NoteLyricVAlign);
+            Assert.Equal(0, preset.Ui.NoteLyricHAlign);
             Assert.Equal(5, preset.Ui.NoteLyricPaddingPx);
             Assert.False(preset.Ui.NoteLyricShrinkToFit);
 
