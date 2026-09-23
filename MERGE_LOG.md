@@ -659,3 +659,87 @@
 - **`AppTest.StringsTest` 的 headless teardown 摆动**：上一轮记录的偶发 `[Test Case Cleanup Failure]`（`AvaloniaTestRunner` 清理阶段线程亲和性）在本轮两次全量中**均未复现**。仍按「顺序敏感、需独立 topic 定位」跟踪；若再次出现，按 `## Merge 2026-09-16 81637a33` 的未决项继续处理。
 - **xunit 钉版**：本轮上游未改 `OpenUtau.Test.csproj`（`bbfb26dd` 只改 `.github/workflows/build.yml`），fork 的 `xunit.v3` 3.2.2 钉版与 csproj 内说明注释维持原判。
 - **`$parent.` 无类型写法**：`TrackSettingsDialog.axaml` 已随上游改用类型限定；`PianoRoll.axaml` / `MainWindow.axaml` 的 `$parent.Bounds.Height` 是**上游自身仍在用**的写法且构建通过，本轮不动（减小与上游差异）。
+
+---
+
+## Merge 2026-09-24 48a308b4
+
+- **时间**（UTC）：`2026-09-23T16:15:48Z`（= 本地 2026-09-24 凌晨 +0800；验证完成时间）
+- **合并方式**：`git merge --no-commit --no-ff upstream/master`（merge-base `37ed7d721c29c3078c8211fa8e6d3825787446c5`，即上次合并记录的上游基线；合并范围 `37ed7d72..48a308b4`）
+- **上游基线**：`48a308b4839b701fc61f2cf1302f7e4ac577c7f5` — Revert "WorldlineResampler: Expand Expression Support (#2426)" (#2436)
+- **fork 侧基线**：`0081c73d`（Merge pull request #18 from machinacanis/fix/ci-cross-platform-tests；相对 merge-base 另有 98 个 fork commit，已全部落在 `origin/master` 上）
+- **重做说明（可追溯）**：本轮上游合并先在 fork 基线 `3d0234b0` 上完成过一次（结果提交 `3659f587`，内容与下述一致，仅缺 PR #18 的 5 行）。推 `origin` 前 `git fetch origin` 发现 `origin/master` 已前进到 `0081c73d`（PR #17 `feature/studio-exp-overlay`、PR #18 `fix/ci-cross-platform-tests`）。因 `3d0234b0` 是 `0081c73d` 的祖先，为免多一个无谓 merge commit、也免把「上游同步」与「追平 origin」搅成两件事，改用 `git reset --hard origin/master` 后在 `0081c73d` 上**重做同一次上游合并**，并以重做后的结果做全部验证（下述数字均在最终树上实测，与旧结果无关）。
+
+### 引入的上游 commit（5 个，线性）
+
+| # | SHA | 主题 | 作者 |
+| --- | --- | --- | --- |
+| 1 | `26eead420ec6339018015d37d524d2f9e59332ef` | Update TrackHeader.axaml (#2427) | Anjo |
+| 2 | `d9ef2ad96d5705db1df7c4c6fb521a753f799e51` | WorldlineResampler: Expand Expression Support (#2426) | 黒猫大福 |
+| 3 | `475bd6015569e6392b49250fb1564bdc5734dbf6` | Welcome page fixes (#2433) | Mashi |
+| 4 | `3306fdf603cbbef374ca73dede3ec07c69a888cb` | Add presamp test and bug fixes (#2430) | Maiko |
+| 5 | `48a308b4839b701fc61f2cf1302f7e4ac577c7f5` | Revert "WorldlineResampler: Expand Expression Support (#2426)" (#2436) | StAkira |
+
+**净效果**：`d9ef2ad9` 与 `48a308b4` 互为「加 / 回退」，`git diff 37ed7d72 upstream/master -- OpenUtau.Core/Classic/WorldlineResampler.cs` 与合并结果对该文件的 diff **均为空** → 上游侧该文件净改动为 **0**，文件与 base、与上游逐字节一致；fork 侧也从未改过它，故无取舍、无风险。
+
+### 修改面
+
+- 上游本轮只动 **9 个文件**：`OpenUtau.Core/Classic/Presamp.cs`（+86 / −66）、`OpenUtau/Controls/TrackHeader.axaml`（+2 / −2）、`OpenUtau/Views/MainWindow.axaml.cs`（+38 / −14）、新增 `OpenUtau.Test/Classic/PresampIniTest.cs`（114 行）与 5 个夹具 `OpenUtau.Test/Files/presampini/{default,xsampa,tricky_symbols,blank,empty}/presamp.ini`。
+- **双侧都改过的只有 2 个文件**（`TrackHeader.axaml`、`MainWindow.axaml.cs`）；其余 7 个文件 fork 侧改动量为 0，逐字节取上游。
+- 上游本轮**未新增/修改任何字符串键**（`git diff 37ed7d72 upstream/master -- OpenUtau/Strings/` 为空）。
+- fork 独有面（Studio UI、HiFiUTAU、CUSTOM_SERVER、DAW 集成）**没有一个文件**被本轮上游改动触及。
+
+内容概要：
+
+- **presamp 解析修复 + 测试**（`3306fdf6`）：`VCPAD`/`VCVPAD` 空值不再覆盖默认；补 `[VCPAD]` 节处理与 `%num%/%append%/%pitch%` 组合的合法性校验；`AliasPriorityDefault` 满 5 条时改为「先清空再添加」（原实现会持续增长）；`[VERSION]`/`[LOCALE]`/`[RESAMP]`/`[TOOL]`/`[BATNUM]` 显式忽略；`MakePhonemeList` 注释与几处整理。新增 6 个 `[Fact]`，覆盖 default / xsampa / tricky_symbols / blank / empty / 文件不存在 六种输入。
+- **欢迎页修正**（`475bd601`）：启动不再自动建工程（构造函数删除 `viewModel.NewProject()`）；`OnKeyDown` 拆为 `GlobalHotkey` + `EditorHotkey`，编辑类快捷键加 `viewModel.Page == 1` 门控（欢迎页禁用）。
+- **TrackHeader 滑条模板绑定修正**（`26eead42`）：`Slider.fader` 在 `:pointerover` / `:pressed` 下 Thumb 背景改用 `$parent[Slider].((vm:TrackHeaderViewModel)DataContext).TrackColor.*`（compiled bindings 下的类型限定写法）。
+
+### 冲突
+
+**无**。两个双侧重叠文件均由 ort 自动合并，未出现冲突标记（全库 `^(<<<<<<<|=======|>>>>>>>)` 扫描为空）。
+
+| 文件 | 上游侧改动量（base→上游） | fork 侧改动量（base→fork） | 合并结果 vs 上游 | 合并结果 vs fork | 上游侧来源 | fork 侧来源 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `OpenUtau/Controls/TrackHeader.axaml` | +2 / −2 | +30 / −20 | +30 / −20（= 合并前 fork delta） | +2 / −2（= 上游 delta） | `26eead42`（滑块模板内 Thumb 绑定，第 42/50 行） | `55615237`、`8d04547c`、`4fcfe157`、`464705a1`、`a0172184`、`c837526a`（Studio 色条 / 徽标 / 按钮类名，第 104 行起） |
+| `OpenUtau/Views/MainWindow.axaml.cs` | +38 / −14 | +24 / −12 | +24 / −12（= 合并前 fork delta） | +38 / −14（= 上游 delta） | `475bd601` | `53b2417f`（Tools 菜单 DAW 项）、`9fd108be`（`HandleGlobalShortcut` 公开入口 + `MixFxWindowManager`）、`b4295a6b`（`Singer.Subbanks` 空值守卫，第 1950 行附近） |
+
+### 判定流程取证（两个重叠文件，按 `AGENTS.md` 的 Merge conflict policy 判定流程执行）
+
+1. **量化两侧改动**：见上表（`git diff --numstat 37ed7d72 upstream/master -- <file>` 与 `git diff --numstat 37ed7d72 origin/master -- <file>`）。
+2. **看残余差异由谁贡献**：合并结果对 `upstream/master` 的残余为 +30 / −20 与 +24 / −12，**两侧改动量均非 0**，不属于「上游已自行回退、无上游实现」的情形，必须逐段判定。
+3. **归属到 commit 与作者**：`git log --oneline 37ed7d72..origin/master -- <file>` 逐条归属；上游侧分别只来自 `26eead42`（Anjo）与 `475bd601`（Mashi），fork 侧来自上表所列 fork commit，`git merge-base --is-ancestor` 确认这些 commit 均不在 `upstream/master` 上，作者无重叠。
+4. **逐行核对目标**：
+   - `TrackHeader.axaml`：上游只改**滑块模板内部两行 Thumb 背景绑定的写法**（第 42/50 行），fork 改的是**头像面板 / 色条 / 轨道号徽标 / 按钮类名**（第 104 行起）——两份 diff 的行段完全不相邻，无重叠面。**非同目标双实现，两侧全部采纳**。
+   - `MainWindow.axaml.cs`：上游重构的是**快捷键分层与欢迎页门控**（`GlobalHotkey` / `EditorHotkey` / `Page == 1`）并删除启动建工程；fork 做的是**把自己的对话框接进主窗口快捷键**（把 `OnKeyDown` 体抽成公开入口 `HandleGlobalShortcut` 供 `MixFxDialog` 转发）、DAW 菜单项、`MixFxWindowManager` 生命周期与 `Subbanks` 空值守卫。目标不同（上游=分层与欢迎页行为，fork=给非模态 FX 窗口复用快捷键等），不触发政策第 1 条的替换；按第 2 条「尽量减小与上游差异」合成，入口名保留 fork 的。
+5. **集合类差异**：本轮无（无 `Strings.axaml` / 语言文件改动）。
+6. **结论**：两文件均无替换、按合成处理，并已逐侧清点零丢失（见「已验证」第 4 条）。
+
+### 决策记录
+
+- **`OpenUtau.Core/Classic/Presamp.cs`：逐字节取上游**。fork 侧改动量为 0，无取舍；配套新测试与 5 个 `presamp.ini` 夹具一并入库（`OpenUtau.Test.csproj` 的 `Files\**` 通配已覆盖新目录，无需改 csproj）。
+- **`OpenUtau/Controls/TrackHeader.axaml`：两侧全取**。上游 `$parent[Slider]` 限定写法是 compiled bindings 迁移（`db9065b1`，见 `## Merge 2026-09-19 37ed7d72`）的后续修正，必须采纳；fork 的 Studio 色条 / 轨道号徽标 / `.s1` 按钮类名落在第 104 行以后，按政策第 3 条作为 fork 独有功能原样保留。
+- **`OpenUtau/Views/MainWindow.axaml.cs`：取上游结构 + 保留 fork 公开入口**。具体合成：
+  - 采纳上游的 `GlobalHotkey(args)` 与 `if (viewModel.Page == 1) { EditorHotkey(args); }`（欢迎页禁用编辑快捷键），以及 `viewModel.TracksViewModel.*` 调用点写法；
+  - 保留 fork 的 `void OnKeyDown(...) => HandleGlobalShortcut(args);` 与 `public void HandleGlobalShortcut(KeyEventArgs args)`：入口体内就是上游那三行（焦点守卫 + 分组调度），因此 `MixFxDialog.axaml.cs` 中 `mainWindow.HandleGlobalShortcut(args)`（`9fd108be` 的非模态 FX 窗口转发）语义与上游 `OnKeyDown` 完全一致，并自动继承欢迎页门控；
+  - 上游删除的 `viewModel.NewProject()` **按上游采纳**（政策第 1 + 2 条）：欢迎页 UI（`MainWindow.axaml` 的 `Carousel SelectedIndex="{Binding Page}"`）两侧一致存在，不自动建工程即上游本轮的设计意图；该 axaml 的 fork 侧 delta 仅 6/5 行（Tools 菜单 DAW 项、面板分隔条、表达式条），与欢迎页无关；
+  - fork 的 `OnMenuDawIntegration` 位置、`MixFxWindowManager.CloseAll()` / `CloseFor(removeTrack.track)` 与 `Singer.Subbanks` 空值守卫都落在自动合并区段，逐条核对仍在（零丢失检查覆盖）。
+- **fork 独有功能零删改**：本轮合并面 9 个文件中没有 fork 独有文件；Studio UI、HiFiUTAU、CUSTOM_SERVER、DAW 集成与其偏好代码均未被触碰。
+- **字符串脚本**：上游本轮无键变更，未产生翻译同步需求。仍执行一次 `python Misc/sync_strings.py`，其唯一副作用是**剥离英文源 `Strings.axaml` 的 BOM**（脚本以无 BOM 回写，历轮已记录该行为），与合并内容无关，已 `git checkout --` 还原 → `Strings.axaml` 与 22 个语言文件**零变化**。
+
+### 已验证
+
+1. **构建**：`dotnet build OpenUtau -c Debug` → **0 错误 / 0 警告**（增量）；测试运行对 `OpenUtau` 与 `OpenUtau.Test` 做了完整编译，同样 **0 错误**（警告为存量分析器提示 `xUnit1051` / `xUnit1031` / `xUnit2013` 等，与本次合并无关，本轮未新增）。
+2. **测试（合并结果）**：`dotnet test OpenUtau.Test` → **Total 476 / 通过 475 / 失败 0 / 跳过 1**（跳过项仍为需真实 DAW 插件的 `DawRealPluginTest.RealPluginCompletesTheHandshakeAndPullsAudio`）。本轮**未复现** `AppTest.StringsTest` 的 headless teardown 摆动。
+3. **用例数账目闭合（同机、同命令对照）**：在 fork 基线 `0081c73d` 的独立 `git worktree`（已移除）上跑全量 → **Total 470 / 通过 469 / 失败 0 / 跳过 1**；合并后 476，**差额 +6** 恰为上游 `3306fdf6` 新增 `OpenUtau.Test/Classic/PresampIniTest.cs` 的 6 个 `[Fact]`（上游本轮对 `OpenUtau.Test/` **只有新增、无用例删除**）。另单独执行 `dotnet test OpenUtau.Test --filter "FullyQualifiedName~PresampIniTest"` → **6 通过 / 0 失败 / 0 跳过**，确认新用例在合并树上真实执行。
+4. **双侧零丢失核对**（两个重叠文件，方法沿用历轮：取 base→各自 HEAD 的 `+` 行、忽略 ≤12 字符短行，在合并结果中逐条字面匹配）：上游侧 `TrackHeader.axaml` 2 行 + `MainWindow.axaml.cs` 25 行、fork 侧 25 行 + 16 行，**全部命中，0 丢失**；交叉核对的数字（合并结果对上游 = 合并前 fork delta，对 fork = 上游 delta）逐项吻合。
+5. **BOM 核对**：`Presamp.cs` / `MainWindow.axaml.cs` / `PresampIniTest.cs` 在 HEAD、上游、工作树三处均为 UTF-8 BOM；`TrackHeader.axaml` 两侧一致无 BOM。本轮无手工解冲突，未出现历轮记录过的「编辑过程剥 BOM」问题。
+6. **`git diff --check`**：无空白错误；冲突标记全库扫描为空。
+7. **UI 冒烟（本轮改了 `MainWindow` 构造函数与启动行为，故必跑）**：以 `hub start` 直接启动合并结果的 `OpenUtau.exe`（Debug）→ **存活 34.6s、stdout/stderr 全程无输出**后主动终止；再以 PowerShell `Start-Process` 启动一次 → 20s 后进程存活、`MainWindowTitle = "OpenUtau v0.0.0.0"`、工作集 207MB，`CloseMainWindow()` 后确认进程已退出（`hasExitedAfterClose=True`，无异常弹窗、无崩溃）。两次启动均未出现欢迎页相关异常。
+8. **清理**：对照用 `git worktree`（`../ou-baseline`）已移除（`git worktree list` 仅剩主工作树）；无临时文件残留。
+
+### 未决项（已知、非阻塞）
+
+- **`AppTest.StringsTest` 的 headless teardown 摆动**：本轮合并树与 fork 基线两次全量各 1 次、均未复现。仍按「顺序敏感、需独立 topic 定位」跟踪。
+- **xunit 钉版**：上游本轮未改 `OpenUtau.Test.csproj`，fork 的 `xunit.v3` 3.2.2 钉版与 csproj 内说明注释维持原判（同 `## Merge 2026-09-16 81637a33`）。
+- **`WorldlineResampler` 表达式支持（#2426）已被上游自我回退**：本 fork 从未跟进该特性，无需跟进；若上游后续以修正版重提，按新 commit 正常合并。

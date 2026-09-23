@@ -42,7 +42,7 @@
 
       <Style Selector="^:pointerover">
         <Style Selector="^ /template/ Thumb">
-          <Setter Property="Background" Value="{Binding TrackColor.AccentColorLight}"/>
+          <Setter Property="Background" Value="{Binding $parent[Slider].((vm:TrackHeaderViewModel)DataContext).TrackColor.AccentColorLight}}"/>
         </Style>
         <Style Selector="^ /template/ RepeatButton#PART_DecreaseButton">
           <Setter Property="Background" Value="{Binding TrackColor.AccentColorLight}" />
@@ -50,7 +50,7 @@
       </Style>
       <Style Selector="^:pressed">
         <Style Selector="^ /template/ Thumb">
-          <Setter Property="Background" Value="{Binding TrackColor.AccentColorDark}"/>
+          <Setter Property="Background" Value="{Binding $parent[Slider].((vm:TrackHeaderViewModel)DataContext).TrackColor.AccentColorDark}"/>
         </Style>
         <Style Selector="^ /template/ RepeatButton#PART_DecreaseButton">
           <Setter Property="Background" Value="{Binding TrackColor.AccentColorDark}" />
