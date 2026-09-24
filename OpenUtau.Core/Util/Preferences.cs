@@ -136,6 +136,7 @@ namespace OpenUtau.Core.Util {
                     if (!new[] { "stable", "beta", "alpha" }.Contains(Default.Channel)) Default.Channel = "stable";
                     if (!Renderers.getRendererOptions().Contains(Default.DefaultRenderer)) Default.DefaultRenderer = string.Empty;
                     if (!GetOnnxRunnerOptionsSafely().Contains(Default.OnnxRunner)) Default.OnnxRunner = string.Empty;
+                    if (OS.IsWindows()) Default.WinePath = string.Empty;
                     if (Default.Theme != null) {
                         Default.ThemeName = Default.Theme switch {
                             1 => "Dark",

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -318,7 +318,7 @@ namespace OpenUtau.App.ViewModels {
             HitTest = new NotesViewModelHitTest(this);
             DocManager.Inst.AddSubscriber(this);
 
-            this.WhenAnyValue(x => x.Part)
+            ObservableMixins.WhereNotNull(this.WhenAnyValue(x => x.Part))
                 .Subscribe(p => {
                     MessageBus.Current.SendMessage(new PianoRollOpenPartChangedEvent(p));
                     PublishPianoRollViewport();

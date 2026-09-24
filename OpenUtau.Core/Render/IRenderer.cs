@@ -96,8 +96,9 @@ namespace OpenUtau.Core.Render {
     /// </summary>
     public interface IRenderer {
         USingerType SingerType { get; }
-        bool SupportsRenderPitch { get; }
-        bool SupportsRealCurve { get { return false; } }
+        bool SupportsRenderPitch => false;
+        bool SupportsRealCurve => false;
+        bool SupportsPhonemeEnvelope => true;
         bool SupportsExpression(UExpressionDescriptor descriptor);
         RenderResult Layout(RenderPhrase phrase);
 

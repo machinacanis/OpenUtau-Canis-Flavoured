@@ -743,3 +743,106 @@
 - **`AppTest.StringsTest` 的 headless teardown 摆动**：本轮合并树与 fork 基线两次全量各 1 次、均未复现。仍按「顺序敏感、需独立 topic 定位」跟踪。
 - **xunit 钉版**：上游本轮未改 `OpenUtau.Test.csproj`，fork 的 `xunit.v3` 3.2.2 钉版与 csproj 内说明注释维持原判（同 `## Merge 2026-09-16 81637a33`）。
 - **`WorldlineResampler` 表达式支持（#2426）已被上游自我回退**：本 fork 从未跟进该特性，无需跟进；若上游后续以修正版重提，按新 commit 正常合并。
+
+---
+
+## Merge 2026-09-24 5d17f141
+
+- **时间**（UTC）：`2026-09-24T06:38:59Z`（= 本地 2026-09-24 午后 +0800；验证完成时间）
+- **合并方式**：`git merge --no-commit --no-ff upstream/master`（merge-base `48a308b4839b701fc61f2cf1302f7e4ac577c7f5`，即上次合并记录的上游基线；合并范围 `48a308b4..5d17f141`）
+- **上游基线**：`5d17f141` — Serialize SharpWavtool cache file reads per path (#2442)
+- **fork 侧基线**：`eb3cab20`（Merge upstream/master (48a308b4) into master）
+
+### 引入的上游 commit（8 个，线性）
+
+| # | SHA | 主题 | 作者 |
+| --- | --- | --- | --- |
+| 1 | `3dc7ff51` | Fix Rider errors (#2440) | Anjo |
+| 2 | `e7b65e54` | Remove redundant Update call in PartsCanvasPointerReleased (#2439) | StAkira |
+| 3 | `5bebe0ce` | Add support for native Linux and MacOS wavtools (#1618) | Mashi |
+| 4 | `e9141c2a` | Migrate to slnx (#2432) | Anjo |
+| 5 | `8e9e521a` | Generalize DiffSinger bar-style phoneme display to renderers that ignore envelopes (#2441) | 黒猫大福 |
+| 6 | `0b8d72b7` | WorldlineResampler: Expression Support_2 (#2437) | 黒猫大福 |
+| 7 | `9a2bc125` | Pin Windows DirectML back to 1.23.0 to stop the native crash on session creation (#2443) | Kakaru |
+| 8 | `5d17f141` | Serialize SharpWavtool cache file reads per path (#2442) | StAkira |
+
+（`0b8d72b7` 即上一轮被上游自行回退的 #2426 的重提版，见 `## Merge 2026-09-24 48a308b4` 的未决项。）
+
+### 修改面
+
+- 上游 22 个文件（+193 / −103），含 1 个删除（`OpenUtau.sln`）与 2 个新增（`OpenUtau.slnx`、`OpenUtau.Core/Classic/UnixWavtool.cs`）。
+- **双侧都改过的 5 个文件**：1 个冲突（`OpenUtau.Core/Util/Preferences.cs`）+ 4 个由 ort 自动合并（`OpenUtau.Core/OpenUtau.Core.csproj`、`OpenUtau/Controls/TrackHeader.axaml`、`OpenUtau/ViewModels/NotesViewModel.cs`、`OpenUtau/Views/MainWindow.axaml.cs`）。
+- 上游本轮**未新增/修改字符串键**（`git diff 48a308b4 upstream/master -- OpenUtau/Strings/` 为空），**未新增/删除任何测试用例**（`-- OpenUtau.Test/` 为空）。
+- fork 独有面（Studio UI、HiFiUTAU、CUSTOM_SERVER、DAW 集成）**没有一个文件**被本轮上游改动触及。
+
+内容概要：
+
+- **原生 Linux/macOS wavtool**（`5bebe0ce`）：新增 `UnixWavtool`，`ToolsManager` 在非 Windows 下把 `.sh` / 无扩展名的 wavtool 交给它（原来错给 `ExeWavtool`）；`IResampler` 加 `NoWrapperScript`，`ExeResampler` 的 wine 判定由「非 Windows 且扩展名是 .exe/.bat」改为「有 WinePath 且需要 wrapper」；`Preferences.Load()` 在 Windows 上清空 `WinePath`。
+- **缓存读锁**（`5d17f141`）：`SharpWavtool` 读 `item.outputFile` 前 `lock (Renderers.GetCacheLock(...))`，与 `ClassicRenderer` 的写锁同键，消除并发渲染共用 resample 缓存时的「文件被占用」；`WorldlineRenderer` 改用同一个 `Renderers.GetCacheLock`。
+- **WorldlineResampler 表达式支持**（`0b8d72b7`）：`Manifest` 声明 `ten` / `brea` / `voi`。
+- **音素包络显示泛化**（`8e9e521a`）：`IRenderer` 新增 `SupportsPhonemeEnvelope => true`；DiffSinger / Enunu / Voicevox 声明 `false`；`PhonemeUIRender.IsDiffSinger(part)` 改为 `SupportsPhonemeEnvelope(part)`（读 `track.RendererSettings.Renderer`），`PhonemeCanvas` 与 `NotesViewModelHitTest` 据此决定画「条」还是画包络、以及是否命中包络把手。
+- **slnx 迁移**（`e9141c2a`）：删 `OpenUtau.sln`、加 `OpenUtau.slnx`（同样的 4 个项目 + Solution Items）。
+- **DirectML 钉回 1.23.0**（`9a2bc125`）：1.24.x 的 DirectML 在创建 `InferenceSession` 时可原生杀进程（无托管异常、无日志），1.23.0 稳定。
+- **Rider 修正**（`3dc7ff51`）：`TrackHeader.axaml` 去掉上一轮 #2427 多写的一个 `}`（`AccentColorLight}}` → `AccentColorLight}`），`NotesViewModel` 的 `WhenAnyValue(x => x.Part)` 包上 `ObservableMixins.WhereNotNull(...)`。
+- **`e7b65e54`**：删掉 `PartsCanvasPointerReleased` 里冗余的 `partEditState.Update(point.Pointer, point.Position)`。
+
+### 冲突（1 个文件）
+
+| 文件 | 上游侧改动量（base→上游） | fork 侧改动量（base→fork） | 合并结果 vs 上游 | 合并结果 vs fork | 上游侧来源 | fork 侧来源 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `OpenUtau.Core/Util/Preferences.cs` | +1 / −0 | +119 / −1 | +119 / −1（= 合并前 fork delta） | +1 / −0（= 上游新增行） | `5bebe0ce`（`Load()` 里新增 `if (OS.IsWindows()) Default.WinePath = string.Empty;`） | `c89b9623`（ONNX runner 守卫 `GetOnnxRunnerOptionsSafely()`）、Studio / HiFiUTAU / Custom Server 偏好面（`c29b2b10`、`a65e4bac`、`24610b1c`、`b4295a6b` 等） |
+
+其余 4 个双侧重叠文件由 ort 自动合并，两侧改动行段不相邻（明细见下表），无冲突标记。
+
+### 判定流程取证（按 `AGENTS.md` 的 Merge conflict policy 判定流程执行）
+
+1. **量化两侧改动**：见上表与下表（`git diff --numstat 48a308b4 upstream/master -- <file>` 与 `git diff --numstat 48a308b4 HEAD -- <file>`）。
+2. **看残余差异由谁贡献**：`Preferences.cs` 合并结果对上游的残余为 +119 / −1，**两侧改动量均非 0**，不属于「上游已自行回退、无上游实现」的情形。
+3. **归属到 commit 与作者**：`git log --oneline 48a308b4..upstream/master -- <file>` 对每个文件都**只有一个**上游 commit（见下表），作者与 fork 侧无重叠；fork 侧来源用 `git log --oneline 48a308b4..HEAD -- <file>` 与 `git merge-base --is-ancestor` 确认。
+4. **逐行核对目标**：上游对 `Preferences.cs` 只加 **1 行**——在既有 `Load()` 的「加载后校正」框架里追加一条「Windows 上清空 WinePath」的迁移，属于「在既有框架里追加一行」；fork 侧是**新增偏好面**（Studio 外观 / HiFiUTAU / Custom Server）与**ONNX runner 守卫**。两者目标不同 → **不构成同目标双实现，不触发政策第 1 条的替换**，取并集。
+5. **集合类差异**：本轮无（无 `Strings.axaml` / 语言文件改动）。
+6. **结论**：`Preferences.cs` 取并集；其余 4 个自动合并文件两侧全取（见「已验证」第 4 条的零丢失核对）。
+
+### 决策记录
+
+- **`Preferences.cs`：并集**。保留 fork 的 `GetOnnxRunnerOptionsSafely()`（fork 的 ONNX 原生可用性守卫，`c89b9623`；上游无对应实现，属政策第 3 条的 fork 独有功能），同时采纳上游新增的 `if (OS.IsWindows()) Default.WinePath = string.Empty;`。合成后该行紧邻排布，语义互不干扰（一个校验 ONNX runner 选项、一个清理 Windows 下的 WinePath）。
+- **`OpenUtau.Core.csproj`：两侧都取**。fork 的 `Newtonsoft.Json 13.0.3` 注释块（HiFiUTAU / Custom Server 的 phrase JSON 仍用 Newtonsoft）与上游的 `Microsoft.ML.OnnxRuntime.DirectML` 钉回 `1.23.0`（含上游写明原因的注释）共存，已核对两处 `PackageReference` 都在。上游的钉版对 fork **同样必要**：fork 的 HiFiUTAU 亦走 ONNX，`OnnxNativeAvailability` 守卫针对的正是同一类「创建 session 时原生杀进程」现象。
+- **`IRenderer.SupportsPhonemeEnvelope`：fork 渲染器不加覆写，保持默认 `true`**（政策第 2/3 条：不在上游文件里塞 fork 分支）。取证：
+  - `OpenUtau.Core/HiFiUtau/HifiUtauPhraseJson.cs`（第 85 行读 `phone.envelope`、第 109–149 行读 `nextPhone.envelope` 并输出 `envelope.p0..p4`）与 `OpenUtau.Core/CustomRender/CustomPhraseJson.cs`（第 73 / 95–134 行同构）**都消费包络点**；`HifiF0Utils.cs` / `CustomF0Utils.cs` 还用 `envelope[0].X` 反推 preutter。
+  - 即 fork 的两个渲染器**使用**包络，与上游标 `false` 的 DiffSinger / Enunu / Voicevox（忽略包络）语义相反；改标 `false` 会让钢琴卷帘把 fork 渲染器的音素画成条形并屏蔽包络把手拖拽，属功能回归。
+  - 运行时佐证见「已验证」第 3 条（HIFIUTAU / CUSTOM_SERVER / WORLDLINE-R / CLASSIC = `true`，DIFFSINGER / ENUNU / VOICEVOX = `false`，7/7 通过）。
+- **`IResampler.NoWrapperScript`：无需 fork 适配**。取证：全库 `: IResampler` 实现只有 `ExeResampler` 与 `WorldlineResampler` 两个（均为上游文件，上游本轮已改），fork 未新增实现类。
+- **`OpenUtau.sln` → `OpenUtau.slnx`：采纳**。取证：fork 全库无 `OpenUtau.sln` 引用（对 `*.yml` / `*.yaml` / `*.md` / `*.csproj` / `*.ps1` / `*.sh` 的 `grep -rn "OpenUtau\.sln"` 为空）；CI `.github/workflows/pr-test.yml` 走 `dotnet restore OpenUtau -r <rid>` 与 `dotnet run --project OpenUtau.Test/OpenUtau.Test.csproj`，不含 sln；`OpenUtau.slnx` 列的 4 个项目与 fork 完全一致（含 `BuildDependency`）。本机实测 `dotnet build OpenUtau.slnx -c Debug` → 0 错误。
+- **`TrackHeader.axaml`：采纳上游修正**。上游 `3dc7ff51` 修掉的是上一轮 `26eead42`（#2427）自己多写的 `}`；上一轮我们按政策取了上游的 `}}`，本轮一并跟随上游改回单 `}`，fork 的 Studio 区段（第 104 行起）未动。
+- **`MainWindow.axaml.cs`：采纳上游删除冗余 `Update` 调用**（`e7b65e54`，位于 fork 从未改动的 `PartsCanvasPointerReleased`）；fork 的 DAW 菜单 / `HandleGlobalShortcut` / `MixFxWindowManager` / `Subbanks` 守卫均不受影响。
+- **BOM 回归修正（fork 侧既有偏差）**：合并后 `OpenUtau.Core/OpenUtau.Core.csproj` 与 `OpenUtau/ViewModels/NotesViewModel.cs` 在 fork 基线上**缺 UTF-8 BOM**（上游两侧都有），使两者与上游各多出 1 行 diff 且违反 `.editorconfig` 的 `charset = utf-8-bom`；已补回 BOM，两文件对上游的差异回到纯语义面（csproj 现为 +4 / −0 = 纯 fork 的 Newtonsoft 注释与引用；`NotesViewModel.cs` 现为 +20 / −6 = 纯 fork delta）。其余合并面文件 BOM 与两侧一致（`TrackHeader.axaml` 上游本就无 BOM，`UnixWavtool.cs`、`OpenUtau.slnx` 同上游）。
+- **字符串脚本**：上游本轮无键变更，未产生同步需求。仍执行一次 `python Misc/sync_strings.py` 确认——唯一副作用是**剥离英文源 `Strings.axaml` 的 BOM**（脚本以无 BOM 回写，历轮已记录），与合并内容无关，已 `git checkout --` 还原 → `Strings.axaml` 与 22 个语言文件**零变化**。
+
+### 已验证
+
+1. **构建**：`dotnet build OpenUtau -c Debug` → **0 错误**（1784 条警告，与历次同量级，上一轮 1782；含既有 `CS0649` / `CS0414` / `xUnit1051` 等存量提示）；`dotnet build OpenUtau.slnx -c Debug`（迁移后的解决方案文件，本机 .NET 10 SDK）→ **0 错误**。
+2. **测试**：`dotnet test OpenUtau.Test` → **Total 476 / 通过 475 / 失败 0 / 跳过 1**（跳过项仍为需真实 DAW 插件的 `DawRealPluginTest.RealPluginCompletesTheHandshakeAndPullsAudio`）。本轮**未复现** `AppTest.StringsTest` 的 headless teardown 摆动。
+3. **用例数账目闭合（同机、同命令对照，独立 `git worktree`，已移除）**：fork 基线 `eb3cab20` 跑全量 → **Total 476 / 通过 475 / 失败 0 / 跳过 1**；合并后同为 476，**差额 0**——与「上游本轮对 `OpenUtau.Test/` 无任何文件改动」一致（`git diff --stat 48a308b4 upstream/master -- OpenUtau.Test/` 为空），无用例增减。
+4. **渲染器包络能力运行时核对（临时 xUnit 用例，验证后已删除）**：对 `Renderers.GetOrCreate(<id>).SupportsPhonemeEnvelope` 断言 → `HIFIUTAU` / `CUSTOM_SERVER` / `WORLDLINE-R` / `CLASSIC` = `true`，`DIFFSINGER` / `ENUNU` / `VOICEVOX` = `false`，**7 通过 / 0 失败**。这条正是本轮唯一需要判断「fork 是否为上游新语义做适配」的位置，结论是**不需要**（见决策记录）。
+5. **双侧零丢失核对**（5 个重叠文件，方法沿用历轮：取 base→各自 HEAD 的 `+` 行、忽略 ≤12 字符短行，在合并结果中逐条字面匹配）：**上游侧 12 行、fork 侧 177 行全部命中，0 丢失**。逐文件数字见下表：
+
+| 文件 | 上游侧（base→上游） | fork 侧（base→fork） | 合并结果 vs 上游 | 合并结果 vs fork |
+| --- | --- | --- | --- | --- |
+| `OpenUtau.Core/Util/Preferences.cs` | +1 / −0 | +119 / −1 | +119 / −1 | +1 / −0 |
+| `OpenUtau.Core/OpenUtau.Core.csproj` | +9 / −1 | +5 / −1 | +4 / −0 | +10 / −2（含 BOM 补回） |
+| `OpenUtau/Controls/TrackHeader.axaml` | +1 / −1 | +30 / −20 | +30 / −20 | +1 / −1 |
+| `OpenUtau/ViewModels/NotesViewModel.cs` | +1 / −1 | +21 / −7 | +20 / −6 | +2 / −2（含 BOM 补回） |
+| `OpenUtau/Views/MainWindow.axaml.cs` | +0 / −1 | +24 / −12 | +24 / −12 | +0 / −1 |
+
+（`NotesViewModel.cs` 的 fork delta 由 +21 / −7 变为 +20 / −6，差额 1/1 即 BOM 补回那行；上游新增的 `ObservableMixins.WhereNotNull(...)` 与 fork 的 `StudioTrackPaletteChangedEvent` 监听并存，已逐行确认。）
+
+6. **BOM 核对**：4 个合并文件（`Preferences.cs`、`MainWindow.axaml.cs`、`Presamp` 无关）与 `UnixWavtool.cs`、`OpenUtau.slnx` 的 BOM 状态与两侧一致；`csproj` / `NotesViewModel.cs` 的缺失已按 `.editorconfig` 补回（见决策记录）。
+7. **`git diff --check`**：无空白错误；冲突标记（`^(<<<<<<<|>>>>>>>)`）全库扫描为空（含索引态）。
+8. **UI 冒烟（本轮改了钢琴卷帘音素绘制与轨道头 XAML，故必跑）**：以 PowerShell `Start-Process` 直接启动合并结果的 `OpenUtau.exe`（Debug）两次 → 两次均 **存活 30s**、`MainWindowTitle = "OpenUtau v0.0.0.0"`、工作集 221MB / 209MB、**stdout 与 stderr 全为空**，`CloseMainWindow()` 后均确认进程已退出（`hasExitedAfterClose=True`，无异常弹窗、无崩溃）。
+9. **清理**：对照用 `git worktree`（`../ou-baseline`）已移除（`git worktree list` 仅剩主工作树）；临时 xUnit 文件 `OpenUtau.Test/Core/Render/TempRendererEnvelopeCapabilityTest.cs` 与临时冒烟脚本/输出（`%TEMP%\ou-smoke*`）均已删除；工作树除本次合并文件外无残留。
+
+### 未决项（已知、非阻塞）
+
+- **`AppTest.StringsTest` 的 headless teardown 摆动**：本轮合并树与 fork 基线两次全量各 1 次、均未复现。仍按「顺序敏感、需独立 topic 定位」跟踪。
+- **xunit 钉版**：上游本轮未改 `OpenUtau.Test.csproj`，fork 的 `xunit.v3` 3.2.2 钉版与 csproj 内说明注释维持原判（同 `## Merge 2026-09-16 81637a33`）。
+- **`.slnx` 依赖较新 SDK**：上游已删除 `OpenUtau.sln`。fork 的本地命令与 CI 都用项目路径（`dotnet build OpenUtau`、`dotnet run --project OpenUtau.Test/OpenUtau.Test.csproj`），本机 .NET 10 SDK 已验证 `dotnet build OpenUtau.slnx` 可用；若将来有工具/IDE 只认 `.sln`，需再评估。
