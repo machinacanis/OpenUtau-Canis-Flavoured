@@ -836,7 +836,7 @@
 
 （`NotesViewModel.cs` 的 fork delta 由 +21 / −7 变为 +20 / −6，差额 1/1 即 BOM 补回那行；上游新增的 `ObservableMixins.WhereNotNull(...)` 与 fork 的 `StudioTrackPaletteChangedEvent` 监听并存，已逐行确认。）
 
-6. **BOM 核对**：4 个合并文件（`Preferences.cs`、`MainWindow.axaml.cs`、`Presamp` 无关）与 `UnixWavtool.cs`、`OpenUtau.slnx` 的 BOM 状态与两侧一致；`csproj` / `NotesViewModel.cs` 的缺失已按 `.editorconfig` 补回（见决策记录）。
+6. **BOM 核对**：本轮合并面 7 个文件逐个与两侧比对——`Preferences.cs`、`MainWindow.axaml.cs` 三处（HEAD / 上游 / 工作树）均为 UTF-8 BOM；`TrackHeader.axaml` 两侧本就无 BOM；上游新增的 `UnixWavtool.cs` 与 `OpenUtau.slnx` 与上游一致（无 / 无）；`OpenUtau.Core.csproj` 与 `NotesViewModel.cs` 在 fork 基线缺 BOM，已按 `.editorconfig` 的 `charset = utf-8-bom` 补回（见决策记录）。
 7. **`git diff --check`**：无空白错误；冲突标记（`^(<<<<<<<|>>>>>>>)`）全库扫描为空（含索引态）。
 8. **UI 冒烟（本轮改了钢琴卷帘音素绘制与轨道头 XAML，故必跑）**：以 PowerShell `Start-Process` 直接启动合并结果的 `OpenUtau.exe`（Debug）两次 → 两次均 **存活 30s**、`MainWindowTitle = "OpenUtau v0.0.0.0"`、工作集 221MB / 209MB、**stdout 与 stderr 全为空**，`CloseMainWindow()` 后均确认进程已退出（`hasExitedAfterClose=True`，无异常弹窗、无崩溃）。
 9. **清理**：对照用 `git worktree`（`../ou-baseline`）已移除（`git worktree list` 仅剩主工作树）；临时 xUnit 文件 `OpenUtau.Test/Core/Render/TempRendererEnvelopeCapabilityTest.cs` 与临时冒烟脚本/输出（`%TEMP%\ou-smoke*`）均已删除；工作树除本次合并文件外无残留。
