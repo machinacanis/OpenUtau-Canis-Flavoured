@@ -900,3 +900,87 @@
 ### 其他
 
 - 新增 remote `xiaobaijunya`（`https://github.com/xiaobaijunya/OpenUtau-CustomRenderer.git`），供后续同步使用；未改动 `origin` / `upstream` 配置。
+
+---
+
+## Merge 2026-09-24 a4d41398
+
+- **时间**（UTC）：`2026-09-24T16:39:10Z`（= 本地 2026-09-25 00:39 +0800；验证完成时间）
+- **合并方式**：`git merge --no-commit --no-ff upstream/master`（merge-base `5d17f141d3ff923ddc2c38cb50d91bd8fc0cd39f`，即上次上游合并记录的上游基线；合并范围 `5d17f141..a4d41398`）
+- **上游基线**：`a4d41398d1b4f6362476c96883514f9ebf4dcd8f` — Add headless UI smoke tests for the main window (#2445)
+- **fork 侧基线**：`85536eea87b8fc4ffdcce92e8ce227260a6789db`（`Merge fix/modplus-frq: sync xiaobaijunya modplus commits (934a390c, 30a69d2b)`）
+
+### 引入的上游 commit（2 个，线性）
+
+| # | SHA | 主题 | 作者 |
+| --- | --- | --- | --- |
+| 1 | `ce996bac` | Replace the track header singer menu with a singer flyout (#2444) | StAkira |
+| 2 | `a4d41398` | Add headless UI smoke tests for the main window (#2445) | StAkira |
+
+### 修改面
+
+- 上游 17 个文件（+1199 / −194）：**13 个 fork 侧未改动**（`SingerFlyout.axaml(.cs)`、`SingerAvatarCache.cs`、`SingerFlyoutViewModel.cs`、`SingerFlyoutOrderTest.cs`、`OpenUtau.UiTest/` 三文件、`pr-test.yml`、`OpenUtau.slnx`、`TrackHeader.axaml.cs`、`MenuItemViewModel.cs`、`UpdaterDialog.axaml.cs`，由 ort 直接落盘），**4 个双侧都改过**（1 冲突 + 3 自动合并）。
+- fork 侧自 base 起改动 142 个文件；剔除上述 4 个后，**138 个 fork 独有面文件本轮上游一个都没碰**。
+- 上游本轮**未改字符串**（`git diff 5d17f141 upstream/master -- OpenUtau/Strings/` 为空），**新增 3 个测试用例**（`OpenUtau.Test/App/SingerFlyoutOrderTest.cs`）+ **新增 1 个测试工程**（`OpenUtau.UiTest`，2 个用例）。
+
+内容概要：
+
+- **歌手 flyout（`ce996bac`）**：轨道头的歌手选择由 `ContextMenu`（`SingersMenuRes` + `SingerMenuItems`）改为模态 `Flyout`。新增 `SingerFlyout.axaml(.cs)`（瓷砖式列表、收藏星、当前歌手环、安装/打开目录/刷新）、`SingerFlyoutViewModel`（`OrderSingers`：收藏优先 → 近期收藏 → 其余收藏按名 → 近期非收藏 → 按组名再按名；`SingerTileViewModel` 轻量化：瓷砖由 Button 降为 Border、星标由 ToggleButton+Viewbox+Canvas 降为单 Path，大列表快 ~2.5–3×）、`SingerAvatarCache`（共享位图缓存，不 dispose）。`TrackHeaderViewModel` 删掉 `SingerMenuItems` / `RefreshSingersAsync`（−163 行）；`TrackHeader.axaml` 删 `SingersMenuRes` 资源、歌手按钮加 `Name="SingerButton"`、更多按钮加 `Name="MoreButton"`、新增 `FlyoutPresenter.singerFlyout` 样式；`TrackHeader.axaml.cs` 的 `SingerButtonClicked` 改为同步 `ShowSingerFlyout`（锚点 `SingerButton`，从「⋯」飞出时先 `MoreButton.Flyout?.Hide()` 避免叠层）；`MenuItemViewModel.IsFavourite` setter 不再调 `TrackHeaderViewModel.InvalidateSingerMenuCache()`。附带修画布悬停光标：`MainWindow.axaml` 加 `PointerExited`、`axaml.cs` 加 `PartsCanvasPointerExited`（离开部件边缘时清 `Cursor`）。
+- **headless UI 冒烟（`a4d41398`）**：新增独立测试工程 `OpenUtau.UiTest`（`Avalonia.Headless` + Skia 真绘制 + 截图 artifact，独立进程，避免污染 `OpenUtau.Test` 的进程级单例），CI 加 `ui test` 步骤；`MainWindow` 构造函数把 `DataContext = viewModel = ...` **挪到 `InitializeComponent()` 之前**（消除每次启动的两次绑定错误）；`UpdaterDialog.CheckForUpdateEnabled` 让测试跳过联网更新检查；`OpenUtau.slnx` 加项目。
+
+### 冲突（1 个文件）
+
+| 文件 | 上游侧改动量（base→上游） | fork 侧改动量（base→fork） | 合并结果 vs 上游 | 合并结果 vs fork | 上游侧来源 | fork 侧来源 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `OpenUtau/Controls/TrackHeader.axaml` | +11 / −20 | +30 / −20 | +30 / −20（= fork delta） | +11 / −20（= 上游 delta） | `ce996bac`（`Name="SingerButton"` / `Name="MoreButton"` / 删 `SingersMenuRes` / 加 `FlyoutPresenter.singerFlyout`） | `464705a1`（轨道号徽章移出头像、`TrackNameButton` 进 `Grid`）、配合 `c837526a`（`BadgeForeground` 取色）、`55615237`（彩色条）、`4fcfe157` / `8d04547c`（`.s1` 皮肤类名）、`a0172184`（fx 与 M/S 同列） |
+
+冲突块位置 `OpenUtau/Controls/TrackHeader.axaml:114-133`（轨道名 / 歌手按钮所在的 `StackPanel`）。
+其余 3 个双侧重叠文件由 ort 自动合并，两侧改动行段不相邻（明细见下表），无冲突标记。
+
+### 判定流程取证（按 `AGENTS.md` 的 Merge conflict policy 判定流程执行）
+
+1. **量化两侧改动**：见上表与下表（`git diff --numstat 5d17f141 upstream/master -- <file>` 与 `git diff --numstat 5d17f141 master -- <file>`）。
+2. **看残余差异由谁贡献**：`TrackHeader.axaml` 合并结果对上游的残余为 +30 / −20、对 fork 为 +11 / −20，**两侧改动量均非 0**，不属于「上游已自行回退、无上游实现」的情形。
+3. **归属到 commit 与作者**：`git log --oneline 5d17f141..upstream/master -- OpenUtau/Controls/TrackHeader.axaml` 只有 `ce996bac`（StAkira）一条；fork 侧 `git log --no-merges --oneline 5d17f141..master -- <file>` 为 6 条 Studio 轨道头 topic（`464705a1` / `a0172184` / `4fcfe157` / `8d04547c` / `55615237` / `c837526a`，作者 Machinacanis），两侧作者不重叠。
+4. **逐行核对目标**：冲突块内**上游**改的是「歌手按钮从 ContextMenu 换成 flyout」——加 `Name="SingerButton"`（`ShowSingerFlyout` 里 `Control anchor = SingerButton;` 依赖该字段）、去掉 `ContextMenu="{StaticResource SingersMenuRes}"`（资源已被上游删除）；**fork** 改的是「轨道号徽章从头像角移到轨道名左侧的 `Grid`，并给按钮起名 `TrackNameButton`」（`464705a1`）。两者一个改歌手入口、一个改徽章布局 → **目标不同，不构成同目标双实现，取并集**。
+5. **集合类差异**：本轮无（上游未改 `Strings.axaml` 与任何语言文件）。
+6. **记录结论**：见「决策记录」。
+
+### 决策记录
+
+- **`TrackHeader.axaml`：并集。** 保留 fork 的 `<Grid ColumnDefinitions="auto,*">`（`TrackNoBadge` + `TrackNameButton`），采纳上游的 `Name="SingerButton"` 且**不带** `ContextMenu`。取证：取上游整块会丢掉 Studio 徽章与新布局（政策第 3 条的 fork 独有功能面）；保留 fork 的匿名歌手按钮则 `TrackHeader.axaml.cs` 的 `ShowSingerFlyout` 里 `SingerButton` / `MoreButton` 两个字段不存在，**根本不编译**。
+- **`MainWindow.axaml.cs` 的 `DataContext` 先于 `InitializeComponent`：保留上游次序**（政策第 2 条：优先减小 diff，不反向改上游）。取证：UiTest 主窗口冒烟在两台路径下均 0 绑定错误（见「已验证」第 3、6 条），fork 的 XAML 无「构造后再绑 `DataContext`」的依赖。
+- **另 3 个双侧文件两侧全取，逐段并存**：
+  - `TrackHeaderViewModel.cs`：上游删 `SingerMenuItems` 面（−163）与 fork 的 Studio 绘制（`BadgeForeground` / `ColorBarWidth` / `ApplyPaint`）及 `TrackMuteVisualEvent`（`1b767a77`）、`MixFxWindowManager`（`9fd108be`）并存。合并结果的 `RefreshAvatar`（含 `SingerAvatarCache.Get` + `EmptyAvatar` 占位）与上游逐字一致。
+  - `MainWindow.axaml`：上游 `ce996bac` 的 `PointerExited="PartsCanvasPointerExited"` 与 fork 的 `Name="MainPageGrid"`（`f4777f8e`）、`RowDefinition Height="Auto"`、`GridSplitter Classes="panel"`、`x:Name="MainProgressText"`（`f22f3a13`）并存。
+  - `MainWindow.axaml.cs`：上游 `a4d41398` 的构造次序 + `ce996bac` 的 `PartsCanvasPointerExited` 与 fork 的 DAW 菜单 / `HandleGlobalShortcut`（`53b2417f`、`b4295a6b`）/ `MixFxWindowManager.CloseAll()`（`9fd108be`）/ `Subbanks?` 守卫并存。
+- **13 个上游独有文件：直接落盘，无取舍**（fork 侧自 base 起未改动，`git diff --numstat 5d17f141 master -- <file>` 全为空）。其中 `TrackHeader.axaml.cs` 与 fork 的 6 条 Studio 改动**同日不同区段**（fork 只改 `.axaml` 的类名与 `x:Name`，未改 code-behind），合并后该文件与上游逐字节相同。
+- **fork 无残留引用**：全库 `grep -rn "SingerMenuItems\|InvalidateSingerMenuCache\|SingersMenuRes\|RefreshSingersAsync"` → 0 命中。
+- **字符串脚本**：上游本轮无键变更，未产生同步需求。仍执行一次 `python Misc/sync_strings.py` 确认——唯一副作用是**剥离英文源 `Strings.axaml` 的 BOM**（脚本以无 BOM 回写，历轮已记录），已 `git checkout --` 还原 → `Strings.axaml` 与 22 个语言文件**零变化**。
+
+### 已验证
+
+1. **构建**：`dotnet build OpenUtau.slnx`（本机 .NET 10.0.401 SDK）→ **0 错误**（73 条警告，全部为 `OpenUtau.Test` 的存量 xunit analyzer 提示：`xUnit1051` / `xUnit2013` / `xUnit1031`）。
+2. **测试**：`dotnet test OpenUtau.Test` → **Total 479 / 通过 478 / 失败 0 / 跳过 1**（跳过项仍为需真实 DAW 插件的 `DawRealPluginTest.RealPluginCompletesTheHandshakeAndPullsAudio`）。**用例数账目闭合**：fork 基线 476（上次记录）→ 合并后 479，差额 **+3** = 上游新增 `SingerFlyoutOrderTest` 的 3 个 `[Fact]`，与「上游对 `OpenUtau.Test/` 只新增该文件」一致。
+3. **新增 UI 测试工程**：`dotnet run --project OpenUtau.UiTest/OpenUtau.UiTest.csproj` → **Total 2 / Errors 0 / Failed 0 / Skipped 0**（7.2s，win-x64 `net10.0-windows`）。这是上游为本次合并面（主窗口构造次序 + 启动期绑定）自带的最强端到端信号；**本 fork 首次具备 headless 全窗口冒烟能力**。
+4. **冲突解析的运行时取证**（临时 `[Fact] TempSingerButtonOpensFlyout`，验证后已删除；已确认 `OpenUtau.UiTest/MainWindowTest.cs` 与上游**逐字节相同**）：真实 `MainWindow` → 点 `welcome.new` 进编辑器 → `TrackHeader.FindControl<Button>("SingerButton")` 命中（证明 `x:Name` 与生成的字段都在）→ 点击 → 全程 **0 错误**（`ErrorMessageNotification`、错误级日志、Avalonia 绑定错误都进 `ErrorCollector`）→ 截图 `TempSingerButtonOpensFlyout.png` 目视确认：flyout 锚在该按钮下方、空态「此处没有歌手」+ 安装 / 打开目录 / 刷新三按钮渲染正常；轨道头同时正确显示 **6px 彩色条 + 「1」徽章 + Track1 + 选择歌手**（Studio UI 开；本机 `Preferences.UseStudioUI` 默认 `true`，即走的正是 fork 改动那条渲染路径）。3 通过 / 0 失败。
+5. **双侧零丢失核对**（4 个重叠文件，方法沿用历轮：取 base→各自 HEAD 的 `+` 行、忽略 ≤12 字符短行，在合并结果中逐条字面匹配）：**上游侧 29 行、fork 侧 66 行全部命中，0 丢失**。逐文件数字见下表：
+
+| 文件 | 上游侧（base→上游） | fork 侧（base→fork） | 合并结果 vs 上游 | 合并结果 vs fork |
+| --- | --- | --- | --- | --- |
+| `OpenUtau/Controls/TrackHeader.axaml` | +11 / −20 | +30 / −20 | +30 / −20 | +11 / −20 |
+| `OpenUtau/ViewModels/TrackHeaderViewModel.cs` | +12 / −163 | +22 / −16 | +22 / −16 | +12 / −163 |
+| `OpenUtau/Views/MainWindow.axaml` | +1 / −0 | +6 / −5 | +6 / −5 | +1 / −0 |
+| `OpenUtau/Views/MainWindow.axaml.cs` | +11 / −2 | +24 / −12 | +24 / −12 | +11 / −2 |
+
+6. **原生桌面 UI 冒烟**（本轮改了 `MainWindow` 构造次序与轨道头 XAML，故必跑）：以 PowerShell `Start-Process` 直接启动合并结果的 `OpenUtau.exe`（Debug）→ **存活 30s**、`MainWindowTitle = "OpenUtau v0.0.0.0"`、工作集 206MB、**stdout 与 stderr 全为空**、`CloseMainWindow()` 后确认退出（`hasExitedAfterClose=True`，无异常弹窗、无崩溃）；临时输出文件已删除。
+7. **BOM 核对**：本轮合并面 17 个文件逐个与上游比对首 3 字节——**17/17 与上游一致**（`TrackHeader.axaml` / `SingerFlyout.axaml(.cs)` / `SingerAvatarCache.cs` / `SingerFlyoutViewModel.cs` / `SingerFlyoutOrderTest.cs` / `OpenUtau.UiTest/*` / `OpenUtau.slnx` / `pr-test.yml` 两侧本就无 BOM；其余 9 个含 BOM），无历轮那种 fork 基线缺 BOM 的偏差。
+8. **`git diff --check` 与冲突标记**：索引态无空白错误；全库冲突标记（`^(<<<<<<<|>>>>>>>|=======$)`）扫描为空。
+9. **清理**：临时 `[Fact]` 已删除并核对与上游逐字节相同；UiTest 生成的截图与 `prefs.json` 落在 `OpenUtau.UiTest/bin/...`（该工程 `DataPath` 走便携模式 = 程序目录，**不触及用户 `Documents/OpenUtau`**），全部位于 gitignore 覆盖的 `bin/`；临时冒烟脚本与 `%TEMP%\ou-smoke-*.txt` 已删除；工作树除本次合并文件与 `MERGE_LOG.md` 外无残留。
+
+### 未决项（已知、非阻塞）
+
+- **`OpenUtau.UiTest` 的跨平台可用性只在 win-x64 本地实测**；macOS / Linux 由 CI（`pr-test.yml` 新增 `ui test` 步骤）覆盖，本机无法验证。
+- **xunit 双版本并存**：`OpenUtau.Test` 仍钉 `xunit.v3` **3.2.2**（fork 自加，因 `Avalonia.Headless.XUnit 12.1.2` 在 xunit.v3 4.x 上 `[AvaloniaFact]` 会 `MissingMethodException`），而新 `OpenUtau.UiTest` 用 **4.0.0**（只写 `[Fact]`，自己用 `HeadlessUnitTestSession` 而非 `[AvaloniaFact]`，恰好绕开该缺陷）。两者是独立工程 / 独立进程，本机实测可同时构建运行；但**若上游将来给 `OpenUtau.UiTest` 引入 `[AvaloniaFact]`，fork 需要同样钉版**。
+- **`AppTest.StringsTest` 的 headless teardown 摆动**：本轮全量 1 次未复现，仍按「顺序敏感、需独立 topic 定位」跟踪（同上轮）。
+- **CI 触发面**：`pr-test.yml` 仅在 `pull_request` 到 `master` 时跑；直接推到 `master` 不会触发，本 fork 的本地验证仍以 `dotnet test` + `dotnet run --project OpenUtau.UiTest` 为准。
