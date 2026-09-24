@@ -846,3 +846,57 @@
 - **`AppTest.StringsTest` 的 headless teardown 摆动**：本轮合并树与 fork 基线两次全量各 1 次、均未复现。仍按「顺序敏感、需独立 topic 定位」跟踪。
 - **xunit 钉版**：上游本轮未改 `OpenUtau.Test.csproj`，fork 的 `xunit.v3` 3.2.2 钉版与 csproj 内说明注释维持原判（同 `## Merge 2026-09-16 81637a33`）。
 - **`.slnx` 依赖较新 SDK**：上游已删除 `OpenUtau.sln`。fork 的本地命令与 CI 都用项目路径（`dotnet build OpenUtau`、`dotnet run --project OpenUtau.Test/OpenUtau.Test.csproj`），本机 .NET 10 SDK 已验证 `dotnet build OpenUtau.slnx` 可用；若将来有工具/IDE 只认 `.sln`，需再评估。
+
+---
+
+## Sync 2026-09-24 xiaobaijunya (934a390c + 30a69d2b)
+
+- **时间**（UTC）：`2026-09-24T07:14:57Z`（= 本地 2026-09-24 15:1x +0800；验证完成时间）
+- **来源仓库**：`xiaobaijunya/OpenUtau-CustomRenderer`（**本 fork 的上游来源仓库**，remote `xiaobaijunya`），同步后 tip `30a69d2b59a0dead0a73d2efa47333e187487f1d`
+- **方式**：按用户指示只取该仓库**最新 2 个 commit**（不合并其余 56 个）。先在 topic 分支 `fix/modplus-frq` 上 `git cherry-pick -x 934a390c 30a69d2b`（`-x` 在提交信息里留来源 SHA），验证完成后合入 `master`。
+- **fork 侧基线**：`d6ce535c`（`docs(merge-log): fix the garbled BOM audit line in the 5d17f141 entry`）
+- **干净性取证**：cherry-pick 前本 fork 的 `OpenUtau.Core/Classic/Frq.cs` 与来源仓库 `75ea0b5a:Frq.cs` **逐字节相同**（blob `b3ddf630`）→ 这两个 commit 是相对本 fork 的干净增量，不是双侧分叉实现。
+
+### 引入的 commit（2 个）
+
+| # | SHA | 主题 | 作者 |
+| --- | --- | --- | --- |
+| 1 | `934a390c20e4e8b6a0347c7c92eb32e520203dd0` | 优化modplus效果 | xiaobaijunya |
+| 2 | `30a69d2b59a0dead0a73d2efa47333e187487f1d` | 修复modplus生成不了的bug | xiaobaijunya |
+
+### 修改面
+
+- **`OpenUtau.Core/Classic/Frq.cs`**：两 commit 合计 +131 / −27，cherry-pick 后与该仓库 tip **逐字节一致**（blob `2035135f`）。
+  - 新增 `CenterTrimRatio = 0.30`、`CenterTone()`、`VoicedTones()`、`MinVoicedFreq = 60`：参考音改为「oto 区域 `[offset, cutoff)` 内 f0 帧，去掉最低/最高各 30% 后取音高平均」（音域上平均 = 几何平均），**不再使用 frq 文件里的 `averageF0`** ——后者会被起音滑音、噪声尖峰拉偏，且 `Completion()` 插值出的假音高会被当真音高计入。
+  - `OtoFrq` 构造新增前置校验并写 `error` 文案：无 wav 文件 / 无 frq-mrq 文件 / frq 无帧 / **无浊音帧** / 区域算出的音高差数组为空 → `loaded = false`（旧实现此时会让音高数组变成 `-Infinity`/`NaN`，正是 modplus「生成不了」的根因）。
+- **`OpenUtau.Core/Render/RenderPhrase.cs`**：+43，modplus 块新增 `LogModPlusOnce`（静态去重，避免逐 phrase/逐次播放刷屏）+ 4 处守住（frq 不可用 / 音高差数组为空 / `frqIntervalTick <= 0` / `stretch` 非有限或非正 / 逐点 `diff` 非有限），并把 catch 日志补上 oto 文件、音素、位置。
+
+### 冲突（1 个文件）
+
+| 文件 | 上游侧来源 | fork 侧来源 | 处置 |
+| --- | --- | --- | --- |
+| `OpenUtau.Core/Render/RenderPhrase.cs` | `30a69d2b`（基于旧 API：`UProject`/`UTrack`/`UVoicePart` 构造函数、`phoneme.oto`、`project.timeAxis.TemposBetweenTicks`、`phoneme.GetExpression`） | fork 的 pipeline 版 `RenderPhrase(Pipeline.PhraseSource, int, int)`（`PhonemeSource`、`NoteTempos`、`DefaultBpm`、`VelRaw`） | **按 fork API 逐条改写上游语义**（政策第 3 条：fork 独有面单独落点），上游 4 处守住与去重日志一字不落 |
+
+改写映射（20 行冲突全部覆盖）：`phoneme.oto` → `PhonemeSource.Oto`；`project.timeAxis.TemposBetweenTicks(part.position + phoneme.position, part.position + phoneme.End)` → `phoneme.NoteTempos`；`project.tempos[0].bpm` → `source.DefaultBpm`；`phoneme.GetExpression(project, track, Format.Ustx.VEL).Item1` → `phoneme.VelRaw`；其余自动合并进来的旧写法则统一回写到 fork 的 `Oto`/`Phoneme`/`Position` 属性名。
+
+### 已验证
+
+1. **构建**：`dotnet build OpenUtau -c Debug`（独立 `git worktree`，因本机用户实例正运行并锁住 `OpenUtau/bin/Debug`）→ **0 错误**（1785 条警告，与合入前 1784 同量级）。
+2. **测试**：`dotnet test OpenUtau.Test` → **Total 476 / 通过 475 / 失败 0 / 跳过 1**，与 `master` 基线**逐项相同**（无用例增减、无回归）。
+3. **行为验证（临时 xUnit 6 用例，直接驱动生产 `OtoFrq`，验证后已删除）**：
+   - 参考音取自 f0 帧而非 `averageF0`：把 `averageF0` 设成 700 Hz（被离群帧污染），A4 帧的音高差仍**恰为 0**（旧实现会整体偏 −8.1 半音）；
+   - 两端裁剪确实生效：区域音高均值 +0.8 半音（非对称离群）时，纯 A4 尾段 100 帧的音高差**全部为 0**；
+   - **全无浊音帧** → `loaded = false`、`error = "frq file has no voiced frame"`、两个数组为空（旧实现 `Completion()` 填 0 → `FreqToTone(0) = -Inf` → 音高数组 Inf/NaN → 渲染失败，即本次修复的 bug）；
+   - **空音高差**（`consonant == offset`）→ 报 `empty tone diff` 并跳过，不再让绘制侧按 `Length - 1` 索引空数组；
+   - 正常区域 → `toneDiffFix` / `toneDiffStretch` 全部有限，真实音高偏差（±12/±24 半音）完整保留；
+   - 无 frq 文件 → `error = "no frq / mrq file"`。**6 通过 / 0 失败**。
+4. **UI 冒烟**：本机用户实例（PID 5748，`无梦之梦-backup.ustx`）正在运行，`Program.Main` 的单实例守卫会让新进程直接退出（日志实测：`Process OpenUtau already open. Exiting.`），故**不干扰用户实例**，改用重命名副本 `ou-smoke-probe.exe` 启动分支构建 → **存活 30s**、`MainWindowTitle = "OpenUtau v0.0.0.0"`、工作集 236MB、stdout/stderr 全空、`CloseMainWindow()` 后正常退出；副本与临时脚本均已删除。
+5. **未覆盖（如实记录）**：仓库内没有任何 `.frq` 夹具（`git ls-files "*.frq"` 计数 0），因此 `RenderPhrase` 内那 4 处守住属于**防御性冗余**（`OtoFrq` 已保证前置条件），仅做了代码审查与编译验证，没有端到端渲染用例覆盖。
+
+### 未决项（已知、非阻塞）
+
+- **该仓库其余 56 个 commit 未同步**（音高提取与「应用音高」窗口 `PitchAudioApplier`/`ApplyPitchDialog`、`ChineseVOCALOID` 音素器、`ViewConstants`、钢琴卷帘/波形/主题改动、appveyor 打包等）——按用户本轮指示「只要新的两个 commit」处理；若后续要它们，需单独定 topic 与取舍（其中 UI 面与 fork 自研 Studio UI 存在直接冲突面，`git merge` 干跑有 30 个冲突文件）。
+
+### 其他
+
+- 新增 remote `xiaobaijunya`（`https://github.com/xiaobaijunya/OpenUtau-CustomRenderer.git`），供后续同步使用；未改动 `origin` / `upstream` 配置。

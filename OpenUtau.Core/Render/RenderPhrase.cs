@@ -229,6 +229,23 @@ namespace OpenUtau.Core.Render {
         private List<string> cacheFiles = new List<string>();
 
         /// <summary>
+        /// Mod plus problems already reported, keyed by oto file and message. A RenderPhrase is built
+        /// for every phrase and repeatedly during playback, so logging each failure would flood the log.
+        /// </summary>
+        private static readonly HashSet<string> modPlusWarned = new HashSet<string>();
+        private static readonly object modPlusWarnedLock = new object();
+
+        private static void LogModPlusOnce(string? otoFile, string message) {
+            var key = $"{otoFile}|{message}";
+            lock (modPlusWarnedLock) {
+                if (!modPlusWarned.Add(key)) {
+                    return;
+                }
+            }
+            Log.Warning($"{message} (oto: {otoFile})");
+        }
+
+        /// <summary>
         /// The heavy phrase build over an immutable snapshot; pure over the
         /// snapshot, safe off the UI thread.
         /// </summary>
@@ -392,12 +409,22 @@ namespace OpenUtau.Core.Render {
                             phoneme.Oto.Frq = new OtoFrq(phoneme.Oto, cSinger.Frqs);
                         }
                         if (phoneme.Oto.Frq.loaded == false) {
+                            LogModPlusOnce(phoneme.Oto.File, $"Mod plus skipped, frq is unusable: {phoneme.Oto.Frq.error}");
                             continue;
                         }
                         var frq = phoneme.Oto.Frq;
+                        if (frq.toneDiffFix.Length == 0 || frq.toneDiffStretch.Length == 0) {
+                            // Indexing these arrays with a clamp to Length - 1 throws when they are empty.
+                            LogModPlusOnce(phoneme.Oto.File, $"Mod plus skipped, tone diff is empty (fix {frq.toneDiffFix.Length}, stretch {frq.toneDiffStretch.Length})");
+                            continue;
+                        }
                         UTempo[] noteTempos = phoneme.NoteTempos;
                         var tempo = noteTempos.Length > 0 ? noteTempos[0].bpm : source.DefaultBpm; // compromise 妥協！
                         var frqIntervalTick = MusicMath.TempoMsToTick(tempo, (double)1 * 1000 / 44100 * frq.hopSize);
+                        if (frqIntervalTick <= 0) {
+                            LogModPlusOnce(phoneme.Oto.File, $"Mod plus skipped, invalid frq frame length {frqIntervalTick} (hop size {frq.hopSize})");
+                            continue;
+                        }
                         double consonantStretch = Math.Pow(2f, 1.0f - phoneme.VelRaw / 100f);
 
                         var preutter = MusicMath.TempoMsToTick(tempo, Math.Min(phoneme.Preutter, phoneme.Oto.Preutter * consonantStretch));
@@ -409,6 +436,10 @@ namespace OpenUtau.Core.Render {
                         double stretch = 1;
                         if (frq.toneDiffStretch.Length * frqIntervalTick < ((double)endIndex - startStretch) * pitchInterval) {
                             stretch = ((double)endIndex - startStretch) * pitchInterval / (frq.toneDiffStretch.Length * frqIntervalTick);
+                        }
+                        if (!double.IsFinite(stretch) || stretch <= 0) {
+                            LogModPlusOnce(phoneme.Oto.File, $"Mod plus skipped, invalid stretch {stretch}");
+                            continue;
                         }
                         var env0 = new Vector2(0, 0);
                         var env1 = new Vector2((phoneme.Envelope[1].X - phoneme.Envelope[0].X) / (phoneme.Envelope[4].X - phoneme.Envelope[0].X), 100);
@@ -424,6 +455,11 @@ namespace OpenUtau.Core.Render {
                             var diff = MusicMath.Linear(frqPointMin, frqPointMax, frq.toneDiffStretch[frqPointMin], frq.toneDiffStretch[frqPointMax], frqPoint);
                             diff = diff * phonemeModp / 100;
                             diff = Fade(diff, pit);
+                            if (!double.IsFinite(diff)) {
+                                // NaN / Infinity would poison the pitch array and make the resampler fail.
+                                LogModPlusOnce(phoneme.Oto.File, "Mod plus produced a non-finite pitch diff (stretch)");
+                                continue;
+                            }
                             pitches[pit] = pitches[pit] + (float)(diff * 100);
                         }
                         for (int i = 0; startStretch + i - 1 >= startIndex; i--) {
@@ -435,6 +471,11 @@ namespace OpenUtau.Core.Render {
                             var diff = MusicMath.Linear(frqPointMin, frqPointMax, frq.toneDiffFix[frqPointMin], frq.toneDiffFix[frqPointMax], frqPoint);
                             diff = diff * phonemeModp / 100;
                             diff = Fade(diff, pit);
+                            if (!double.IsFinite(diff)) {
+                                // NaN / Infinity would poison the pitch array and make the resampler fail.
+                                LogModPlusOnce(phoneme.Oto.File, "Mod plus produced a non-finite pitch diff (fix)");
+                                continue;
+                            }
                             pitches[pit] = pitches[pit] + (float)(diff * 100);
                         }
                         double Fade(double diff, int pit) {
@@ -448,7 +489,7 @@ namespace OpenUtau.Core.Render {
                             return diff;
                         }
                     } catch(Exception e) {
-                        Log.Error(e, "Failed to compute mod plus.");
+                        Log.Error(e, $"Failed to compute mod plus. oto: {phoneme.Oto?.File}, phoneme: {phoneme.Phoneme}, position: {phoneme.Position}");
                     }
                 }
             }

@@ -9,33 +9,113 @@ using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.Classic {
     public class OtoFrq {
+        /// <summary>
+        /// Fraction of frames dropped from each end when computing the center tone.
+        /// </summary>
+        private const double CenterTrimRatio = 0.30;
+
+        /// <summary>
+        /// Frames at or below this frequency (Hz) are considered unvoiced.
+        /// </summary>
+        private const double MinVoicedFreq = 60;
+
         public double[] toneDiffFix = new double[0];
         public double[] toneDiffStretch = new double[0];
         public int hopSize;
         public bool loaded = false;
+        /// <summary>
+        /// Why the frq data is unusable when <see cref="loaded"/> is false. Empty on success.
+        /// Renderers log this so that a missing modulation plus is not silent.
+        /// </summary>
+        public string error = string.Empty;
 
         public OtoFrq(UOto oto, Dictionary<string, IFrqFiles> dict) {
+            if (string.IsNullOrEmpty(oto.File)) {
+                // UOto.OfDummy() has no file. Dictionary does not accept a null key either.
+                error = "oto has no wav file";
+                return;
+            }
             if (!dict.TryGetValue(oto.File, out IFrqFiles? frq)) {
                 Load(oto.File, out frq);
                 if (frq != null) {
-                    dict.Add(oto.File, frq);
+                    dict[oto.File] = frq;
                 }
             }
-
-            if(frq != null) {
-                hopSize = frq.hopSize;
-                int offset = ConvertMsToFrqLength(frq, oto.Offset);
-                int consonant = ConvertMsToFrqLength(frq, oto.Offset + oto.Consonant);
-                int cutoff = oto.Cutoff < 0 ?
-                    ConvertMsToFrqLength(frq, oto.Offset - oto.Cutoff)
-                    : frq.f0.Length - ConvertMsToFrqLength(frq, oto.Cutoff);
-                var completionF0 = Completion(frq.f0);
-                var averageTone = MusicMath.FreqToTone(frq.averageF0);
-                toneDiffFix = completionF0.Skip(offset).Take(consonant - offset).Select(f => MusicMath.FreqToTone(f) - averageTone).ToArray();
-                toneDiffStretch = completionF0.Skip(consonant).Take(cutoff - consonant).Select(f => MusicMath.FreqToTone(f) - averageTone).ToArray();
-
-                loaded = true;
+            if (frq == null) {
+                error = "no frq / mrq file";
+                return;
             }
+            if (frq.f0.Length == 0) {
+                error = "frq file has no frame";
+                return;
+            }
+            // Without any voiced frame there is no reference tone. Completion() would fill every
+            // frame with 0, FreqToTone(0) is -Infinity, and the resulting tone diff would turn the
+            // pitch array into -Infinity / NaN, which makes the resampler fail.
+            if (!frq.f0.Any(f => f > MinVoicedFreq)) {
+                error = "frq file has no voiced frame";
+                return;
+            }
+
+            hopSize = frq.hopSize;
+            int offset = ConvertMsToFrqLength(frq, oto.Offset);
+            int consonant = ConvertMsToFrqLength(frq, oto.Offset + oto.Consonant);
+            int cutoff = oto.Cutoff < 0 ?
+                ConvertMsToFrqLength(frq, oto.Offset - oto.Cutoff)
+                : frq.f0.Length - ConvertMsToFrqLength(frq, oto.Cutoff);
+            var completionF0 = Completion(frq.f0);
+            // The reference tone is taken from the whole oto region [offset, cutoff), independently
+            // of the note length and of the part actually used by the renderer. Raw f0 is used
+            // instead of completionF0, because Completion() replaces unvoiced frames with
+            // interpolated pitches, which would then be counted as sung pitches.
+            var averageTone = CenterTone(frq.f0, frq.averageF0, offset, cutoff);
+            toneDiffFix = completionF0.Skip(offset).Take(consonant - offset).Select(f => MusicMath.FreqToTone(f) - averageTone).ToArray();
+            toneDiffStretch = completionF0.Skip(consonant).Take(cutoff - consonant).Select(f => MusicMath.FreqToTone(f) - averageTone).ToArray();
+
+            if (toneDiffFix.Length == 0 || toneDiffStretch.Length == 0) {
+                // RenderPhrase indexes both arrays and clamps to Length - 1, an empty array throws.
+                toneDiffFix = new double[0];
+                toneDiffStretch = new double[0];
+                error = $"oto region yields empty tone diff (offset {offset}, consonant {consonant}, cutoff {cutoff})";
+                return;
+            }
+
+            loaded = true;
+        }
+
+        /// <summary>
+        /// Center tone of the oto region [start, end), used as the reference of the pitch deviations.
+        /// The lowest and the highest <see cref="CenterTrimRatio"/> of the voiced frames are dropped
+        /// and the rest is averaged, so that a few outliers (attack glide, noise spike) cannot detune
+        /// the whole note. Averaging is done on tones instead of on frequencies, which is the geometric
+        /// mean and matches how pitch is perceived. Unvoiced frames (f0 &lt;= 60) are ignored. If the
+        /// region holds no voiced frame the whole file is used, and lastly the average f0 stored in
+        /// the frq file.
+        /// </summary>
+        /// <param name="frqs">Raw f0 track, not the output of Completion().</param>
+        /// <param name="fallbackF0">Average f0 stored in the frq file.</param>
+        /// <param name="start">Index of the first frame of the oto region.</param>
+        /// <param name="end">Index just past the last frame of the oto region.</param>
+        private static double CenterTone(double[] frqs, double fallbackF0, int start, int end) {
+            start = Math.Clamp(start, 0, frqs.Length);
+            end = Math.Clamp(end, start, frqs.Length);
+            var tones = VoicedTones(frqs.Skip(start).Take(end - start));
+            if (tones.Count == 0) {
+                tones = VoicedTones(frqs);
+            }
+            if (tones.Count == 0) {
+                return fallbackF0 > MinVoicedFreq ? MusicMath.FreqToTone(fallbackF0) : 0;
+            }
+            tones.Sort();
+            int trim = Math.Min((int)(tones.Count * CenterTrimRatio), (tones.Count - 1) / 2);
+            return tones.Skip(trim).Take(tones.Count - trim * 2).Average();
+        }
+
+        /// <summary>
+        /// Converts the voiced frames of an f0 track (above 60 Hz) to tones. Unvoiced frames are skipped.
+        /// </summary>
+        private static List<double> VoicedTones(IEnumerable<double> frqs) {
+            return frqs.Where(f => f > MinVoicedFreq).Select(f => MusicMath.FreqToTone(f)).ToList();
         }
 
         private void Load(string otoPath, out IFrqFiles? frqFile) {
@@ -64,11 +144,11 @@ namespace OpenUtau.Classic {
         private double[] Completion(double[] frqs) {
             var list = new List<double>();
             for (int i = 0; i < frqs.Length; i++) {
-                if (frqs[i] <= 60) {
+                if (frqs[i] <= MinVoicedFreq) {
                     int min = i - 1;
                     double minFrq = 0;
                     while (min >= 0) {
-                        if (frqs[min] > 60) {
+                        if (frqs[min] > MinVoicedFreq) {
                             minFrq = frqs[min];
                             break;
                         }
@@ -77,15 +157,15 @@ namespace OpenUtau.Classic {
                     int max = i + 1;
                     double maxFrq = 0;
                     while (max < frqs.Length) {
-                        if (frqs[max] > 60) {
+                        if (frqs[max] > MinVoicedFreq) {
                             maxFrq = frqs[max];
                             break;
                         }
                         max++;
                     }
-                    if (minFrq <= 60) {
+                    if (minFrq <= MinVoicedFreq) {
                         list.Add(maxFrq);
-                    } else if (maxFrq <= 60) {
+                    } else if (maxFrq <= MinVoicedFreq) {
                         list.Add(minFrq);
                     } else {
                         list.Add(MusicMath.Linear(min, max, minFrq, maxFrq, i));
