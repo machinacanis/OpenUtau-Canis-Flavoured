@@ -211,6 +211,12 @@ namespace OpenUtau.Core.Util {
             public bool DiffSingerTensorCache = true;
             public bool DiffSingerVarianceLocalPitchPatch = false;
             public bool DiffSingerLangCodeHide = false;
+            /// <summary>
+            /// Auto-merge nearby DiffSinger phrases (piano roll toggle). Off by
+            /// default: it changes how the model segments a passage and is still
+            /// being tuned.
+            /// </summary>
+            public bool DiffSingerMergeNearbyPhrases = false;
             public bool Metronome = false;
             public bool SkipRenderingMutedTracks = false;
             public string Language = string.Empty;

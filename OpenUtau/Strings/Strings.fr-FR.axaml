@@ -564,6 +564,7 @@ Attention : cela va effacer les préréglages.</system:String>
   <!--<system:String x:Key="pianoroll.toggle.hidepianoroll">Hide Piano Roll</system:String>-->
   <!--<system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>-->
   <!--<system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>-->
+  <!--<system:String x:Key="pianoroll.toggle.mergephrases">Auto-merge nearby phrases (DiffSinger)</system:String>-->
   <system:String x:Key="pianoroll.toggle.noteparams">Voir les paramètres de note (\)</system:String>
   <!--<system:String x:Key="pianoroll.toggle.overwritepitch">Toggle Overwrite Pitch Mode</system:String>-->
   <system:String x:Key="pianoroll.toggle.phoneme">Voir les Phonèmes (O)</system:String>
@@ -1017,10 +1018,17 @@ Général
   <system:String x:Key="tracks.mute.only">Rendre Muet cette piste</system:String>
   <system:String x:Key="tracks.mute.unmuteall">Tout rétablir</system:String>
   <!--<system:String x:Key="tracks.nosinger">There is no singer</system:String>-->
+  <!--<system:String x:Key="tracks.nosingermatch">No matching singer</system:String>-->
   <system:String x:Key="tracks.openaddsingers">Ouvrir un emplacement additionnel de Voix</system:String>
+  <!--<system:String x:Key="tracks.openlocation">Open location</system:String>-->
   <system:String x:Key="tracks.opensingers">Ouvrir l'emplacement des Voix</system:String>
   <system:String x:Key="tracks.remove">Supprimer</system:String>
+  <!--<system:String x:Key="tracks.removefromrecent">Remove from recent</system:String>-->
   <system:String x:Key="tracks.rename">Renommer la piste</system:String>
+  <!--<system:String x:Key="tracks.searchsinger">Search singers</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms">Search terms</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms.edit">Edit search terms...</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms.prompt">Extra words that find this singer, separated by commas.</system:String>-->
   <system:String x:Key="tracks.selectrenderer">Sélectionner le système de rendu</system:String>
   <system:String x:Key="tracks.selectsinger">Sélectionner une voix</system:String>
   <system:String x:Key="tracks.singerdefault">(Par défaut) </system:String>

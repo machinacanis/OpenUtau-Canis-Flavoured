@@ -562,6 +562,7 @@ OpenUtau стремится стать средой редактирования
   <!--<system:String x:Key="pianoroll.toggle.hidepianoroll">Hide Piano Roll</system:String>-->
   <!--<system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>-->
   <!--<system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>-->
+  <!--<system:String x:Key="pianoroll.toggle.mergephrases">Auto-merge nearby phrases (DiffSinger)</system:String>-->
   <system:String x:Key="pianoroll.toggle.noteparams">Показать параметры ноты (\)</system:String>
   <system:String x:Key="pianoroll.toggle.overwritepitch">Режим Перезаписи Питча</system:String>
   <system:String x:Key="pianoroll.toggle.phoneme">Показать фонемы (O)</system:String>
@@ -1012,10 +1013,17 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="tracks.mute.only">Отключить только этот трек</system:String>
   <system:String x:Key="tracks.mute.unmuteall">Включить все треки</system:String>
   <system:String x:Key="tracks.nosinger">Вокалист отсутствует</system:String>
+  <!--<system:String x:Key="tracks.nosingermatch">No matching singer</system:String>-->
   <system:String x:Key="tracks.openaddsingers">Открыть дополнительный путь к вокалистам</system:String>
+  <!--<system:String x:Key="tracks.openlocation">Open location</system:String>-->
   <system:String x:Key="tracks.opensingers">Открыть путь к вокалистам</system:String>
   <system:String x:Key="tracks.remove">Удалить</system:String>
+  <!--<system:String x:Key="tracks.removefromrecent">Remove from recent</system:String>-->
   <system:String x:Key="tracks.rename">Переименовать трек</system:String>
+  <!--<system:String x:Key="tracks.searchsinger">Search singers</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms">Search terms</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms.edit">Edit search terms...</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms.prompt">Extra words that find this singer, separated by commas.</system:String>-->
   <system:String x:Key="tracks.selectrenderer">Выбрать тип рендера</system:String>
   <system:String x:Key="tracks.selectsinger">Выберите вокалиста</system:String>
   <system:String x:Key="tracks.singerdefault">(По умолчанию для вокалиста) </system:String>

@@ -562,6 +562,7 @@ Uyarı: Bu seçenek özel önayarları kaldırır.</system:String>
   <!--<system:String x:Key="pianoroll.toggle.hidepianoroll">Hide Piano Roll</system:String>-->
   <!--<system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>-->
   <!--<system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>-->
+  <!--<system:String x:Key="pianoroll.toggle.mergephrases">Auto-merge nearby phrases (DiffSinger)</system:String>-->
   <system:String x:Key="pianoroll.toggle.noteparams">Nota Parametrelerini Gör (\)</system:String>
   <system:String x:Key="pianoroll.toggle.overwritepitch">Üzerine Yazma Pitch Modunu Değiştir</system:String>
   <system:String x:Key="pianoroll.toggle.phoneme">Fonemleri Gör (O)</system:String>
@@ -1016,10 +1017,17 @@ Genel
   <system:String x:Key="tracks.mute.only">Sadece bunu sustur</system:String>
   <system:String x:Key="tracks.mute.unmuteall">Tümünün susturmasını kaldır</system:String>
   <system:String x:Key="tracks.nosinger">Ses bankası yok</system:String>
+  <!--<system:String x:Key="tracks.nosingermatch">No matching singer</system:String>-->
   <system:String x:Key="tracks.openaddsingers">Ek ses bankası konumunu aç</system:String>
+  <!--<system:String x:Key="tracks.openlocation">Open location</system:String>-->
   <system:String x:Key="tracks.opensingers">Ses bankası konumunu aç</system:String>
   <system:String x:Key="tracks.remove">Kaldır</system:String>
+  <!--<system:String x:Key="tracks.removefromrecent">Remove from recent</system:String>-->
   <system:String x:Key="tracks.rename">Parçayı Yeniden Adlandır</system:String>
+  <!--<system:String x:Key="tracks.searchsinger">Search singers</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms">Search terms</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms.edit">Edit search terms...</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms.prompt">Extra words that find this singer, separated by commas.</system:String>-->
   <system:String x:Key="tracks.selectrenderer">Renderer Seç</system:String>
   <system:String x:Key="tracks.selectsinger">Ses Bankası Seç</system:String>
   <system:String x:Key="tracks.singerdefault">(Ses bankası varsayılanı)</system:String>

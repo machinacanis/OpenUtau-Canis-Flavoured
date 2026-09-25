@@ -984,3 +984,78 @@
 - **xunit 双版本并存**：`OpenUtau.Test` 仍钉 `xunit.v3` **3.2.2**（fork 自加，因 `Avalonia.Headless.XUnit 12.1.2` 在 xunit.v3 4.x 上 `[AvaloniaFact]` 会 `MissingMethodException`），而新 `OpenUtau.UiTest` 用 **4.0.0**（只写 `[Fact]`，自己用 `HeadlessUnitTestSession` 而非 `[AvaloniaFact]`，恰好绕开该缺陷）。两者是独立工程 / 独立进程，本机实测可同时构建运行；但**若上游将来给 `OpenUtau.UiTest` 引入 `[AvaloniaFact]`，fork 需要同样钉版**。
 - **`AppTest.StringsTest` 的 headless teardown 摆动**：本轮全量 1 次未复现，仍按「顺序敏感、需独立 topic 定位」跟踪（同上轮）。
 - **CI 触发面**：`pr-test.yml` 仅在 `pull_request` 到 `master` 时跑；直接推到 `master` 不会触发，本 fork 的本地验证仍以 `dotnet test` + `dotnet run --project OpenUtau.UiTest` 为准。
+
+---
+
+## Merge 2026-09-25 ec6c4b2e
+
+- **时间**（UTC）：`2026-09-25T15:09:01Z`（验证完成时间）
+- **合并方式**：`git merge --no-commit --no-ff upstream/master`（merge-base `a4d41398d1b4f6362476c96883514f9ebf4dcd8f`，即上次上游合并记录的上游基线；合并范围 `a4d41398..ec6c4b2e`）
+- **上游基线**：`ec6c4b2ee1aa0171848d433b79410c6bda26cac6` — Singer flyout search (#2450)
+- **fork 侧基线**：`39b6d2169fda7e8432e16f8ffc9084cf6e9c6ddb`（`Merge upstream/master (a4d41398) into master`）
+
+### 引入的上游 commit（2 个，线性）
+
+| # | SHA | 主题 | 作者 |
+| --- | --- | --- | --- |
+| 1 | `148d65fe63ec9a2217fbf139a0c441e537876e43` | DiffSinger: opt-in piano roll toggle for merging nearby phrases (#2449) | Kakaru |
+| 2 | `ec6c4b2ee1aa0171848d433b79410c6bda26cac6` | Singer flyout search (#2450) | StAkira |
+
+### 修改面
+
+- 上游 27 个文件（+828 / −68）：**21 个 fork 侧自 base 起未改动**（歌手搜索面 `SingerFlyout*` / `SingerSectionDividers.cs` / `SingersDialog*` / `SingersViewModel.cs` / `SingerFlyoutViewModel.cs`，音库 `SearchTerms`，`IRenderer.GapOverlapsPadding`，各 Singer 的搜索词，以及 3 个测试文件），由 ort 直接落盘。
+- **6 个双侧都改过**，全部自动合并，**0 个冲突标记**。
+- fork 侧自 base 起改过的其余文件，本轮上游一个都没碰。
+
+内容概要：
+
+- **#2449 乐句合并改为可选**：`IRenderer.ShouldMergePhrases` 的默认实现抽成 `GapOverlapsPadding`（默认接口方法，fork 的 `HifiUtauRenderer` / `CustomServerRenderer` 不覆盖，无需适配）。`DiffSingerRenderer` 用新偏好 `DiffSingerMergeNearbyPhrases`（默认 `false`）把门，关掉时分组回到 `f32e4ab5` 之前。钢琴卷帘工具条加开关，只在 DiffSinger 轨可见；切换后写偏好、`ValidateProjectNotification` + `PreRenderNotification`。`NotesCanvas` 在 `RenderView` 投递投影时再重绘，避免音高线停在旧分组。
+- **#2450 歌手 flyout 搜索**：顶部搜索框，打开即聚焦；匹配忽略大小写、全半角、平假名/片假名。搜索词含显示名、原文名、本地化名、id、文件夹名，以及 `character.yaml` 的 `search_terms`。收藏 / 近期 / 其余之间画分段线（`SingerSectionDividers`），不打乱瓷砖网格。右键菜单：打开位置、编辑搜索词、从近期移除。歌手对话框齿轮菜单也可编辑搜索词，写回 `character.yaml`。
+
+### 冲突
+
+无冲突标记。6 个双侧重叠文件由 ort 自动合并，两侧改动行段不相邻。
+
+| 文件 | 上游侧改动量（base→上游） | fork 侧改动量（base→fork） | 合并结果 vs 上游 | 合并结果 vs fork | 上游侧来源 | fork 侧来源 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `OpenUtau.Core/Util/Preferences.cs` | +6 / −0 | +119 / −1 | +119 / −1（= fork delta） | +6 / −0（= 上游 delta） | `148d65fe`（`DiffSingerMergeNearbyPhrases = false`） | Studio / HiFiUTAU / Custom Server 偏好（`f22f3a13` 起 9 个 fork commit） |
+| `OpenUtau/Controls/NotesCanvas.cs` | +4 / −0 | +106 / −23 | +106 / −23 | +4 / −0 | `148d65fe`（`RenderView.Inst.Observe` 重绘） | Studio 音符绘制（`f22f3a13` / `1b767a77` / `c29b2b10`） |
+| `OpenUtau/Controls/PianoRoll.axaml` | +15 / −0 | +79 / −57 | +79 / −57 | +15 / −0 | `148d65fe`（合并开关，接在 live pitch 按钮后） | Studio 表达式条与面板拖拽（`f22f3a13` / `f4777f8e` / `957bf34b`） |
+| `OpenUtau/ViewModels/NotesViewModel.cs` | +17 / −0 | +20 / −6 | +20 / −6 | +17 / −0 | `148d65fe`（`MergeNearbyPhrases` + 订阅） | 静音变暗 / 幽灵音符（`1b767a77` 及两次 review fix） |
+| `OpenUtau/Strings/Strings.axaml` | +8 / −0 | +147 / −15 | +147 / −15 | +8 / −0 | `148d65fe` + `ec6c4b2e`（8 个新键） | fork 专属键（Studio / DAW / HiFiUTAU） |
+| `OpenUtau/Strings/Strings.zh-CN.axaml` | +1 / −0 | +199 / −13 | +199 / −13 | +1 / −0 | `148d65fe`（`pianoroll.toggle.mergephrases` 译文） | fork 译文（`dece045e` 等） |
+
+### 判定流程取证（按 `AGENTS.md` 的 Merge conflict policy 判定流程执行）
+
+1. **量化两侧改动**：见上表（`git diff --numstat a4d41398 upstream/master -- <file>` 与 `git diff --numstat a4d41398 master -- <file>`）。
+2. **看残余差异由谁贡献**：6 个文件合并结果对上游的残余**逐字节等于 fork delta**，对 fork 的残余**逐字节等于上游 delta**。两侧改动量均非 0，不属于「上游已自行回退」。
+3. **归属到 commit 与作者**：上游侧每个文件只有上表那 1–2 个 commit（Kakaru / StAkira）；fork 侧作者是 Machinacanis（及 DAW 字符串的 KakaruHayate），与上游作者不重叠。
+4. **逐行核对目标**：上游是「DiffSinger 乐句合并开关」和「歌手搜索键 / 搜索词字段」，fork 是 Studio UI、HiFiUTAU、Custom Server、静音视觉。目标不同，**不构成同目标双实现，取并集**。`IRenderer` 的改动是把已有默认方法拆出 `GapOverlapsPadding`，不是替换 fork 实现。
+5. **集合类差异**：`Strings.axaml` 比键集合。合并后英文源是两侧键的并集（944 键，上游新增 8 个，无重复、无丢失）。fork 侧仍是上游的严格超集加这 8 个新键。
+6. **记录结论**：见「决策记录」。
+
+### 决策记录
+
+- **6 个重叠文件全部取并集，不替换任一侧。** 自动合并已把上游增量原样接上，fork 增量一行未丢（>12 字符的新增行字面匹配：上游 6+4+13+14+8+1、fork 114+72+74+16+147+196，**0 丢失**）。
+- **`NotesCanvas` 订阅位置**：`RenderView.Inst.Observe` 落在 fork 的 `ThemeChanged` / `StudioTrackPaletteChanged` / `NotesRefreshEvent` 之后、`NotesSelectionEvent` 之前。Studio 绘制订阅保留。
+- **`PianoRoll.axaml` 开关位置**：接在两个 live pitch 按钮之后、fork 的面板拖拽 `Border` 之前。Studio 表达式条与拖拽分隔条都在。
+- **`NotesViewModel` 订阅**：与上游逐段一致（初值回声跳过，避免启动时重校验）。fork 的静音 / 幽灵音符成员不在这段。
+- **21 个上游独有文件：直接落盘，无取舍。** `ShouldMergePhrases` 仍是默认接口方法，fork Renderer 不必实现。
+- **字符串**：跑一次 `python Misc/sync_strings.py`。脚本以无 BOM 回写，已把英文源 `Strings.axaml` 的 BOM 补回。同步是纯增量：21 个语言文件各 +8 行注释占位，`zh-CN` +7（`pianoroll.toggle.mergephrases` 的「自动合并临近段落（DiffSinger）」译文保留，不覆盖）。既有译文零删除。英文源 944 键，22 个语言文件键集与英文一致。
+
+### 已验证
+
+1. **构建**：`dotnet build OpenUtau.slnx -c Debug` → **0 错误 / 1860 警告**（存量 nullable / xunit analyzer，与历次同量级）。
+2. **测试**：`dotnet test OpenUtau.Test --no-build` → **Total 492 / 通过 490 / 失败 0 / 跳过 2**。账目：fork 基线 479（上次记录）→ 492，差额 **+13** = 上游 `SearchMatches` 的 6 个 `[InlineData]` + 6 个新 `[Fact]` + 1 个跳过的 `MergeAdjacentPhrasesLiveTest`（未设 `OPENUTAU_TEST_SINGERS`）。另一个跳过项仍是 `DawRealPluginTest.RealPluginCompletesTheHandshakeAndPullsAudio`。
+3. **UI 测试**：`dotnet run --project OpenUtau.UiTest --no-build` → **Total 3 / Errors 0 / Failed 0**（基线 2，差额 +1 = 上游 `SingerFlyoutSearches`）。
+4. **原生桌面冒烟**：启动合并结果的 `OpenUtau.exe`（Debug）→ **存活 20s**、窗口标题 `OpenUtau v0.0.0.0`、stdout 与 stderr 全空，随后终止。未改用户 `Documents/OpenUtau`。
+5. **双侧零丢失**：见决策记录。`git diff --numstat` 对 6 个重叠文件的残余与对侧 delta 逐项相等。
+6. **BOM**：`NotesViewModel.cs` / `Preferences.cs` / `Strings.axaml` 两侧本就有 BOM，合并后仍在。`NotesCanvas.cs` / `PianoRoll.axaml` 的 fork 基线无 BOM、上游有 BOM，合并保留 fork 基线（未剥、未补）。`Strings.zh-CN.axaml` 两侧均无 BOM。
+7. **`git diff --check` 与冲突标记**：索引态与工作区均无空白错误；全库冲突标记扫描为空。
+8. **清理**：字符串同步前的备份在 `%TEMP%\ou-strings-backup`（不在仓库内）；冒烟的 stdout/stderr 在 `%TEMP%`，不入库。UiTest 产物在 `bin/`（gitignore）。
+
+### 未决项（已知、非阻塞）
+
+- **`MergeAdjacentPhrasesLiveTest` 本机跳过**：需要 `OPENUTAU_TEST_SINGERS` 指向真实 DiffSinger 音源目录。CI 同样跳过，与上游一致。
+- **7 个搜索键尚无译文**（`tracks.nosingermatch` / `openlocation` / `removefromrecent` / `searchsinger` / `searchterms` / `searchterms.edit` / `searchterms.prompt`）。上游只译了 `pianoroll.toggle.mergephrases` 的 zh-CN。其余语言以注释占位，不在本次合并里新译。
+- **未推送 `origin`**。本记录随合并提交落在本地 `master`。

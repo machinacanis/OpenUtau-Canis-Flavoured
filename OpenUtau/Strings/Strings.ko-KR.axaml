@@ -563,6 +563,7 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <!--<system:String x:Key="pianoroll.toggle.hidepianoroll">Hide Piano Roll</system:String>-->
   <!--<system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>-->
   <!--<system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>-->
+  <!--<system:String x:Key="pianoroll.toggle.mergephrases">Auto-merge nearby phrases (DiffSinger)</system:String>-->
   <system:String x:Key="pianoroll.toggle.noteparams">노트 설정 열기 (\)</system:String>
   <system:String x:Key="pianoroll.toggle.overwritepitch">피치 덮어쓰기 모드 활성</system:String>
   <system:String x:Key="pianoroll.toggle.phoneme">음소 보기 (O)</system:String>
@@ -1017,10 +1018,17 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="tracks.mute.only">이 트랙만 뮤트</system:String>
   <system:String x:Key="tracks.mute.unmuteall">모든 뮤트 해제</system:String>
   <system:String x:Key="tracks.nosinger">가수가 없어요</system:String>
+  <!--<system:String x:Key="tracks.nosingermatch">No matching singer</system:String>-->
   <system:String x:Key="tracks.openaddsingers">가수 폴더(확장) 열기</system:String>
+  <!--<system:String x:Key="tracks.openlocation">Open location</system:String>-->
   <system:String x:Key="tracks.opensingers">가수 폴더(기본) 열기</system:String>
   <system:String x:Key="tracks.remove">트랙 제거</system:String>
+  <!--<system:String x:Key="tracks.removefromrecent">Remove from recent</system:String>-->
   <system:String x:Key="tracks.rename">트랙 이름 변경</system:String>
+  <!--<system:String x:Key="tracks.searchsinger">Search singers</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms">Search terms</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms.edit">Edit search terms...</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms.prompt">Extra words that find this singer, separated by commas.</system:String>-->
   <system:String x:Key="tracks.selectrenderer">렌더러 선택</system:String>
   <system:String x:Key="tracks.selectsinger">가수 선택</system:String>
   <system:String x:Key="tracks.singerdefault">(가수 기본값) </system:String>

@@ -562,6 +562,7 @@ OpenUtau 是一个开源项目, 旨在为 UTAU 用户社区提供现代的用户
   <system:String x:Key="pianoroll.toggle.hidepianoroll">隐藏钢琴卷帘</system:String>
   <!--<system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>-->
   <!--<system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>-->
+  <system:String x:Key="pianoroll.toggle.mergephrases">自动合并临近段落（DiffSinger）</system:String>
   <system:String x:Key="pianoroll.toggle.noteparams">显示参数面板 (\)</system:String>
   <system:String x:Key="pianoroll.toggle.overwritepitch">音高覆写模式</system:String>
   <system:String x:Key="pianoroll.toggle.phoneme">显示音素 (O)</system:String>
@@ -1016,10 +1017,17 @@ OpenUtau 是一个开源项目, 旨在为 UTAU 用户社区提供现代的用户
   <system:String x:Key="tracks.mute.only">仅使这个音轨静音</system:String>
   <system:String x:Key="tracks.mute.unmuteall">全部取消静音</system:String>
   <system:String x:Key="tracks.nosinger">此处没有歌手</system:String>
+  <!--<system:String x:Key="tracks.nosingermatch">No matching singer</system:String>-->
   <system:String x:Key="tracks.openaddsingers">打开额外歌手路径</system:String>
+  <!--<system:String x:Key="tracks.openlocation">Open location</system:String>-->
   <system:String x:Key="tracks.opensingers">打开歌手路径</system:String>
   <system:String x:Key="tracks.remove">移除</system:String>
+  <!--<system:String x:Key="tracks.removefromrecent">Remove from recent</system:String>-->
   <system:String x:Key="tracks.rename">重命名音轨</system:String>
+  <!--<system:String x:Key="tracks.searchsinger">Search singers</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms">Search terms</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms.edit">Edit search terms...</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms.prompt">Extra words that find this singer, separated by commas.</system:String>-->
   <system:String x:Key="tracks.selectrenderer">选择渲染器</system:String>
   <system:String x:Key="tracks.selectsinger">选择歌手</system:String>
   <system:String x:Key="tracks.singerdefault">(歌手默认) </system:String>
