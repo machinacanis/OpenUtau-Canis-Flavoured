@@ -1153,4 +1153,4 @@
 - **本机无 bazelisk**，上游 `//worldline` 的 native 单元测试（`worldline_test.cpp` / 新增 `effects_test.cpp`）未在本机执行；改用第 6 条经 C# 包装的端到端冒烟覆盖同一批 native 导出（调用方缓冲区 ABI、pYIN f0、分析→合成往返），并核对二进制哈希与上游制品一致。
 - **23 个 `yamleditor.*` / `singers.oto` 键尚无译文**：各语言以注释占位（上游本轮只加了英文源）。不在本次合并里新译。
 - **Studio 轨道头的 M / S / fx 位置随上游对齐而变**（M / S 移到轨道名行、fx 移到推子行）。这是取上游布局的直接结果，已由第 5 条截图确认；若以后想保留旧的竖排 M / S / fx 列，需另开 topic 在上游布局上做 fork 覆盖（会重新引入本文件的同步冲突，不建议）。
-- **未推送 `origin`**。本记录随合并提交落在本地 `master`。
+- **已推送 `origin`**：`2fd6e97c..f74c9a12  master -> master`（合并提交 `f74c9a12` 与其 14 个上游提交一并上链）。
