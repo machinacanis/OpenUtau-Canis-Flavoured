@@ -1059,3 +1059,98 @@
 - **`MergeAdjacentPhrasesLiveTest` 本机跳过**：需要 `OPENUTAU_TEST_SINGERS` 指向真实 DiffSinger 音源目录。CI 同样跳过，与上游一致。
 - **7 个搜索键尚无译文**（`tracks.nosingermatch` / `openlocation` / `removefromrecent` / `searchsinger` / `searchterms` / `searchterms.edit` / `searchterms.prompt`）。上游只译了 `pianoroll.toggle.mergephrases` 的 zh-CN。其余语言以注释占位，不在本次合并里新译。
 - **未推送 `origin`**。本记录随合并提交落在本地 `master`。
+
+---
+
+## Merge 2026-09-26 5170ebe2
+
+- **时间**（UTC）：`2026-09-26T07:08:35Z`（验证完成时间）
+- **合并方式**：`git merge --no-commit --no-ff upstream/master`（merge-base `ec6c4b2ee1aa0171848d433b79410c6bda26cac6`，即上次合并记录的上游基线；合并范围 `ec6c4b2e..5170ebe2`）
+- **上游基线**：`5170ebe2e299ba61359fe99022245b4b7010d566` — Avalonia bug fix (#2460)
+- **fork 侧基线**：`2fd6e97c5121043d2bc0f3b3b6a067e5bf5ad489`（`Merge upstream/master (ec6c4b2e) into master`）
+
+### 引入的上游 commit（14 个，线性）
+
+| # | SHA | 主题 | 作者 |
+| --- | --- | --- | --- |
+| 1 | `c3cb8c91c123589045e6e687b8bbeaf2f4d0ede0` | Edit character.yaml and dsconfig.yaml in the Singers dialog, with validation, hover help and suggestions (#2456) | StAkira |
+| 2 | `7d1c32b9d9b4f23a56872b36a8e113aba1d42068` | Align track header buttons with their rows | Sugita Akira |
+| 3 | `b27daf21fb632a9e1cd89415bcd431a7fe3d267e` | Fix out-of-bounds read in worldline ShiftGender | Sugita Akira |
+| 4 | `c5cc0b6ca25efb0241c9453158e925d51d7491d4` | Never speed up vowels in WORLDLINE-R time mapping | Sugita Akira |
+| 5 | `5b16bb8ea9697c16012a8f7d63b7709f03375017` | Remove unused worldline native code | Sugita Akira |
+| 6 | `2c42373980aa8942b4388a360753c2f96096d596` | Fix breathiness jump in WorldSynthesis | Sugita Akira |
+| 7 | `177ac9a1c01da99d1e0edf117ae821dc3a973e64` | Use pYIN for WORLDLINE-R f0 when there is no .frq file | Sugita Akira |
+| 8 | `2f7601c88766eff8740bb938762025038fddcee3` | Repeat the last WORLDLINE-R frame and fit curves to the frame count | Sugita Akira |
+| 9 | `601c58c40f63654630793e6c2c0c750fb7eef0ac` | Port the worldline resampler to C# | Sugita Akira |
+| 10 | `ba3ddd6422e631b544d0e51b82d0df79a32e6ae6` | Use caller-owned buffers in worldline API | Sugita Akira |
+| 11 | `4650bec0c075ca5f732d07b61b216550b56638b8` | Remove obsolete build note | Sugita Akira |
+| 12 | `868658d175a50d745cd549418fa807e7cd16123e` | Update metronome icon (#2459) | Mashi |
+| 13 | `ebd4fc257be927aa33e3f4fe27c767f85d4d4e77` | Rebuild Worldline (#2458) | github-actions[bot] |
+| 14 | `5170ebe2e299ba61359fe99022245b4b7010d566` | Avalonia bug fix (#2460) | Anjo |
+
+### 修改面
+
+- 上游 63 个文件（+2363 / −2776）：**57 个 fork 侧自 base 起未改动**，由 ort 直接落盘。含 **7 个新增文件**（`OpenUtau.Core/Util/YamlValidator.cs`、`YamlValues.cs`、`OpenUtau.Test/Core/Util/YamlValidatorTest.cs`、`OpenUtau.UiTest/YamlEditorTest.cs`、`OpenUtau/Controls/YamlEditor.axaml(.cs)`、`cpp/worldline/model/effects_test.cpp`）与 **23 个删除文件**（worldline native 旧实现：`classic/`、`platinum/`、`model/model.*`、`phrase_synth.*`、`f0/frq_estimator.*`、`synth_request.h`、`worldline_main.cpp`）。
+- fork 侧自 base 起改动 142 个文件；与上游重叠 **6 个**，其中 **1 个出现冲突标记**（`TrackHeader.axaml`），其余 5 个自动合并。
+
+内容概要：
+
+- **Singers 对话框内 YAML 编辑（`c3cb8c91` #2456）**：新增 `YamlEditor` 控件（AvaloniaEdit + `JsonSchema.Net 8.0.0` 校验）、`YamlValidator` / `YamlValues`，`character.yaml` / `dsconfig.yaml` 可在歌手对话框内编辑（实时校验、悬停帮助、键值建议），新增 23 个 `yamleditor.*` / `singers.oto` 键；`App.axaml` 挂 AvaloniaEdit 样式；`SingersDialog.axaml(.cs)` / `SingersViewModel` / `SingerFlyoutViewModel` / `OtoPlot` / `VoicebankConfig` / `DiffSingerConfig` / `Util/Yaml.cs` 相应改动；`OpenUtau.UiTest` 新增 `YamlEditorTest`（3 个用例）。
+- **WORLDLINE-R 重写（11 个 commit，`b27daf21`…`ebd4fc25`）**：resampler 移植到 C#（`601c58c4`）；native 导出改为**调用方持有缓冲区**（`ba3ddd64`）；删除未用 native 代码（`5b16bb8e`）；无 `.frq` 时 f0 改用 pYIN（`177ac9a1`）；时间映射不再加速元音（`c5cc0b6c`）；末帧重复并把曲线拟合到帧数（`2f7601c8`）；`WorldSynthesis` 气息跳变修复（`2c423739`）；`ShiftGender` 越界读修复（`b27daf21`）；`ebd4fc25` 重编 `runtimes/` 全部 6 个二进制。
+- **轨道头按钮按行对齐（`7d1c32b9`）**：删掉旧的独立 `StackPanel Grid.Column="2"`，改为单一 Grid（5 行）——M / S 与轨道名同行、设置与渲染器同格、fx 与推子同行；小高度下被隐藏的行折进「⋯」菜单。
+- 其他：节拍器图标更新（`868658d1`）、Avalonia 12.1.2 → 12.1.3 与 `Avalonia.Headless.XUnit` 同步升级（`5170ebe2`）、`cpp/README.md` 删除过时构建说明（`4650bec0`）。
+
+### 冲突（1 个文件）
+
+| 文件 | 上游侧改动量（base→上游） | fork 侧改动量（base→fork） | 合并结果 vs 上游 | 合并结果 vs fork | 上游侧来源 | fork 侧来源 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `OpenUtau/Controls/TrackHeader.axaml` | +72 / −74 | +30 / −20 | +31 / −20 | +80 / −81 | `7d1c32b9`（Sugita Akira） | `c837526a` / `55615237` / `8d04547c` / `4fcfe157` / `464705a1` / `a0172184`（Studio 轨道头 6 条，Machinacanis） |
+
+其余 5 个双侧重叠文件由 ort 自动合并，两侧改动行段不相邻，无冲突标记：
+
+| 文件 | 上游侧改动量（base→上游） | fork 侧改动量（base→fork） | 合并结果 vs 上游 | 合并结果 vs fork | 上游侧来源 | fork 侧来源 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `OpenUtau.Core/OpenUtau.Core.csproj` | +3 / −0 | +4 / −0 | +4 / −0 | +3 / −0 | `c3cb8c91`（`JsonSchema.Net` 引用） | `Newtonsoft.Json` 保留（HiFiUTAU / Custom Server 仍用 `JsonConvert`） |
+| `OpenUtau.Test/OpenUtau.Test.csproj` | +1 / −1 | +11 / −3 | +12 / −3 | +6 / −5 | `5170ebe2`（`Avalonia.Headless.XUnit` → 12.1.3） | xunit.v3 3.2.2 钉版与说明注释 |
+| `OpenUtau/App.axaml` | +1 / −0 | +1 / −0 | +1 / −0 | +1 / −0 | `c3cb8c91`（AvaloniaEdit 样式） | WarmSage 主题 `ResourceInclude`（`fcb6f2ab` / `f22f3a13`） |
+| `OpenUtau/Views/MainWindow.axaml` | +3 / −3 | +6 / −5 | +6 / −5 | +3 / −3 | `868658d1`（节拍器图标 + `Height="18"`） | `f22f3a13` / `f4777f8e`（`MainPageGrid`、Auto 行高、`GridSplitter Classes="panel"`、`MainProgressText`） |
+| `OpenUtau/Strings/Strings.axaml` | +23 / −0 | +147 / −15 | +148 / −15 | +24 / −0 | `c3cb8c91`（23 个新键） | Studio / DAW / HiFiUTAU 专属键 |
+
+### 判定流程取证（按 `AGENTS.md` 的 Merge conflict policy 判定流程执行）
+
+1. **量化两侧改动**：见上表（`git diff --numstat ec6c4b2e upstream/master -- <file>` 与 `git diff --numstat ec6c4b2e master -- <file>`）。
+2. **看残余差异由谁贡献**：`TrackHeader.axaml` 两侧改动量均非 0（上游 +72 / −74、fork +30 / −20），不属于「上游已自行回退、无上游实现」的情形。
+3. **归属到 commit 与作者**：上游侧该文件在 `ec6c4b2e..upstream/master` 内只有 `7d1c32b9`（作者 Sugita Akira）；fork 侧为 6 条 Studio topic（作者 Machinacanis），两侧作者不重叠。
+4. **逐行核对目标**：上游改的是**通用布局重构**——把标签与按钮收进同一个 `Grid ColumnDefinitions="*,auto,auto,auto" RowDefinitions="auto×5"` 按行对齐，并删掉 `Grid.Column="2"` 的独立按钮 `StackPanel`；fork 改的是 **Studio 独有 chrome**——左侧彩色条（`TrackColorBar`）、轨道号徽章从头像角移到轨道名左侧（`TrackNoBadge`）、M / S / fx 三个按钮加 `x:Name` 与 `.s1` 皮肤类名（`8d04547c` / `4fcfe157` / `464705a1` / `a0172184`）。**目标不同，不构成同目标双实现**；冲突重叠的真正原因是 fork 一直在沿用上游**旧版**的按钮排布（并无自己的排布实现），而该排布被上游本轮删掉。
+5. **集合类差异**：`Strings.axaml` 改比**键集合**——上游新增 23 键，fork 侧仍是上游的严格超集 + 这 23 键（合并后英文源 967 键、无重键）。
+6. **记录结论**：见决策记录。
+
+### 决策记录
+
+- **`TrackHeader.axaml`：以上游新版布局为底，把 fork 独有的 Studio chrome 重新贴回。**
+  - 依据：fork 在该文件里真正独有的只有**彩色条、徽章位置、`.s1` 类名 / `x:Name`** 三件事；被上游删掉的那个「M / S / fx 独立 StackPanel 竖排」是上游**旧版布局**，不是 fork 功能，按政策第 3 条不构成保留理由。取上游布局后 fork 残余变成小段纯增量（+31 / −20），后续同步不再反复冲突（这正是政策第 2 条要的「减小 diff」）。
+  - 具体做法：Col0 由上游的裸 `Panel` 改为 `Grid ColumnDefinitions="auto,auto"`，装 `TrackColorBar`（宽度绑 `ColorBarWidth`，Studio 关时为 0）+ 具名 `AvatarPanel`（只留头像，徽章移出）；徽章 `TrackNoBadge` 放回「轨道名左侧的嵌套 Grid」，`TrackNameButton` 保留 `x:Name`；上游那个「标签 + 按钮」的 Grid 取 `x:Name="HeaderButtons"`；M / S 加 `x:Name="MuteButton"` / `"SoloButton"` 与 `s1 mute` / `s1 solo` 类名；fx 加 `x:Name="FxButton"` 与 `HorizontalAlignment="Stretch"`（上游的 `Width="17"` 保留 → 与 M / S 等宽），且**不加** `s1`。
+  - **fork 测试随之适配 1 处**：`OpenUtau.Test/App/TrackHeaderChromeTest.cs` 的 `HeaderButtons_FitCompactTrackHeight` 改为在具名 `Grid` 上量高度（该元素不再是 `StackPanel`），断言与意图（63px 轨道高度下头部内容 ≤ 59px）不变；其余 4 个用例（彩色条宽度、M / S 皮肤、fx 不加 `s1`、fx 与 M / S 等宽、徽章不在头像面板内）**未改动**。实测该类 5/5 通过。
+- **`OpenUtau.Test/OpenUtau.Test.csproj`：继续钉 xunit.v3 3.2.2，不吃上游的升级**。取证：`Avalonia.Headless.XUnit` 12.1.3 的 nuspec 仍依赖 `xunit.v3.extensibility.core 3.2.2`（`~/.nuget/packages/avalonia.headless.xunit/12.1.3/avalonia.headless.xunit.nuspec`），fork 的 `[AvaloniaFact]` 在 xunit.v3 4.0.0 下仍会在发现阶段 `MissingMethodException`，故钉版保持；同时把注释里过时的「12.1.2（latest on NuGet）」更正为 12.1.2 / 12.1.3 并补上依赖证据。
+- **其他 4 个双侧文件全部取并集**（自动合并，两侧改动不相邻，逐条核对两侧改动均未丢失）：`OpenUtau.Core.csproj`（上游 `JsonSchema.Net` + fork `Newtonsoft.Json`）、`App.axaml`（上游 AvaloniaEdit 样式 + fork WarmSage 主题）、`MainWindow.axaml`（上游节拍器图标 + fork 面板布局）、`Strings.axaml`（两侧键并集）。
+- **57 个上游独有文件直接落盘，无取舍**：`PhonemizerFactory.cs` 合并后与上游**逐字节一致**（上次合并已让给上游，本次上游再改 8 行）；`OpenUtau.Core/Render/Worldline.cs`、`cpp/worldline/**`、`runtimes/**` 全取上游（fork 自 base 起未改动这些文件）；`OpenUtau/Controls/OtoPlot.cs`、`Util/Yaml.cs` 等同样直接取上游。
+- **字符串同步**：跑一次 `python Misc/sync_strings.py` → 22 个语言文件各 **+24 行**（23 个新键 + 1 个区段空行），**0 行删除**，既有译文（含 fork 专属键的人工译文）一条未丢；英文源 **967 键**（上游 944 + 23），22 个语言文件键集与英文源完全一致、无重键。脚本以无 BOM 回写，已把英文源 `Strings.axaml` 的 BOM 补回（同历轮）；脚本对 22 个语言文件**幂等**（复跑内容不变，仅英文源因 BOM 每次「变化」）。
+
+### 已验证
+
+1. **构建**：`dotnet build OpenUtau.slnx -c Debug` → **0 错误 / 1862 警告**（存量 nullable / xunit analyzer，与历次同量级）。
+2. **测试**：`dotnet test OpenUtau.Test --no-build` → **Total 513 / 通过 511 / 失败 0 / 跳过 2**（跳过项为 `MergeAdjacentPhrasesLiveTest`（需 `OPENUTAU_TEST_SINGERS`）与 `DawRealPluginTest.RealPluginCompletesTheHandshakeAndPullsAudio`（需真实 DAW 插件），均与上游一致）。**账目闭合**：fork 基线 492（490 + 2，上次记录）→ 513，差额 **+21** = 上游新增 `YamlValidatorTest` 的 21 个用例（`[Fact]` + `[InlineData]` 逐项计数一致）。另单独跑 `--filter FullyQualifiedName~TrackHeaderChromeTest` → **5 / 5 通过**。
+3. **UI 测试**：`dotnet run --project OpenUtau.UiTest --no-build` → **Total 6 / Errors 0 / Failed 0**（基线 3，差额 **+3** = 上游 `YamlEditorTest`）。
+4. **原生桌面冒烟**：以 PowerShell `Start-Process` 直接启动合并结果的 `OpenUtau.exe`（Debug）→ 存活 25s、`MainWindowTitle = "OpenUtau v0.0.0.0"`、工作集 ~394MB、**stdout 与 stderr 全空**、`CloseMainWindow()` 后正常退出。
+5. **冲突解析的可见取证**：`OpenUtau.UiTest` 生成的 `NewProjectOpensEditor.png`（本次运行产出）目视确认合并后的轨道头——左侧 6px 彩色条、「1」徽章在轨道名左侧、`⋯` 与 M / S 在轨道名同一行、推子行右侧为 `fx`、第二行歌手按钮；上游 `SingersDialogHasATabPerYamlFile.png` 确认新的 YAML 编辑器（`character.yaml` 标签、语法高亮、底部校验提示、Revert / Save）在 fork 树上正常渲染。
+6. **WORLDLINE-R 新 native ABI 的端到端冒烟**（临时 `[Fact]`，验证后已删除）：合成 1s / 440Hz 正弦 → `Worldline.F0(…, method: 2 /* pYIN，渲染器在无 .frq 时用的就是它 */)` 得 99 帧、有声帧中位数落在 **430–450Hz**；`Worldline.InitAnalysisConfig(44100, 441, 2048)` + `WorldAnalysisF0In`（**调用方持有缓冲区**）产出有限且非静默的 sp / ap（长度 = 帧数 × 1025）；`WorldSynthesis` 输出长度 > 1s/4、RMS > 1e-4、过零率折算基频落在 **420–460Hz**。另比对 `runtimes/win-x64/native/worldline.dll` 与 `OpenUtau/`、`OpenUtau.Test/` 两个输出目录中的副本 **md5 完全一致**（`cd192c0a2ab6b105c9b19c522abdc46a`），即上游重建的二进制正确随构建复制。
+7. **`git diff --check` 与冲突标记**：工作区无空白错误；全库 `^(<<<<<<<|>>>>>>>|=======$)` 扫描为空；`git diff --diff-filter=U` 为空。
+8. **BOM 核对**：`TrackHeader.axaml` / `OpenUtau.Test.csproj`（两侧本就无 BOM）与 `TrackHeaderChromeTest.cs` / `Strings.axaml`（两侧有 BOM）逐个与 `master` / `upstream/master` 比对首 3 字节一致，本轮手工编辑未剥 BOM。
+9. **清理**：临时 `[Fact]` 已删除；字符串备份在 `%TEMP%\ou-strings-backup`（不在仓库内）；冒烟 stdout / stderr 在 `%TEMP%` 且已删除；UiTest 截图与 `prefs.json` 落在 `bin/`（gitignore）。
+
+### 未决项（已知、非阻塞）
+
+- **本机无 bazelisk**，上游 `//worldline` 的 native 单元测试（`worldline_test.cpp` / 新增 `effects_test.cpp`）未在本机执行；改用第 6 条经 C# 包装的端到端冒烟覆盖同一批 native 导出（调用方缓冲区 ABI、pYIN f0、分析→合成往返），并核对二进制哈希与上游制品一致。
+- **23 个 `yamleditor.*` / `singers.oto` 键尚无译文**：各语言以注释占位（上游本轮只加了英文源）。不在本次合并里新译。
+- **Studio 轨道头的 M / S / fx 位置随上游对齐而变**（M / S 移到轨道名行、fx 移到推子行）。这是取上游布局的直接结果，已由第 5 条截图确认；若以后想保留旧的竖排 M / S / fx 列，需另开 topic 在上游布局上做 fork 覆盖（会重新引入本文件的同步冲突，不建议）。
+- **未推送 `origin`**。本记录随合并提交落在本地 `master`。

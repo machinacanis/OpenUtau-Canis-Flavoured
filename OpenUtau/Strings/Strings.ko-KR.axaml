@@ -919,6 +919,7 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="singers.errorreport">가수 오류 보고서 생성</system:String>
   <system:String x:Key="singers.location">위치 열기</system:String>
   <system:String x:Key="singers.merge">다른 음원과 합치기</system:String>
+  <!--<system:String x:Key="singers.oto">Oto</system:String>-->
   <system:String x:Key="singers.otoview.moveleft">왼쪽으로</system:String>
   <system:String x:Key="singers.otoview.moveright">오른쪽으로</system:String>
   <system:String x:Key="singers.otoview.selectnext">다음</system:String>
@@ -1061,4 +1062,27 @@ HN-SEP model: {3} ({4})</system:String>-->
   <system:String x:Key="welcome.recent">최근 기록들</system:String>
   <system:String x:Key="welcome.start">시작하기</system:String>
   <system:String x:Key="welcome.template">템플릿</system:String>
+
+  <!--<system:String x:Key="yamleditor.default">Default: {0}</system:String>-->
+  <!--<system:String x:Key="yamleditor.discarded">{0} has errors, so it can't be saved. Your changes to it were discarded.</system:String>-->
+  <!--<system:String x:Key="yamleditor.errors">Errors: {0}, warnings: {1}. OpenUtau could not load this file; fix the errors to save.</system:String>-->
+  <!--<system:String x:Key="yamleditor.noproblems">No problems found</system:String>-->
+  <!--<system:String x:Key="yamleditor.revert">Revert</system:String>-->
+  <!--<system:String x:Key="yamleditor.save">Save</system:String>-->
+  <!--<system:String x:Key="yamleditor.syntax">Not valid YAML: {0}</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.bool">true or false</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.choice">one of {0}</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.integer">whole number</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.list">list of {0}</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.map">map of {0}</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.number">number</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.section">section of keys</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.text">text</system:String>-->
+  <!--<system:String x:Key="yamleditor.unknownkey">Unknown key "{0}", which OpenUtau ignores. Check the spelling.</system:String>-->
+  <!--<system:String x:Key="yamleditor.unsaved">Save changes to {0}?</system:String>-->
+  <!--<system:String x:Key="yamleditor.unsaved.caption">Unsaved changes</system:String>-->
+  <!--<system:String x:Key="yamleditor.unsaved.errors">{0} has errors, so it can't be saved. Discard your changes?</system:String>-->
+  <!--<system:String x:Key="yamleditor.value">Value: {0}</system:String>-->
+  <!--<system:String x:Key="yamleditor.warnings">Warnings: {0}. OpenUtau ignores these parts; you can still save.</system:String>-->
+  <!--<system:String x:Key="yamleditor.wrongtype">Expected {0}.</system:String>-->
 </ResourceDictionary>

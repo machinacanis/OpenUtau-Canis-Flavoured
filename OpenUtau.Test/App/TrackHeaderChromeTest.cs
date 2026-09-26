@@ -103,8 +103,8 @@ namespace OpenUtau.App {
         [AvaloniaFact]
         public void HeaderButtons_FitCompactTrackHeight() {
             var header = ShowHeader(63);
-            var buttons = header.GetVisualDescendants().OfType<StackPanel>()
-                .First(panel => panel.Name == "HeaderButtons");
+            var buttons = header.GetVisualDescendants().OfType<Grid>()
+                .First(grid => grid.Name == "HeaderButtons");
             // 63 - 2 (Border margin) - 2 (BorderThickness) = 59px of content.
             Assert.True(buttons.DesiredSize.Height <= 59,
                 $"header buttons need {buttons.DesiredSize.Height}px, only 59px available");
